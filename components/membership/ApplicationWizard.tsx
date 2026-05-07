@@ -211,7 +211,7 @@ function Step1({ draft, onChange, errors }: {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <Label htmlFor="fullName">Full Name *</Label>
-          <input id="fullName" type="text" placeholder="e.g. Chidi Okonkwo"
+          <input id="fullName" type="text" placeholder="e.g. Adebayo Salako"
             value={draft.fullName}
             onChange={(e) => onChange("fullName", e.target.value)}
             className={inputCls(!!errors.fullName)} />

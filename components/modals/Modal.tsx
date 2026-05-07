@@ -72,7 +72,7 @@ export default function Modal({
           <div className="flex items-center justify-between border-b border-(--color-neutral-200) px-6 py-4">
             <h2
               id="modal-title"
-              className="text-base font-semibold text-(--foreground)"
+              className="text-base font-semibold text-gray-500"
             >
               {title}
             </h2>

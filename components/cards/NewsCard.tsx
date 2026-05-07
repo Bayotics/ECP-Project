@@ -128,7 +128,7 @@ export default function NewsCard({
           </div>
           <Link
             href={href}
-            className="font-semibold text-(--foreground) hover:text-(--color-green-600) transition-colors line-clamp-2 leading-snug focus-visible:outline-none focus-visible:underline"
+            className="font-semibold text-gray-700 hover:text-(--color-green-600) transition-colors line-clamp-2 leading-snug focus-visible:outline-none focus-visible:underline"
           >
             {title}
           </Link>
@@ -213,7 +213,7 @@ export default function NewsCard({
 
         <Link
           href={href}
-          className="font-bold text-(--foreground) hover:text-(--color-green-600) transition-colors leading-snug line-clamp-2 focus-visible:outline-none focus-visible:underline"
+          className="font-bold text-gray-500 hover:text-(--color-green-600) transition-colors leading-snug line-clamp-2 focus-visible:outline-none focus-visible:underline"
         >
           {title}
         </Link>

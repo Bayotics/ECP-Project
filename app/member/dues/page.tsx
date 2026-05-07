@@ -86,7 +86,7 @@ function PayModal({
       <ModalShell onClose={onClose}>
         <div className="text-center py-4 space-y-3">
           <div className="text-5xl">🎉</div>
-          <h2 className="text-xl font-bold text-(--foreground)">Payment Successful!</h2>
+          <h2 className="text-xl font-bold text-gray-500">Payment Successful!</h2>
           <p className="text-sm text-(--color-neutral-500)">
             Your {year} dues of <strong>₦{amount.toLocaleString()}</strong> have been received.
           </p>
@@ -110,7 +110,7 @@ function PayModal({
       <ModalShell onClose={() => {}}>
         <div className="text-center py-8 space-y-4">
           <div className="h-12 w-12 rounded-full border-4 border-(--color-green-200) border-t-(--color-green-600) animate-spin mx-auto" />
-          <p className="font-semibold text-(--foreground)">Processing payment…</p>
+          <p className="font-semibold text-gray-500">Processing payment…</p>
           <p className="text-sm text-(--color-neutral-500)">Please wait, do not close this window</p>
         </div>
       </ModalShell>
@@ -121,7 +121,7 @@ function PayModal({
     <ModalShell onClose={onClose}>
       <div className="space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-(--foreground)">Pay Annual Dues</h2>
+          <h2 className="text-xl font-bold text-gray-500">Pay Annual Dues</h2>
           <p className="text-sm text-(--color-neutral-500) mt-1">
             {year} membership dues · Lagos State Chapter
           </p>
@@ -135,7 +135,7 @@ function PayModal({
 
         {/* Payment method */}
         <div>
-          <label className="block text-sm font-medium text-(--foreground) mb-2">Payment method</label>
+          <label className="block text-sm font-medium text-gray-500 mb-2">Payment method</label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {PAYMENT_METHODS.map((m) => (
               <button
@@ -239,7 +239,7 @@ export default function DuesPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-(--foreground)">Dues &amp; Payments</h1>
+        <h1 className="text-2xl font-bold text-gray-500">Dues &amp; Payments</h1>
         <p className="text-sm text-(--color-neutral-500) mt-1">Track your annual membership dues and payment history</p>
       </div>
 
@@ -247,7 +247,7 @@ export default function DuesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
           <p className="text-xs font-medium text-(--color-neutral-400) uppercase tracking-wide">Current Year</p>
-          <p className="text-2xl font-bold text-(--foreground) mt-1">{CURRENT_YEAR}</p>
+          <p className="text-2xl font-bold text-gray-500 mt-1">{CURRENT_YEAR}</p>
           {currentRecord && (
             <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[currentRecord.status]}`}>
               {STATUS_LABEL[currentRecord.status]}
@@ -256,7 +256,7 @@ export default function DuesPage() {
         </div>
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
           <p className="text-xs font-medium text-(--color-neutral-400) uppercase tracking-wide">Annual Dues</p>
-          <p className="text-2xl font-bold text-(--foreground) mt-1">₦{DUES_AMOUNT.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-500 mt-1">₦{DUES_AMOUNT.toLocaleString()}</p>
           <p className="text-xs text-(--color-neutral-400) mt-1">Per calendar year</p>
         </div>
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
@@ -276,7 +276,7 @@ export default function DuesPage() {
             : "bg-yellow-50 border-yellow-200"
         }`}>
           <div className="space-y-1">
-            <p className="font-semibold text-(--foreground)">{CURRENT_YEAR} Annual Dues</p>
+            <p className="font-semibold text-gray-500">{CURRENT_YEAR} Annual Dues</p>
             {currentRecord.status === "paid" ? (
               <>
                 <p className="text-sm text-(--color-green-700)">✓ Paid on {new Date(currentRecord.paidDate!).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}</p>
@@ -304,7 +304,7 @@ export default function DuesPage() {
 
       {/* History */}
       <div>
-        <h2 className="font-semibold text-(--foreground) mb-3">Payment History</h2>
+        <h2 className="font-semibold text-gray-500 mb-3">Payment History</h2>
         <div className="bg-white rounded-xl border border-(--color-neutral-200) overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -327,8 +327,8 @@ export default function DuesPage() {
               ) : (
                 history.map((r) => (
                   <tr key={r.id} className="hover:bg-(--color-neutral-50) transition">
-                    <td className="px-5 py-3.5 font-semibold text-(--foreground)">{r.year}</td>
-                    <td className="px-5 py-3.5 text-(--foreground)">₦{r.amount.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 font-semibold text-gray-500">{r.year}</td>
+                    <td className="px-5 py-3.5 text-gray-500">₦{r.amount.toLocaleString()}</td>
                     <td className="px-5 py-3.5">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[r.status]}`}>
                         {STATUS_LABEL[r.status]}

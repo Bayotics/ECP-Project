@@ -52,7 +52,7 @@ function ProfileModal({ user, onClose, onContact }: { user: User; onClose: () =>
               <Avatar user={user} size="lg" />
             </div>
             <div className="pb-1">
-              <p className="text-xl font-bold text-(--foreground)">{user.displayName}</p>
+              <p className="text-xl font-bold text-gray-500">{user.displayName}</p>
               <span className="inline-block rounded-full bg-(--color-green-100) text-(--color-green-700) px-2 py-0.5 text-xs font-medium capitalize">
                 {user.role}
               </span>
@@ -102,7 +102,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-(--color-neutral-400) font-medium uppercase tracking-wide">{label}</span>
-      <span className="text-sm text-(--foreground) font-medium">{value}</span>
+      <span className="text-sm text-gray-500 font-medium">{value}</span>
     </div>
   );
 }
@@ -151,7 +151,7 @@ export default function DirectoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-(--foreground)">Member Directory</h1>
+          <h1 className="text-2xl font-bold text-gray-500">Member Directory</h1>
           <p className="text-sm text-(--color-neutral-500) mt-1">{filtered.length} member{filtered.length !== 1 ? "s" : ""} found</p>
         </div>
         {/* View toggle */}
@@ -160,7 +160,7 @@ export default function DirectoryPage() {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`rounded-md px-3 py-1.5 text-sm transition ${view === v ? "bg-white shadow-sm text-(--foreground)" : "text-(--color-neutral-500)"}`}
+              className={`rounded-md px-3 py-1.5 text-sm transition ${view === v ? "bg-white shadow-sm text-gray-500" : "text-(--color-neutral-500)"}`}
             >
               {v === "grid" ? "⊞" : "☰"}
             </button>
@@ -220,7 +220,7 @@ export default function DirectoryPage() {
             >
               <Avatar user={user} size="lg" />
               <div>
-                <p className="font-semibold text-(--foreground) group-hover:text-(--color-green-600) transition">{user.displayName}</p>
+                <p className="font-semibold text-gray-500 group-hover:text-(--color-green-600) transition">{user.displayName}</p>
                 {user.occupation && <p className="text-xs text-(--color-neutral-500) mt-0.5 truncate">{user.occupation}</p>}
                 {user.lga && <p className="text-xs text-(--color-neutral-400) mt-0.5">{user.lga}</p>}
               </div>
@@ -240,7 +240,7 @@ export default function DirectoryPage() {
             >
               <Avatar user={user} size="sm" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-(--foreground) group-hover:text-(--color-green-600) transition">{user.displayName}</p>
+                <p className="text-sm font-semibold text-gray-500 group-hover:text-(--color-green-600) transition">{user.displayName}</p>
                 {user.occupation && <p className="text-xs text-(--color-neutral-500) truncate">{user.occupation}</p>}
               </div>
               {user.lga && <span className="text-xs text-(--color-neutral-400) hidden sm:block">{user.lga}</span>}

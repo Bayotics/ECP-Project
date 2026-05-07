@@ -102,7 +102,7 @@ export default function DownloadBlock({ fileName, fileType, fileSizeKb, url, tit
       {/* Info */}
       <div className="flex-1 min-w-0">
         {title && <p className="text-xs font-semibold text-(--color-neutral-400) mb-0.5">{title}</p>}
-        <p className="font-semibold text-(--foreground) truncate">{fileName}</p>
+        <p className="font-semibold text-gray-500 truncate">{fileName}</p>
         <div className="flex items-center gap-1.5 text-xs text-(--color-neutral-400) mt-0.5">
           <span className={cn("font-bold uppercase", meta.color)}>{meta.label}</span>
           {fileSizeKb != null && (

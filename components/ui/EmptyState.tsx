@@ -96,7 +96,7 @@ export default function EmptyState({
     >
       <div className="text-(--color-neutral-300)">{resolvedIcon}</div>
       <div className="flex flex-col gap-1 max-w-sm">
-        <h3 className="font-bold text-(--foreground) text-lg">{resolvedTitle}</h3>
+        <h3 className="font-bold text-gray-500 text-lg">{resolvedTitle}</h3>
         <p className="text-sm text-(--color-neutral-500) leading-relaxed">{resolvedDesc}</p>
       </div>
       {actions.length > 0 && (

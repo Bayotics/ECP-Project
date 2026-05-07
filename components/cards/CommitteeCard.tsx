@@ -116,7 +116,7 @@ export default function CommitteeCard({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-(--foreground) truncate">{name}</p>
+          <p className="font-semibold text-gray-500 truncate">{name}</p>
           <p className="text-xs text-(--color-neutral-500) truncate">{role}</p>
         </div>
         {(isChairperson || isViceChair) && (
@@ -156,7 +156,7 @@ export default function CommitteeCard({
       </div>
 
       {/* Name & role */}
-      <h3 className="mt-2 font-extrabold text-(--foreground) leading-tight">{name}</h3>
+      <h3 className="mt-2 font-extrabold text-gray-500 leading-tight">{name}</h3>
       <p className="mt-0.5 text-sm font-semibold text-(--color-green-600)">{role}</p>
       {committee && (
         <p className="text-xs text-(--color-neutral-400) mt-0.5">{committee}</p>

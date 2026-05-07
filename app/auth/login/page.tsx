@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -15,10 +15,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    router.replace("/member/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/member/dashboard");
+    }
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated) return null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,7 +43,7 @@ export default function LoginPage() {
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-extrabold text-lg mb-4">
           ECP
         </div>
-        <h1 className="text-2xl font-bold text-(--foreground)">Welcome back</h1>
+        <h1 className="text-2xl font-bold text-gray-500">Welcome back</h1>
         <p className="mt-1 text-sm text-(--color-neutral-500)">
           Sign in to your ECP member account
         </p>
@@ -62,7 +65,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-(--foreground) mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-500 mb-1.5">
             Email address
           </label>
           <input
@@ -73,16 +76,16 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-(--foreground)">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-500">
               Password
             </label>
-            <Link href="/forgot-password" className="text-xs text-(--color-green-600) hover:underline">
+            <Link href="/auth/forgot-password" className="text-xs text-(--color-green-600) hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -95,12 +98,12 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 pr-11 text-sm text-(--foreground) placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 pr-11 text-sm text-gray-500 placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
             <button
               type="button"
               onClick={() => setShowPassword((p) => !p)}
-              className="absolute inset-y-0 right-3 flex items-center text-(--color-neutral-400) hover:text-(--foreground) transition"
+              className="absolute inset-y-0 right-3 flex items-center text-(--color-neutral-400) hover:text-gray-500 transition"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -128,7 +131,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-(--color-neutral-500)">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-(--color-green-600) font-medium hover:underline">
+        <Link href="/auth/register" className="text-(--color-green-600) font-medium hover:underline">
           Create one
         </Link>
       </p>

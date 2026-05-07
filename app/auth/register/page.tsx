@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -29,10 +29,13 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    router.replace("/member/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/member/dashboard");
+    }
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated) return null;
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -74,7 +77,7 @@ export default function RegisterPage() {
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-extrabold text-lg mb-4">
           ECP
         </div>
-        <h1 className="text-2xl font-bold text-(--foreground)">Create your account</h1>
+        <h1 className="text-2xl font-bold text-gray-500">Create your account</h1>
         <p className="mt-1 text-sm text-(--color-neutral-500)">
           Join the Eko Club Philadelphia community
         </p>
@@ -89,7 +92,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-(--foreground) mb-1.5">
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-500 mb-1.5">
               First name
             </label>
             <input
@@ -99,11 +102,11 @@ export default function RegisterPage() {
               value={form.firstName}
               onChange={set("firstName")}
               placeholder="Tunde"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
           </div>
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-(--foreground) mb-1.5">
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-500 mb-1.5">
               Last name
             </label>
             <input
@@ -113,13 +116,13 @@ export default function RegisterPage() {
               value={form.lastName}
               onChange={set("lastName")}
               placeholder="Adeyemi"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-(--foreground) mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-500 mb-1.5">
             Email address
           </label>
           <input
@@ -130,13 +133,13 @@ export default function RegisterPage() {
             value={form.email}
             onChange={set("email")}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-(--foreground) mb-1.5">
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-500 mb-1.5">
               Phone <span className="text-(--color-neutral-400)">(optional)</span>
             </label>
             <input
@@ -145,18 +148,18 @@ export default function RegisterPage() {
               value={form.phone}
               onChange={set("phone")}
               placeholder="08012345678"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
           </div>
           <div>
-            <label htmlFor="lga" className="block text-sm font-medium text-(--foreground) mb-1.5">
+            <label htmlFor="lga" className="block text-sm font-medium text-gray-500 mb-1.5">
               LGA <span className="text-(--color-neutral-400)">(optional)</span>
             </label>
             <select
               id="lga"
               value={form.lga}
               onChange={set("lga")}
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             >
               <option value="">Select…</option>
               {LAGOS_LGAS.map((l) => (
@@ -167,7 +170,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-(--foreground) mb-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-500 mb-1.5">
             Password
           </label>
           <div className="relative">
@@ -179,12 +182,12 @@ export default function RegisterPage() {
               value={form.password}
               onChange={set("password")}
               placeholder="Min. 6 characters"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 pr-11 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 pr-11 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
             <button
               type="button"
               onClick={() => setShowPass((p) => !p)}
-              className="absolute inset-y-0 right-3 flex items-center text-(--color-neutral-400) hover:text-(--foreground) transition"
+              className="absolute inset-y-0 right-3 flex items-center text-(--color-neutral-400) hover:text-gray-500 transition"
               aria-label="Toggle password visibility"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,7 +199,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-(--foreground) mb-1.5">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-500 mb-1.5">
             Confirm password
           </label>
           <input
@@ -207,7 +210,7 @@ export default function RegisterPage() {
             value={form.confirmPassword}
             onChange={set("confirmPassword")}
             placeholder="Repeat password"
-            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+            className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
           />
         </div>
 
@@ -222,7 +225,7 @@ export default function RegisterPage() {
 
       <p className="text-center text-sm text-(--color-neutral-500)">
         Already have an account?{" "}
-        <Link href="/login" className="text-(--color-green-600) font-medium hover:underline">
+        <Link href="/auth/login" className="text-(--color-green-600) font-medium hover:underline">
           Sign in
         </Link>
       </p>

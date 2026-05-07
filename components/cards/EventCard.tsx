@@ -102,7 +102,7 @@ export default function EventCard({
           <div className="flex items-start justify-between gap-2 flex-wrap">
             <Link
               href={href}
-              className="font-semibold text-(--foreground) hover:text-(--color-green-600) transition-colors focus-visible:outline-none focus-visible:underline line-clamp-1"
+              className="font-semibold text-gray-500 hover:text-(--color-green-600) transition-colors focus-visible:outline-none focus-visible:underline line-clamp-1"
             >
               {title}
             </Link>
@@ -173,7 +173,7 @@ export default function EventCard({
 
         <Link
           href={href}
-          className="font-bold text-(--foreground) hover:text-(--color-green-600) transition-colors focus-visible:outline-none focus-visible:underline line-clamp-2 leading-snug"
+          className="font-bold text-gray-700 hover:text-(--color-green-600) transition-colors focus-visible:outline-none focus-visible:underline line-clamp-2 leading-snug"
         >
           {title}
         </Link>

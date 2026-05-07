@@ -190,7 +190,7 @@ function MissionSection() {
                 Learn about us
               </Link>
               <Link
-                href="/register"
+                href="/auth/register"
                 className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all hover:bg-white focus-visible:outline-none focus-visible:ring-2"
                 style={{
                   borderColor: "var(--color-green-600)",
@@ -212,6 +212,7 @@ function MissionSection() {
             <SpotlightCard
               eyebrow="Our Community"
               title="500+ Lagosians in Philadelphia"
+              titleClassName="text-green-400"
               subtitle="Members across the Delaware Valley"
               description="Eko Club Philadelphia has been bringing together Lagosians in the diaspora for over two decades — through cultural galas, scholarship funds, community service, and a deep commitment to the development of Lagos State."
               stats={[
@@ -600,14 +601,14 @@ function CommitteesPreview() {
                         <p className="text-xs font-semibold" style={{ color: "var(--color-neutral-800)" }}>
                           {chair.name}
                         </p>
-                        <p className="text-xs" style={{ color: "var(--color-neutral-400)" }}>
+                        <p className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
                           {chair.role}
                         </p>
                       </div>
                       {/* member count */}
                       <span
                         className="ml-auto text-xs"
-                        style={{ color: "var(--color-neutral-400)" }}
+                        style={{ color: "var(--color-neutral-600)" }}
                       >
                         {committee.members.length} member{committee.members.length !== 1 ? "s" : ""}
                       </span>
@@ -729,7 +730,7 @@ function SponsorsBand() {
       <div className="mx-auto max-w-7xl">
         <p
           className="mb-8 text-center text-xs font-semibold uppercase tracking-widest"
-          style={{ color: "var(--color-neutral-400)" }}
+          style={{ color: "var(--color-neutral-600)" }}
         >
           Trusted partners & supporters
         </p>
@@ -753,8 +754,8 @@ function SponsorsBand() {
                   />
                 ) : (
                   <span
-                    className="whitespace-nowrap text-sm font-semibold opacity-40"
-                    style={{ color: "var(--color-neutral-600)" }}
+                    className="whitespace-nowrap text-sm font-semibold opacity-60"
+                    style={{ color: "var(--color-neutral-700)" }}
                   >
                     {sponsor.name}
                   </span>
@@ -916,7 +917,7 @@ function NewsletterSignup() {
             </button>
           </form>
 
-          <p className="text-xs" style={{ color: "var(--color-neutral-400)" }}>
+          <p className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
             Join {subscribers.length > 0 ? `${subscribers.length.toLocaleString()}+` : "hundreds of"} Eko Club Philadelphia members already subscribed.
           </p>
         </motion.div>

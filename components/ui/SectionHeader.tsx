@@ -85,7 +85,7 @@ export default function SectionHeader({
           viewport={{ once: true }}
           className={cn(
             "text-2xl font-extrabold leading-snug tracking-tight sm:text-3xl lg:text-4xl",
-            dark ? "text-white" : "text-(--foreground)"
+            dark ? "text-white" : "text-gray-500"
           )}
         >
           {heading}

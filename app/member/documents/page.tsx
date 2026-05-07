@@ -140,7 +140,7 @@ export default function DocumentsPage() {
     <div className="space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-(--foreground)">Documents Center</h1>
+        <h1 className="text-2xl font-bold text-gray-500">Documents Center</h1>
         <p className="text-sm text-(--color-neutral-500) mt-1">Access your personal documents and organization resources</p>
       </div>
 
@@ -212,7 +212,7 @@ export default function DocumentsPage() {
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-(--foreground) truncate">{doc.label}</p>
+                <p className="text-sm font-semibold text-gray-500 truncate">{doc.label}</p>
                 <p className="text-xs text-(--color-neutral-400) mt-0.5 truncate">{doc.name}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className={`text-xs font-medium uppercase px-1.5 py-0.5 rounded ${FILE_COLORS[doc.fileType]}`}>

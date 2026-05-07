@@ -67,7 +67,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
           >
             ECP
           </span>
-          <span className="font-bold text-sm text-(--foreground)">
+          <span className="font-bold text-sm text-gray-500">
             {role === "admin" ? "Admin" : "Member"} Portal
           </span>
         </Link>
@@ -85,7 +85,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
                   ? "bg-(--color-green-50) text-(--color-green-700)"
-                  : "text-(--color-neutral-600) hover:bg-(--color-neutral-100) hover:text-(--foreground)"
+                  : "text-(--color-neutral-600) hover:bg-(--color-neutral-100) hover:text-gray-500"
               )}
               style={
                 active && role === "admin"
@@ -120,7 +120,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
               </span>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-medium text-(--foreground) truncate">{currentUser.displayName}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">{currentUser.displayName}</p>
               <p className="text-xs text-(--color-neutral-400) capitalize">{currentUser.role}</p>
             </div>
           </div>

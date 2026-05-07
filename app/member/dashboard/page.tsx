@@ -39,7 +39,7 @@ function DashboardCard({
   return (
     <div className="rounded-xl border border-(--color-neutral-200) bg-white p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-(--foreground)">{title}</h2>
+        <h2 className="font-semibold text-gray-500">{title}</h2>
         {href && (
           <Link href={href} className="text-xs text-(--color-green-600) font-medium hover:underline">
             {linkLabel} →
@@ -136,7 +136,7 @@ export default function MemberDashboardPage() {
                         </p>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-(--foreground) group-hover:text-(--color-green-600) transition truncate">
+                        <p className="text-sm font-medium text-gray-500 group-hover:text-(--color-green-600) transition truncate">
                           {ev.title}
                         </p>
                         <p className="text-xs text-(--color-neutral-400) mt-0.5">
@@ -166,11 +166,11 @@ export default function MemberDashboardPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-(--color-neutral-500)">Application ID</span>
-                  <span className="font-mono text-xs text-(--foreground)">{application.id.slice(0, 12)}…</span>
+                  <span className="font-mono text-xs text-gray-500">{application.id.slice(0, 12)}…</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-(--color-neutral-500)">Submitted</span>
-                  <span className="text-xs text-(--foreground)">{formatDate(application.appliedAt)}</span>
+                  <span className="text-xs text-gray-500">{formatDate(application.appliedAt)}</span>
                 </div>
                 {application.status === "approved" && (
                   <div className="rounded-lg bg-(--color-green-50) border border-(--color-green-200) p-3 text-center">
@@ -203,7 +203,7 @@ export default function MemberDashboardPage() {
             <ul className="space-y-3 divide-y divide-(--color-neutral-100)">
               {latestNews.map((post) => (
                 <li key={post.id} className="pt-3 first:pt-0">
-                  <p className="text-sm font-medium text-(--foreground) line-clamp-2">{post.title}</p>
+                  <p className="text-sm font-medium text-gray-500 line-clamp-2">{post.title}</p>
                   <p className="text-xs text-(--color-neutral-400) mt-0.5">
                     {formatDate(post.publishedAt ?? post.createdAt)} · <span className="capitalize">{post.category}</span>
                   </p>
@@ -229,7 +229,7 @@ export default function MemberDashboardPage() {
                     </span>
                   )}
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-(--foreground) truncate">{m.displayName}</p>
+                    <p className="text-xs font-medium text-gray-500 truncate">{m.displayName}</p>
                     <p className="text-xs text-(--color-neutral-400) capitalize truncate">{m.role}</p>
                   </div>
                 </div>
@@ -247,7 +247,7 @@ export default function MemberDashboardPage() {
               <li key={i} className="flex items-center gap-3 rounded-lg border border-(--color-neutral-200) px-4 py-2.5">
                 <span className="text-lg">📄</span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-(--foreground) truncate">{doc.name}</p>
+                  <p className="text-sm font-medium text-gray-500 truncate">{doc.name}</p>
                   <p className="text-xs text-(--color-neutral-400)">{doc.simulatedSize ?? ""}</p>
                 </div>
                 <span className="ml-auto text-xs text-(--color-green-600) font-medium">Uploaded</span>

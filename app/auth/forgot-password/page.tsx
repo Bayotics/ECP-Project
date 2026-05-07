@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-extrabold text-lg mb-4">
           ECP
         </div>
-        <h1 className="text-2xl font-bold text-(--foreground)">Reset your password</h1>
+        <h1 className="text-2xl font-bold text-gray-500">Reset your password</h1>
         <p className="mt-1 text-sm text-(--color-neutral-500)">
           Enter your email and we&apos;ll send a reset link
         </p>
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-(--foreground) mb-1.5">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-500 mb-1.5">
               Email address
             </label>
             <input
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-(--foreground) placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 placeholder-neutral-400 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
           </div>
 

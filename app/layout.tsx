@@ -71,7 +71,7 @@ export default function RootLayout({
       className={`${inter.variable} ${plusJakarta.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-(--background) text-(--foreground)">
+      <body className="min-h-full flex flex-col bg-(--background) text-gray-500">
         {/* Skip navigation for keyboard/screen-reader users */}
         <a href="#main-content" className="skip-to-content">
           Skip to main content

@@ -44,7 +44,7 @@ export default function StatCard({
       <p className="text-xs font-semibold uppercase tracking-widest text-(--color-neutral-400)">
         {label}
       </p>
-      <p className="mt-2 text-3xl font-extrabold text-(--foreground)">
+      <p className="mt-2 text-3xl font-extrabold text-gray-500">
         {value}
       </p>
       {delta && (

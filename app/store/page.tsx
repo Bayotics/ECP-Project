@@ -207,7 +207,7 @@ export default function StorePage() {
           <select
             value={sort}
             onChange={e => setSort(e.target.value)}
-            className="ml-auto text-sm border border-(--color-neutral-300) rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-(--color-green-400) shrink-0"
+            className="ml-auto text-sm border border-(--color-neutral-300) rounded-xl px-3 py-2 bg-gray-300 focus:outline-none focus:ring-2 focus:ring-(--color-green-400) shrink-0"
           >
             {SORT_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>

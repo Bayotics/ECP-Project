@@ -371,7 +371,7 @@ export default function AIChatWidget() {
               placeholder="Ask me anything…"
               disabled={loading}
               maxLength={500}
-              className="flex-1 px-3.5 py-2 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-(--color-neutral-50) disabled:opacity-50 transition-shadow"
+              className="flex-1 text-gray-500 px-3.5 py-2 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-(--color-neutral-50) disabled:opacity-50 transition-shadow"
             />
             <button
               type="submit"

@@ -74,7 +74,7 @@ export default function Breadcrumbs({ crumbs: override, separator, className }: 
                 <li>
                   {isLast || !crumb.href ? (
                     <span
-                      className={cn("font-medium", isLast ? "text-(--foreground)" : "text-(--color-neutral-500)")}
+                      className={cn("font-medium", isLast ? "text-gray-500" : "text-(--color-neutral-500)")}
                       aria-current={isLast ? "page" : undefined}
                     >
                       {crumb.label}

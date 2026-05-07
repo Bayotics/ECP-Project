@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Seed data for ECP (Empowerment Community Platform) Lagos.
  * 
  * This file contains realistic mock data for all entities.
@@ -15,17 +15,17 @@ import type { Product } from "../models/product";
 import type { Order } from "../models/order";
 import type { Donation } from "../models/donation";
 
-/* â”€â”€â”€ Users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Users ──────────────────────────────────────────── */
 export const SEED_USERS: User[] = [
   {
     id: "u-admin-001",
     email: "admin@ekoclubphiladelphia.org",
-    firstName: "Chidi",
-    lastName: "Okonkwo",
-    displayName: "Chidi Okonkwo",
+    firstName: "Taiwo",
+    lastName: "Adesanya",
+    displayName: "Taiwo Adesanya",
     role: "super-admin",
     status: "active",
-    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Chidi",
+    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Taiwo",
     phone: "08012345678",
     lga: "Ikeja",
     ward: "Alausa Ward",
@@ -37,12 +37,12 @@ export const SEED_USERS: User[] = [
   {
     id: "u-admin-002",
     email: "secretary@ekoclubphiladelphia.org",
-    firstName: "Amaka",
-    lastName: "Eze",
-    displayName: "Amaka Eze",
+    firstName: "Folake",
+    lastName: "Bello",
+    displayName: "Folake Bello",
     role: "admin",
     status: "active",
-    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Amaka",
+    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Folake",
     phone: "08023456789",
     lga: "Lagos Island",
     ward: "Campos Ward",
@@ -72,13 +72,13 @@ export const SEED_USERS: User[] = [
   },
   {
     id: "u-member-002",
-    email: "ngozi.obi@email.com",
-    firstName: "Ngozi",
-    lastName: "Obi",
-    displayName: "Ngozi Obi",
+    email: "kemi.adewale@email.com",
+    firstName: "Kemi",
+    lastName: "Adewale",
+    displayName: "Kemi Adewale",
     role: "member",
     status: "active",
-    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Ngozi",
+    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Kemi",
     phone: "08045678901",
     lga: "Eti-Osa",
     ward: "Lekki Phase 1 Ward",
@@ -90,13 +90,13 @@ export const SEED_USERS: User[] = [
   },
   {
     id: "u-member-003",
-    email: "emeka.uche@email.com",
-    firstName: "Emeka",
-    lastName: "Uche",
-    displayName: "Emeka Uche",
+    email: "bode.ogunleye@email.com",
+    firstName: "Bode",
+    lastName: "Ogunleye",
+    displayName: "Bode Ogunleye",
     role: "member",
     status: "active",
-    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Emeka",
+    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Bode",
     phone: "08056789012",
     lga: "Alimosho",
     ward: "Idimu Ward",
@@ -141,13 +141,13 @@ export const SEED_USERS: User[] = [
   },
   {
     id: "u-applicant-002",
-    email: "adaeze.nwosu@email.com",
-    firstName: "Adaeze",
-    lastName: "Nwosu",
-    displayName: "Adaeze Nwosu",
+    email: "sola.afolabi@email.com",
+    firstName: "Sola",
+    lastName: "Afolabi",
+    displayName: "Sola Afolabi",
     role: "applicant",
     status: "pending",
-    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Adaeze",
+    avatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Sola",
     phone: "08089012345",
     lga: "Ajegunle",
     occupation: "Journalist",
@@ -155,11 +155,11 @@ export const SEED_USERS: User[] = [
   },
 ];
 
-/* â”€â”€â”€ Membership Applications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Membership Applications ────────────────────────── */
 export const SEED_APPLICATIONS: MembershipApplication[] = [
   {
     id: "ma-001",
-    fullName: "Amaka Eze",
+    fullName: "Folake Bello",
     email: "secretary@ekoclubphiladelphia.org",
     phone: "08023456789",
     lga: "Lagos Island",
@@ -194,8 +194,8 @@ export const SEED_APPLICATIONS: MembershipApplication[] = [
   },
   {
     id: "ma-003",
-    fullName: "Ngozi Obi",
-    email: "ngozi.obi@email.com",
+    fullName: "Kemi Adewale",
+    email: "kemi.adewale@email.com",
     phone: "08045678901",
     lga: "Eti-Osa",
     ward: "Lekki Phase 1 Ward",
@@ -212,8 +212,8 @@ export const SEED_APPLICATIONS: MembershipApplication[] = [
   },
   {
     id: "ma-004",
-    fullName: "Emeka Uche",
-    email: "emeka.uche@email.com",
+    fullName: "Bode Ogunleye",
+    email: "bode.ogunleye@email.com",
     phone: "08056789012",
     lga: "Alimosho",
     ward: "Idimu Ward",
@@ -261,8 +261,8 @@ export const SEED_APPLICATIONS: MembershipApplication[] = [
   },
   {
     id: "ma-007",
-    fullName: "Adaeze Nwosu",
-    email: "adaeze.nwosu@email.com",
+    fullName: "Sola Afolabi",
+    email: "sola.afolabi@email.com",
     phone: "08089012345",
     lga: "Ajegunle",
     occupation: "Journalist",
@@ -275,7 +275,7 @@ export const SEED_APPLICATIONS: MembershipApplication[] = [
   },
 ];
 
-/* â”€â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Events ─────────────────────────────────────────── */
 export const SEED_EVENTS: Event[] = [
   {
     id: "ev-001",
@@ -308,7 +308,7 @@ export const SEED_EVENTS: Event[] = [
     id: "ev-002",
     title: "Digital Skills for Civic Advocacy Workshop",
     slug: "digital-skills-civic-advocacy-workshop",
-    description: "Learn how to use digital tools â€” social media, data journalism, and online petitions â€” to amplify your civic voice. Hands-on sessions led by expert trainers.",
+    description: "Learn how to use digital tools — social media, data journalism, and online petitions — to amplify your civic voice. Hands-on sessions led by expert trainers.",
     shortDescription: "Hands-on digital tools training for civic advocates.",
     date: "2026-05-24T09:00:00.000Z",
     endDate: "2026-05-24T13:00:00.000Z",
@@ -346,7 +346,7 @@ export const SEED_EVENTS: Event[] = [
     maxAttendees: 50,
     registrationRequired: true,
     organizerId: "u-member-002",
-    organizerName: "Ngozi Obi",
+    organizerName: "Kemi Adewale",
     tags: ["meetup", "networking", "ikoyi", "members"],
     isFeatured: false,
     isPublic: false,
@@ -370,7 +370,7 @@ export const SEED_EVENTS: Event[] = [
     maxAttendees: 200,
     registrationRequired: true,
     organizerId: "u-member-003",
-    organizerName: "Emeka Uche",
+    organizerName: "Bode Ogunleye",
     tags: ["environment", "volunteer", "alimosho", "community"],
     isFeatured: false,
     isPublic: true,
@@ -395,7 +395,7 @@ export const SEED_EVENTS: Event[] = [
     maxAttendees: 300,
     registrationRequired: true,
     organizerId: "u-member-002",
-    organizerName: "Ngozi Obi",
+    organizerName: "Kemi Adewale",
     tags: ["law", "electoral", "rights", "seminar", "online"],
     isFeatured: true,
     isPublic: true,
@@ -404,7 +404,7 @@ export const SEED_EVENTS: Event[] = [
   },
   {
     id: "ev-006",
-    title: "Community Health Fair â€” Kosofe Edition",
+    title: "Community Health Fair — Kosofe Edition",
     slug: "community-health-fair-kosofe-2026",
     description: "Free health screenings, health education, and community resource fair for Kosofe residents. Partnering with local clinics and NGOs.",
     shortDescription: "Free health screenings and health education for Kosofe community.",
@@ -431,7 +431,7 @@ export const SEED_EVENTS: Event[] = [
     title: "ECP Annual Gala Dinner 2025",
     slug: "ecp-annual-gala-2025",
     description: "Our annual celebration of civic excellence, recognizing outstanding contributors and launching the year's fundraising campaign.",
-    shortDescription: "ECP 2025 Annual Gala â€” celebrating civic excellence.",
+    shortDescription: "ECP 2025 Annual Gala — celebrating civic excellence.",
     date: "2025-12-07T18:00:00.000Z",
     endDate: "2025-12-07T22:00:00.000Z",
     time: "6:00 PM",
@@ -453,7 +453,7 @@ export const SEED_EVENTS: Event[] = [
   },
 ];
 
-/* â”€â”€â”€ RSVPs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── RSVPs ──────────────────────────────────────────── */
 export const SEED_RSVPS: RSVP[] = [
   {
     id: "rsvp-001",
@@ -469,8 +469,8 @@ export const SEED_RSVPS: RSVP[] = [
     id: "rsvp-002",
     eventId: "ev-001",
     userId: "u-member-002",
-    name: "Ngozi Obi",
-    email: "ngozi.obi@email.com",
+    name: "Kemi Adewale",
+    email: "kemi.adewale@email.com",
     status: "confirmed",
     registeredAt: "2026-04-03T10:00:00.000Z",
   },
@@ -478,8 +478,8 @@ export const SEED_RSVPS: RSVP[] = [
     id: "rsvp-003",
     eventId: "ev-001",
     userId: "u-member-003",
-    name: "Emeka Uche",
-    email: "emeka.uche@email.com",
+    name: "Bode Ogunleye",
+    email: "bode.ogunleye@email.com",
     status: "confirmed",
     registeredAt: "2026-04-04T11:00:00.000Z",
   },
@@ -505,8 +505,8 @@ export const SEED_RSVPS: RSVP[] = [
     id: "rsvp-006",
     eventId: "ev-003",
     userId: "u-member-002",
-    name: "Ngozi Obi",
-    email: "ngozi.obi@email.com",
+    name: "Kemi Adewale",
+    email: "kemi.adewale@email.com",
     status: "confirmed",
     registeredAt: "2026-05-01T10:00:00.000Z",
   },
@@ -523,28 +523,28 @@ export const SEED_RSVPS: RSVP[] = [
     id: "rsvp-008",
     eventId: "ev-005",
     userId: "u-member-003",
-    name: "Emeka Uche",
-    email: "emeka.uche@email.com",
+    name: "Bode Ogunleye",
+    email: "bode.ogunleye@email.com",
     status: "confirmed",
     registeredAt: "2026-04-22T15:00:00.000Z",
   },
 ];
 
-/* â”€â”€â”€ News Posts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── News Posts ─────────────────────────────────────── */
 export const SEED_NEWS: NewsPost[] = [
   {
     id: "news-001",
     title: "Eko Club Philadelphia Launches 2026 cultural education Campaign",
     slug: "ecp-launches-2026-civic-education-campaign",
     excerpt: "Eko Club Philadelphia has officially launched its ambitious 2026 cultural education Campaign, targeting over 50,000 Lagos residents across all 20 LGAs.",
-    content: `<p>Eko Club Philadelphia has officially launched its ambitious 2026 cultural education Campaign, targeting over 50,000 Lagos residents across all 20 local government areas.</p><p>The campaign, themed <strong>"Know Your Lagos"</strong>, will use a combination of community town halls, school outreach programmes, and digital content to equip Lagosians with the knowledge they need to participate meaningfully in governance.</p><p>"We believe an informed citizenry is the foundation of accountable governance," said Eko Club Philadelphia Chair Chidi Okonkwo at the launch event. "This campaign is our commitment to that belief."</p><p>The campaign will run from May through December 2026 and includes a partnership with 10 secondary schools in underserved communities.</p>`,
+    content: `<p>Eko Club Philadelphia has officially launched its ambitious 2026 cultural education Campaign, targeting over 50,000 Lagos residents across all 20 local government areas.</p><p>The campaign, themed <strong>"Know Your Lagos"</strong>, will use a combination of community town halls, school outreach programmes, and digital content to equip Lagosians with the knowledge they need to participate meaningfully in governance.</p><p>"We believe an informed citizenry is the foundation of accountable governance," said Eko Club Philadelphia Chair Taiwo Adesanya at the launch event. "This campaign is our commitment to that belief."</p><p>The campaign will run from May through December 2026 and includes a partnership with 10 secondary schools in underserved communities.</p>`,
     category: "announcement",
     status: "published",
     imageUrl: "https://images.unsplash.com/photo-1529390079861-591de354faf5?w=800",
     imageAlt: "Eko Club Philadelphia cultural education Campaign launch",
     authorId: "u-admin-001",
-    authorName: "Chidi Okonkwo",
-    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Chidi",
+    authorName: "Taiwo Adesanya",
+    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Taiwo",
     viewCount: 1842,
     readingTimeMinutes: 3,
     isFeatured: true,
@@ -560,13 +560,13 @@ export const SEED_NEWS: NewsPost[] = [
     title: "State of Lagos Roads: Our Community Survey Report",
     slug: "state-of-lagos-roads-community-survey-2026",
     excerpt: "Our latest community survey reveals that 68% of Lagos residents rate road conditions in their neighbourhoods as 'poor' or 'very poor'. Here are the full findings.",
-    content: `<p>Eko Club Philadelphia conducted a comprehensive survey of road conditions across Lagos State, gathering data from over 3,000 respondents in 15 LGAs between January and March 2026.</p><h2>Key Findings</h2><ul><li>68% of respondents rate local road conditions as 'poor' or 'very poor'</li><li>Alimosho and Mushin LGAs scored worst, with over 80% negative ratings</li><li>Victoria Islandâ€“Lekki axis rated best, with 45% positive ratings</li><li>Over 70% say poor roads negatively impact their daily productivity</li></ul><p>The full report has been submitted to the Lagos State Ministry of Works and will be presented at the upcoming Town Hall.</p>`,
+    content: `<p>Eko Club Philadelphia conducted a comprehensive survey of road conditions across Lagos State, gathering data from over 3,000 respondents in 15 LGAs between January and March 2026.</p><h2>Key Findings</h2><ul><li>68% of respondents rate local road conditions as 'poor' or 'very poor'</li><li>Alimosho and Mushin LGAs scored worst, with over 80% negative ratings</li><li>Victoria Island–Lekki axis rated best, with 45% positive ratings</li><li>Over 70% say poor roads negatively impact their daily productivity</li></ul><p>The full report has been submitted to the Lagos State Ministry of Works and will be presented at the upcoming Town Hall.</p>`,
     category: "report",
     status: "published",
     imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
     authorId: "u-admin-002",
-    authorName: "Amaka Eze",
-    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Amaka",
+    authorName: "Folake Bello",
+    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Folake",
     viewCount: 3210,
     readingTimeMinutes: 6,
     isFeatured: true,
@@ -582,12 +582,12 @@ export const SEED_NEWS: NewsPost[] = [
     title: "BREAKING: Lagos INEC Office Partners with ECP on Voter Registration Drive",
     slug: "inec-ecp-voter-registration-partnership-2026",
     excerpt: "The Lagos State INEC office has officially partnered with Eko Club Philadelphia to coordinate a voter registration drive targeting first-time voters ahead of 2027 elections.",
-    content: `<p>In a significant development for community participation in Lagos, the Independent National Electoral Commission (INEC) Lagos office has signed a Memorandum of Understanding with Eko Club Philadelphia for a coordinated voter registration drive.</p><p>The partnership targets 100,000 new voter registrations before the 2027 general elections, with a focus on youth aged 18â€“30 who are yet to register.</p><p>"This partnership validates the work ECP has been doing on the ground," said Secretary-General Amaka Eze. "INEC recognizes us as a credible partner because of our community trust."</p>`,
+    content: `<p>In a significant development for community participation in Lagos, the Independent National Electoral Commission (INEC) Lagos office has signed a Memorandum of Understanding with Eko Club Philadelphia for a coordinated voter registration drive.</p><p>The partnership targets 100,000 new voter registrations before the 2027 general elections, with a focus on youth aged 18–30 who are yet to register.</p><p>"This partnership validates the work ECP has been doing on the ground," said Secretary-General Folake Bello. "INEC recognizes us as a credible partner because of our community trust."</p>`,
     category: "news",
     status: "published",
     imageUrl: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800",
     authorId: "u-admin-001",
-    authorName: "Chidi Okonkwo",
+    authorName: "Taiwo Adesanya",
     viewCount: 5621,
     readingTimeMinutes: 4,
     isFeatured: true,
@@ -603,13 +603,13 @@ export const SEED_NEWS: NewsPost[] = [
     title: "Youth Empowerment Forum Draws 400 Participants",
     slug: "youth-empowerment-forum-400-participants",
     excerpt: "ECP's Youth Empowerment Forum held last weekend attracted over 400 young Lagosians eager to learn about civic engagement and career development.",
-    content: `<p>Eko Club Philadelphia's Youth Empowerment Forum, held at the University of Lagos conference centre on April 26â€“27, drew an impressive crowd of over 400 young participants from across the state.</p><p>Sessions covered civic literacy, entrepreneurship, digital skills, and mental health awareness. Keynote speakers included young entrepreneurs, community leaders, and a serving lawmaker.</p><p>Participant Bisola Okafor, 22, said: "I came without knowing what to expect and I'm leaving with a roadmap for how I can make a difference in my community."</p>`,
+    content: `<p>Eko Club Philadelphia's Youth Empowerment Forum, held at the University of Lagos conference centre on April 26–27, drew an impressive crowd of over 400 young participants from across the state.</p><p>Sessions covered civic literacy, entrepreneurship, digital skills, and mental health awareness. Keynote speakers included young entrepreneurs, community leaders, and a serving lawmaker.</p><p>Participant Bisola Okafor, 22, said: "I came without knowing what to expect and I'm leaving with a roadmap for how I can make a difference in my community."</p>`,
     category: "news",
     status: "published",
     imageUrl: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800",
     authorId: "u-member-003",
-    authorName: "Emeka Uche",
-    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Emeka",
+    authorName: "Bode Ogunleye",
+    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Bode",
     viewCount: 2104,
     readingTimeMinutes: 4,
     isFeatured: false,
@@ -625,12 +625,12 @@ export const SEED_NEWS: NewsPost[] = [
     title: "Opinion: Why cultural education Must Start in Primary School",
     slug: "opinion-civic-education-primary-school",
     excerpt: "Waiting until university to teach civic responsibility is too late. A Lagos teacher makes the case for mandatory cultural education from age six.",
-    content: `<p>By Emeka Uche, Eko Club Philadelphia Member and Secondary School Teacher</p><p>Every election cycle, we hear the same lament: Nigerians don't understand how their democracy works. Politicians sell their votes for pennies. Young people don't register. But what if the problem is older than the voters themselves?</p><p>As a teacher in Lagos, I see daily how civic knowledge is absent from our curriculum. Children memorise the capital cities of Burkina Faso but cannot name their local government chairman or describe what a ward councillor does...</p>`,
+    content: `<p>By Bode Ogunleye, Eko Club Philadelphia Member and Secondary School Teacher</p><p>Every election cycle, we hear the same lament: Nigerians don't understand how their democracy works. Politicians sell their votes for pennies. Young people don't register. But what if the problem is older than the voters themselves?</p><p>As a teacher in Lagos, I see daily how civic knowledge is absent from our curriculum. Children memorise the capital cities of Burkina Faso but cannot name their local government chairman or describe what a ward councillor does...</p>`,
     category: "opinion",
     status: "published",
     authorId: "u-member-003",
-    authorName: "Emeka Uche",
-    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Emeka",
+    authorName: "Bode Ogunleye",
+    authorAvatarUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Bode",
     viewCount: 1876,
     readingTimeMinutes: 7,
     isFeatured: false,
@@ -666,13 +666,13 @@ export const SEED_NEWS: NewsPost[] = [
     id: "news-007",
     title: "Annual Report 2025: Measuring Our Impact",
     slug: "ecp-annual-report-2025",
-    excerpt: "Our 2025 annual report is now available. Read about our impact: 12,000 people reached, 22 events held, and â‚¦8.2 million raised for community projects.",
-    content: `<p>Eko Club Philadelphia is proud to present our 2025 Annual Impact Report. This year was transformational for our organisation and for the communities we serve.</p><h2>By the Numbers</h2><ul><li>12,847 Lagos residents reached through programmes</li><li>22 events held across 10 LGAs</li><li>â‚¦8.2 million raised and deployed for community projects</li><li>340 active members at year-end</li><li>6 policy submissions accepted by Lagos State government</li></ul>`,
+    excerpt: "Our 2025 annual report is now available. Read about our impact: 12,000 people reached, 22 events held, and ₦8.2 million raised for community projects.",
+    content: `<p>Eko Club Philadelphia is proud to present our 2025 Annual Impact Report. This year was transformational for our organisation and for the communities we serve.</p><h2>By the Numbers</h2><ul><li>12,847 Lagos residents reached through programmes</li><li>22 events held across 10 LGAs</li><li>₦8.2 million raised and deployed for community projects</li><li>340 active members at year-end</li><li>6 policy submissions accepted by Lagos State government</li></ul>`,
     category: "report",
     status: "published",
     imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800",
     authorId: "u-admin-002",
-    authorName: "Amaka Eze",
+    authorName: "Folake Bello",
     viewCount: 2453,
     readingTimeMinutes: 8,
     isFeatured: false,
@@ -685,7 +685,7 @@ export const SEED_NEWS: NewsPost[] = [
   },
 ];
 
-/* â”€â”€â”€ Committees â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Committees ─────────────────────────────────────── */
 export const SEED_COMMITTEES: Committee[] = [
   {
     id: "com-001",
@@ -698,35 +698,35 @@ export const SEED_COMMITTEES: Committee[] = [
     members: [
       {
         userId: "u-admin-001",
-        name: "Chidi Okonkwo",
+        name: "Taiwo Adesanya",
         role: "Chairperson",
         isChairperson: true,
         isViceChair: false,
         joinedCommitteeAt: "2023-01-15T08:00:00.000Z",
         socialLinks: [{ platform: "twitter", url: "https://twitter.com/chidiokonkwo" }],
         bio: "Founding Chair of Eko Club Philadelphia. 15+ years in civic engagement.",
-        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Chidi",
+        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Taiwo",
       },
       {
         userId: "u-admin-002",
-        name: "Amaka Eze",
+        name: "Folake Bello",
         role: "Secretary-General",
         isChairperson: false,
         isViceChair: false,
         joinedCommitteeAt: "2023-02-10T08:00:00.000Z",
         socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/in/amakaeze" }],
         bio: "Secretary-General overseeing day-to-day operations.",
-        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Amaka",
+        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Folake",
       },
       {
         userId: "u-member-002",
-        name: "Ngozi Obi",
+        name: "Kemi Adewale",
         role: "Legal Advisor",
         isChairperson: false,
         isViceChair: false,
         joinedCommitteeAt: "2023-10-01T08:00:00.000Z",
         bio: "Legal Advisor to the Executive Committee.",
-        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Ngozi",
+        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Kemi",
       },
     ],
     establishedAt: "2023-01-15T08:00:00.000Z",
@@ -744,13 +744,13 @@ export const SEED_COMMITTEES: Committee[] = [
     members: [
       {
         userId: "u-member-003",
-        name: "Emeka Uche",
+        name: "Bode Ogunleye",
         role: "Chairperson",
         isChairperson: true,
         isViceChair: false,
         joinedCommitteeAt: "2023-11-01T08:00:00.000Z",
         bio: "Secondary school teacher and cultural education advocate.",
-        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Emeka",
+        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Bode",
       },
       {
         userId: "u-member-004",
@@ -787,13 +787,13 @@ export const SEED_COMMITTEES: Committee[] = [
     members: [
       {
         userId: "u-member-002",
-        name: "Ngozi Obi",
+        name: "Kemi Adewale",
         role: "Chairperson",
         isChairperson: true,
         isViceChair: false,
         joinedCommitteeAt: "2023-09-01T08:00:00.000Z",
         bio: "Electoral law specialist and legal practitioner.",
-        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Ngozi",
+        imageUrl: "https://api.dicebear.com/8.x/avataaars/svg?seed=Kemi",
         socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/in/ngoziobilaw" }],
       },
       {
@@ -840,7 +840,7 @@ export const SEED_COMMITTEES: Committee[] = [
   },
 ];
 
-/* â”€â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Products ───────────────────────────────────────── */
 export const SEED_PRODUCTS: Product[] = [
   {
     id: "prod-001",
@@ -881,7 +881,7 @@ export const SEED_PRODUCTS: Product[] = [
     id: "prod-003",
     name: "Civic Rights Handbook 2026",
     slug: "civic-rights-handbook-2026",
-    description: "The Eko Club Philadelphia Civic Rights Handbook â€” a comprehensive guide to your rights as a Lagos resident and Nigerian citizen. Covers electoral rights, land rights, consumer rights, and how to access public services.",
+    description: "The Eko Club Philadelphia Civic Rights Handbook — a comprehensive guide to your rights as a Lagos resident and Nigerian citizen. Covers electoral rights, land rights, consumer rights, and how to access public services.",
     shortDescription: "Complete guide to your rights as a Lagos resident.",
     price: 2500,
     compareAtPrice: 3500,
@@ -928,7 +928,7 @@ export const SEED_PRODUCTS: Product[] = [
   },
 ];
 
-/* â”€â”€â”€ Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Orders ─────────────────────────────────────────── */
 export const SEED_ORDERS: Order[] = [
   {
     id: "ord-001",
@@ -978,8 +978,8 @@ export const SEED_ORDERS: Order[] = [
     id: "ord-002",
     orderNumber: "ECP-2026-0002",
     userId: "u-member-002",
-    customerName: "Ngozi Obi",
-    customerEmail: "ngozi.obi@email.com",
+    customerName: "Kemi Adewale",
+    customerEmail: "kemi.adewale@email.com",
     items: [
       {
         productId: "prod-003",
@@ -995,7 +995,7 @@ export const SEED_ORDERS: Order[] = [
     discount: 0,
     total: 8500,
     shippingAddress: {
-      fullName: "Ngozi Obi",
+      fullName: "Kemi Adewale",
       phone: "08045678901",
       address: "12 Akin Adesola Street",
       city: "Victoria Island",
@@ -1059,8 +1059,8 @@ export const SEED_ORDERS: Order[] = [
     id: "ord-004",
     orderNumber: "ECP-2026-0004",
     userId: "u-member-003",
-    customerName: "Emeka Uche",
-    customerEmail: "emeka.uche@email.com",
+    customerName: "Bode Ogunleye",
+    customerEmail: "bode.ogunleye@email.com",
     items: [
       {
         productId: "prod-003",
@@ -1075,7 +1075,7 @@ export const SEED_ORDERS: Order[] = [
     discount: 500,
     total: 13500,
     shippingAddress: {
-      fullName: "Emeka Uche",
+      fullName: "Bode Ogunleye",
       phone: "08056789012",
       address: "7 Idimu Road",
       city: "Alimosho",
@@ -1090,7 +1090,7 @@ export const SEED_ORDERS: Order[] = [
   },
 ];
 
-/* â”€â”€â”€ Donations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Donations ──────────────────────────────────────── */
 export const SEED_DONATIONS: Donation[] = [
   {
     id: "don-001",
@@ -1117,8 +1117,8 @@ export const SEED_DONATIONS: Donation[] = [
     id: "don-002",
     referenceNumber: "DON-2026-0002",
     userId: "u-member-002",
-    donorName: "Ngozi Obi",
-    donorEmail: "ngozi.obi@email.com",
+    donorName: "Kemi Adewale",
+    donorEmail: "kemi.adewale@email.com",
     isAnonymous: false,
     amount: 100000,
     type: "one-time",
@@ -1170,8 +1170,8 @@ export const SEED_DONATIONS: Donation[] = [
     id: "don-005",
     referenceNumber: "DON-2026-0005",
     userId: "u-member-003",
-    donorName: "Emeka Uche",
-    donorEmail: "emeka.uche@email.com",
+    donorName: "Bode Ogunleye",
+    donorEmail: "bode.ogunleye@email.com",
     isAnonymous: false,
     amount: 15000,
     type: "one-time",
@@ -1198,4 +1198,7 @@ export const SEED_DONATIONS: Donation[] = [
     updatedAt: "2026-05-04T16:00:00.000Z",
   },
 ];
+
+
+
 

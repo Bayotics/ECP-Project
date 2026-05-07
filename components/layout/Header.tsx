@@ -36,12 +36,12 @@ function Logo({ onClick }: { onClick?: () => void }) {
       </span>
       {/* Wordmark */}
       <span className="flex flex-col leading-tight">
-        <span className="font-extrabold text-sm text-(--foreground) group-hover:text-(--color-green-600) transition-colors">
+        <span className="font-extrabold text-sm text-green-600 group-hover:text-(--color-green-400) transition-colors">
           Eko Club Philadelphia
         </span>
-        <span className="hidden text-xs text-(--color-neutral-400) font-normal sm:block">
+        {/* <span className="hidden text-xs text-(--color-neutral-400) font-normal sm:block">
           Eko Club International
-        </span>
+        </span> */}
       </span>
     </Link>
   );
@@ -202,7 +202,7 @@ export default function Header() {
             </Link>
             {/* Login */}
             <Link
-              href="/login"
+              href="/auth/login"
               className={cn(
                 "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all",
                 "text-(--color-neutral-700) hover:text-(--color-green-600) hover:bg-(--color-green-50)",
@@ -232,7 +232,7 @@ export default function Header() {
 
             {/* Apply */}
             <Link
-              href="/apply"
+              href="/membership/apply"
               className={cn(
                 "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all",
                 "bg-(--color-green-500) hover:bg-(--color-green-600)",
@@ -391,7 +391,7 @@ export default function Header() {
         {/* Mobile CTA buttons */}
         <div className="container-app pb-5 pt-1 flex flex-col gap-2 border-t border-(--color-neutral-100)">
           <Link
-            href="/login"
+            href="/auth/login"
             onClick={() => setMenuOpen(false)}
             className={cn(
               "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold",
@@ -421,7 +421,7 @@ export default function Header() {
           </Link>
 
           <Link
-            href="/apply"
+            href="/membership/apply"
             onClick={() => setMenuOpen(false)}
             className={cn(
               "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white",

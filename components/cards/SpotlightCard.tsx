@@ -31,6 +31,8 @@ export interface SpotlightCardProps {
   /** "light" | "dark" */
   theme?: "light" | "dark";
   className?: string;
+  /** Extra className applied to the title h3 */
+  titleClassName?: string;
 }
 
 /* ─── SpotlightCard ──────────────────────────────────── */
@@ -46,6 +48,7 @@ export default function SpotlightCard({
   accentColor = "green",
   theme = "light",
   className,
+  titleClassName,
 }: SpotlightCardProps) {
   const isDark = theme === "dark";
 
@@ -122,7 +125,7 @@ export default function SpotlightCard({
         )}
 
         <motion.div variants={childVariants} className="flex flex-col gap-1">
-          <h3 className={cn("text-2xl md:text-3xl font-extrabold leading-tight", isDark ? "text-white" : "text-(--foreground)")}>
+          <h3 className={cn("text-2xl md:text-3xl font-extrabold leading-tight", titleClassName, isDark ? "text-white" : "text-green-600")}>
             {title}
           </h3>
           {subtitle && (

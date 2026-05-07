@@ -104,7 +104,7 @@ export default function FormBlock({
           key={field.id}
           className={cn("flex flex-col gap-1.5", field.colSpan === 2 || field.type === "textarea" ? "sm:col-span-2" : "")}
         >
-          <label htmlFor={field.id} className="text-sm font-semibold text-(--foreground)">
+          <label htmlFor={field.id} className="text-sm font-semibold text-gray-500">
             {field.label}
             {field.required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
@@ -120,7 +120,7 @@ export default function FormBlock({
               aria-describedby={errors[field.id] ? `${field.id}-error` : undefined}
               rows={4}
               className={cn(
-                "rounded-xl border px-4 py-2.5 text-sm resize-y text-(--foreground) placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow",
+                "rounded-xl border px-4 py-2.5 text-sm resize-y text-gray-500 placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow",
                 errors[field.id] ? "border-red-400 bg-red-50" : "border-(--color-neutral-200) bg-white",
               )}
             />
@@ -133,7 +133,7 @@ export default function FormBlock({
               aria-invalid={!!errors[field.id]}
               aria-describedby={errors[field.id] ? `${field.id}-error` : undefined}
               className={cn(
-                "rounded-xl border px-4 py-2.5 text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow cursor-pointer",
+                "rounded-xl border px-4 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow cursor-pointer",
                 errors[field.id] ? "border-red-400 bg-red-50" : "border-(--color-neutral-200) bg-white",
               )}
             >
@@ -164,7 +164,7 @@ export default function FormBlock({
               aria-invalid={!!errors[field.id]}
               aria-describedby={errors[field.id] ? `${field.id}-error` : undefined}
               className={cn(
-                "rounded-xl border px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow",
+                "rounded-xl border px-4 py-2.5 text-sm text-gray-500 placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow",
                 errors[field.id] ? "border-red-400 bg-red-50" : "border-(--color-neutral-200) bg-white",
               )}
             />

@@ -141,7 +141,7 @@ export default function CTASection({
             variants={fadeUp}
             className={cn(
               "text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl",
-              isDark ? "text-white" : "text-(--foreground)"
+              isDark ? "text-white" : "text-gray-500"
             )}
           >
             {heading}

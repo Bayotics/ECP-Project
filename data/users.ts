@@ -14,8 +14,8 @@ export interface User {
 export const mockUsers: User[] = [
   {
     id: "usr_001",
-    name: "Adaeze Okonkwo",
-    email: "adaeze@example.com",
+    name: "Yetunde Adewale",
+    email: "yetunde@example.com",
     role: ROLES.MEMBER,
     lga: "Eti-Osa",
     joinedAt: "2025-01-15",
@@ -24,8 +24,8 @@ export const mockUsers: User[] = [
   },
   {
     id: "usr_002",
-    name: "Emeka Obi",
-    email: "emeka@example.com",
+    name: "Rotimi Ogunleye",
+    email: "rotimi@example.com",
     role: ROLES.ADMIN,
     lga: "Ikeja",
     joinedAt: "2024-11-02",
@@ -44,8 +44,8 @@ export const mockUsers: User[] = [
   },
   {
     id: "usr_004",
-    name: "Chukwudi Bello",
-    email: "chukwudi@example.com",
+    name: "Rotimi Bello",
+    email: "rotimi@example.com",
     role: ROLES.MEMBER,
     lga: "Surulere",
     joinedAt: "2025-02-20",
@@ -54,8 +54,8 @@ export const mockUsers: User[] = [
   },
   {
     id: "usr_005",
-    name: "Ngozi Adeleke",
-    email: "ngozi@example.com",
+    name: "Kemi Adeleke",
+    email: "kemi@example.com",
     role: ROLES.ADMIN,
     lga: "Lagos Island",
     joinedAt: "2024-09-14",
@@ -72,3 +72,4 @@ export const getAdminUsers = (): User[] =>
 
 export const getUserById = (id: string): User | undefined =>
   mockUsers.find((u) => u.id === id);
+

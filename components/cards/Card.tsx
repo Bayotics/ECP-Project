@@ -31,7 +31,7 @@ export default function Card({
         <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-3">
           <div>
             {title && (
-              <h3 className="font-semibold text-(--foreground)">{title}</h3>
+              <h3 className="font-semibold text-gray-500">{title}</h3>
             )}
             {description && (
               <p className="mt-0.5 text-sm text-(--color-neutral-500)">

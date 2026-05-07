@@ -99,12 +99,12 @@ export default function CartPage() {
                     <div className="flex items-center border border-(--color-neutral-300) rounded-lg overflow-hidden mt-2">
                       <button
                         onClick={() => item.quantity === 1 ? removeItem(item.productId) : updateQty(item.productId, item.quantity - 1)}
-                        className="px-2 py-1 hover:bg-(--color-neutral-100) transition-colors text-sm font-bold"
+                        className="px-2 py-1 hover:bg-(--color-neutral-100) transition-colors text-sm text-gray-400 font-bold"
                       >−</button>
-                      <span className="px-3 py-1 text-sm font-semibold border-x border-(--color-neutral-300)">{item.quantity}</span>
+                      <span className="px-3 py-1 text-sm font-semibold border-x border-(--color-neutral-300) text-gray-400">{item.quantity}</span>
                       <button
                         onClick={() => updateQty(item.productId, item.quantity + 1)}
-                        className="px-2 py-1 hover:bg-(--color-neutral-100) transition-colors text-sm font-bold"
+                        className="px-2 py-1 hover:bg-(--color-neutral-100) transition-colors text-sm text-gray-400 font-bold"
                       >+</button>
                     </div>
                     <p className="text-xs font-bold text-(--color-neutral-600) mt-1">{formatNaira(item.price * item.quantity)}</p>

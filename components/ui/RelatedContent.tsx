@@ -110,7 +110,7 @@ function RelatedCard({ item, index }: { item: RelatedItem; index: number }) {
         )}
         <Link
           href={item.href}
-          className="font-semibold text-(--foreground) hover:text-(--color-green-600) transition-colors line-clamp-2 text-sm leading-snug focus-visible:outline-none focus-visible:underline"
+          className="font-semibold text-gray-500 hover:text-(--color-green-600) transition-colors line-clamp-2 text-sm leading-snug focus-visible:outline-none focus-visible:underline"
         >
           {item.title}
         </Link>

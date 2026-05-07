@@ -235,7 +235,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
           value={values.name}
           onChange={(e) => handleChange("name", e.target.value)}
           onBlur={() => handleBlur("name")}
-          placeholder="e.g. Chidi Okonkwo"
+          placeholder="e.g. Ade Bayo"
           className={cn(
             "w-full px-3 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 transition-colors",
             errors.name && touched.name

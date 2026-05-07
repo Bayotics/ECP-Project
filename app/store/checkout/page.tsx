@@ -81,7 +81,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: bo
   const { error, className, ...rest } = props;
   return (
     <input
-      className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) transition-shadow ${
+      className={`w-full text-gray-400 px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) transition-shadow ${
         error ? "border-red-400 bg-red-50" : "border-(--color-neutral-300) bg-white"
       } ${className ?? ""}`}
       {...rest}
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
                       <select
                         value={shipping.state}
                         onChange={e => setShipping(s => ({ ...s, state: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-white"
+                        className="w-full px-3 text-gray-400 py-2.5 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-white"
                       >
                         {NIGERIAN_STATES.map(st => <option key={st}>{st}</option>)}
                       </select>
@@ -366,7 +366,7 @@ export default function CheckoutPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => setStep("shipping")}
-                      className="px-4 py-2.5 border border-(--color-neutral-300) rounded-xl text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
+                      className="px-4 text-gray-400 py-2.5 border border-(--color-neutral-300) rounded-xl text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
                     >
                       ← Back
                     </button>

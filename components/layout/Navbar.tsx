@@ -55,7 +55,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
           ECP
         </Link>
         <span>/</span>
-        <span className="font-medium text-(--foreground)">
+        <span className="font-medium text-gray-500">
           {adminMode ? "Admin" : "Member"} Portal
         </span>
         {adminMode && (
@@ -97,7 +97,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
             <div className="absolute right-0 mt-2 w-52 rounded-xl border border-(--color-neutral-200) bg-white shadow-lg py-1 z-50">
               {/* User info */}
               <div className="px-4 py-3 border-b border-(--color-neutral-100)">
-                <p className="text-sm font-semibold text-(--foreground) truncate">{displayName}</p>
+                <p className="text-sm font-semibold text-gray-500 truncate">{displayName}</p>
                 <p className="text-xs text-(--color-neutral-400) truncate">{currentUser?.email}</p>
               </div>
               <Link

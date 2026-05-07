@@ -82,7 +82,7 @@ export default function SearchFilterBar({
           onChange={(e) => handleInput(e.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full rounded-xl border border-(--color-neutral-200) bg-white pl-10 pr-10 py-2.5 text-sm text-(--foreground) placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow"
+          className="w-full rounded-xl border border-(--color-neutral-200) bg-white pl-10 pr-10 py-2.5 text-sm text-gray-500 placeholder:text-(--color-neutral-400) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent transition-shadow"
         />
         {localValue && (
           <button
@@ -111,7 +111,7 @@ export default function SearchFilterBar({
                     id={`filter-${group.id}`}
                     value={(active as string) ?? ""}
                     onChange={(e) => onFilterChange?.(group.id, e.target.value)}
-                    className="text-sm rounded-lg border border-(--color-neutral-200) bg-white px-3 py-2 text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent cursor-pointer"
+                    className="text-sm rounded-lg border border-(--color-neutral-200) bg-white px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-(--color-green-500) focus:border-transparent cursor-pointer"
                   >
                     <option value="">{group.label}</option>
                     {group.options.map((o) => (
