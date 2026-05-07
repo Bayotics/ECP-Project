@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* ─── Base CSS Variables ────────────────────────────── */
+:root {
+  --background: #f9fafb;
+  --foreground: #0f1a0e;
+}
+
+/* ─── Tailwind v4 @theme (Lagos green / gold palette) ── */
+@theme inline {
+  /* ── Fonts ── */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-plus-jakarta);
+
+  /* ── Colors ── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Lagos Green shades */
+  --color-green-50:  #edfaee;
+  --color-green-100: #d3f5d5;
+  --color-green-200: #a8eba9;
+  --color-green-300: #72d874;
+  --color-green-400: #3ebe42;
+  --color-green-500: #1a9e1e;   /* primary brand green */
+  --color-green-600: #157d18;
+  --color-green-700: #0f5e12;
+  --color-green-800: #0a3f0c;
+  --color-green-900: #052106;
+  --color-green-950: #021503;
+
+  /* Lagos Gold shades */
+  --color-gold-50:   #fffbea;
+  --color-gold-100:  #fff3c4;
+  --color-gold-200:  #ffe484;
+  --color-gold-300:  #ffd044;
+  --color-gold-400:  #ffbc0f;
+  --color-gold-500:  #e0a000;   /* primary brand gold */
+  --color-gold-600:  #b37c00;
+  --color-gold-700:  #875c00;
+  --color-gold-800:  #5a3d00;
+  --color-gold-900:  #2e1f00;
+
+  /* Neutrals */
+  --color-neutral-50:  #f8f9fa;
+  --color-neutral-100: #f1f3f5;
+  --color-neutral-200: #e9ecef;
+  --color-neutral-300: #dee2e6;
+  --color-neutral-400: #ced4da;
+  --color-neutral-500: #adb5bd;
+  --color-neutral-600: #868e96;
+  --color-neutral-700: #495057;
+  --color-neutral-800: #343a40;
+  --color-neutral-900: #212529;
+  --color-neutral-950: #111315;
+
+  /* Semantic aliases */
+  --color-primary:   var(--color-green-500);
+  --color-secondary: var(--color-gold-500);
+  --color-surface:   #ffffff;
+  --color-muted:     var(--color-neutral-100);
+  --color-danger:    #dc2626;
+  --color-success:   var(--color-green-500);
+  --color-warning:   var(--color-gold-400);
+  --color-info:      #2563eb;
+
+  /* ── Spacing overrides ── */
+  --spacing-container: 1280px;   /* max-w for layout containers */
+  --spacing-section:   5rem;     /* vertical section padding     */
+  --spacing-gutter:    1.5rem;   /* horizontal page gutter       */
+
+  /* ── Responsive breakpoints ── */
+  --breakpoint-xs:  480px;
+  --breakpoint-sm:  640px;
+  --breakpoint-md:  768px;
+  --breakpoint-lg:  1024px;
+  --breakpoint-xl:  1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ── Border radius ── */
+  --radius-sm:    0.25rem;
+  --radius-md:    0.5rem;
+  --radius-lg:    0.75rem;
+  --radius-xl:    1rem;
+  --radius-full:  9999px;
+
+  /* ── Shadows ── */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-modal: 0 20px 60px -10px rgb(0 0 0 / 0.25);
+}
+
+/* ─── Dark mode ────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1a0e;
+    --foreground: #f0fdf0;
+  }
+}
+
+/* ─── Base styles ───────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography helpers ────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ─── Layout utilities ──────────────────────────────── */
+.container-app {
+  width: 100%;
+  max-width: var(--spacing-container);
+  margin-inline: auto;
+  padding-inline: var(--spacing-gutter);
+}
+
+.section-padding {
+  padding-block: var(--spacing-section);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-green-400);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-green-600);
+}
+
+/* ─── Accessibility ─────────────────────────────────── */
+
+/* Skip to main content link (shown only on keyboard focus) */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0 0 0.5rem 0.5rem;
+  background-color: var(--color-green-600);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-to-content:focus {
+  top: 0;
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 2px;
+}
+
+/* Ensure focus-visible ring is always visible on interactive elements */
+:focus-visible {
+  outline: 2px solid var(--color-green-500);
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Animations ─────────────────────────────────────── */
+
+/* Infinite scroll / marquee for sponsors band */
+@keyframes scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
