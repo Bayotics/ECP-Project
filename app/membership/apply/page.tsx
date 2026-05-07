@@ -12,7 +12,7 @@ export default function MembershipApplyPage() {
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Page header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-900) font-display mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-200) font-display mb-2">
           Membership Application
         </h1>
         <p className="text-sm text-(--color-neutral-500) max-w-xl mx-auto">

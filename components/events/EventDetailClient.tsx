@@ -291,7 +291,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
             >
-              <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-900) font-display leading-snug mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-100) font-display leading-snug mb-4">
                 {event.title}
               </h1>
 
@@ -369,11 +369,11 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
               className="prose prose-sm prose-neutral max-w-none text-(--color-neutral-700)"
             >
-              <h2 className="text-lg font-bold text-(--color-neutral-800) mb-3">About This Event</h2>
+              <h2 className="text-lg font-bold text-(--color-neutral-100) mb-3">About This Event</h2>
               {isHTML(event.description) ? (
                 <div dangerouslySetInnerHTML={{ __html: event.description }} />
               ) : (
-                <p className="leading-relaxed whitespace-pre-wrap">{event.description}</p>
+                <p className="leading-relaxed whitespace-pre-wrap text-gray-200">{event.description}</p>
               )}
             </motion.div>
 
