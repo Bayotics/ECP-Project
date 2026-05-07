@@ -14,6 +14,7 @@ import type { Committee } from "../models/committee";
 import type { Product } from "../models/product";
 import type { Order } from "../models/order";
 import type { Donation } from "../models/donation";
+import type { OrgDocument } from "../models/document";
 
 /* ─── Users ──────────────────────────────────────────── */
 export const SEED_USERS: User[] = [
@@ -1197,6 +1198,18 @@ export const SEED_DONATIONS: Donation[] = [
     createdAt: "2026-05-04T16:00:00.000Z",
     updatedAt: "2026-05-04T16:00:00.000Z",
   },
+];
+
+/* ─── Documents ──────────────────────────────────────── */
+export const SEED_DOCUMENTS: OrgDocument[] = [
+  { id: "doc-001", name: "ECP_Constitution_2024.pdf",        label: "ECP Constitution",           category: "constitution", access: "members-only", fileType: "pdf",  simulatedSize: "2.4 MB", description: "The founding constitution of Eko Club Philadelphia.",              uploadedAt: "2024-01-01T08:00:00.000Z", uploadedBy: "u-admin-001", updatedAt: "2024-01-01T08:00:00.000Z" },
+  { id: "doc-002", name: "Annual_Report_2023.pdf",           label: "Annual Report 2023",          category: "report",       access: "public",       fileType: "pdf",  simulatedSize: "5.1 MB", description: "Full annual impact report for the 2023 calendar year.",            uploadedAt: "2024-02-15T08:00:00.000Z", uploadedBy: "u-admin-002", updatedAt: "2024-02-15T08:00:00.000Z" },
+  { id: "doc-003", name: "Meeting_Minutes_Q4_2024.pdf",      label: "Meeting Minutes Q4 2024",     category: "minutes",      access: "members-only", fileType: "pdf",  simulatedSize: "0.8 MB", description: "Executive committee meeting minutes for Q4 2024.",                 uploadedAt: "2025-01-10T08:00:00.000Z", uploadedBy: "u-admin-002", updatedAt: "2025-01-10T08:00:00.000Z" },
+  { id: "doc-004", name: "Member_Handbook_v3.pdf",           label: "Member Handbook v3",          category: "handbook",     access: "members-only", fileType: "pdf",  simulatedSize: "1.2 MB", description: "Comprehensive guide for Eko Club Philadelphia members.",             uploadedAt: "2024-08-01T08:00:00.000Z", uploadedBy: "u-admin-001", updatedAt: "2024-08-01T08:00:00.000Z" },
+  { id: "doc-005", name: "ECP_Newsletter_Q1_2025.pdf",       label: "Newsletter Q1 2025",          category: "newsletter",   access: "public",       fileType: "pdf",  simulatedSize: "3.3 MB", description: "Quarterly newsletter covering Q1 2025 activities and highlights.",  uploadedAt: "2025-04-05T08:00:00.000Z", uploadedBy: "u-admin-002", updatedAt: "2025-04-05T08:00:00.000Z" },
+  { id: "doc-006", name: "Lagos_Chapter_Budget_2025.xlsx",   label: "Lagos Chapter Budget 2025",   category: "budget",       access: "admin-only",   fileType: "xlsx", simulatedSize: "0.4 MB", description: "2025 budget spreadsheet for the Lagos chapter.",                    uploadedAt: "2025-01-20T08:00:00.000Z", uploadedBy: "u-admin-001", updatedAt: "2025-01-20T08:00:00.000Z" },
+  { id: "doc-007", name: "Volunteer_Framework.docx",         label: "Volunteer Framework",         category: "policy",       access: "members-only", fileType: "docx", simulatedSize: "0.9 MB", description: "Framework document outlining volunteer roles and responsibilities.", uploadedAt: "2024-06-12T08:00:00.000Z", uploadedBy: "u-admin-001", updatedAt: "2024-06-12T08:00:00.000Z" },
+  { id: "doc-008", name: "Annual_Report_2025.pdf",           label: "Annual Report 2025",          category: "report",       access: "public",       fileType: "pdf",  simulatedSize: "6.2 MB", description: "Full annual impact report for the 2025 calendar year.",            uploadedAt: "2026-01-31T08:00:00.000Z", uploadedBy: "u-admin-002", updatedAt: "2026-01-31T08:00:00.000Z" },
 ];
 
 

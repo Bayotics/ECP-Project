@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useNews } from "@/context/NewsContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
@@ -13,12 +14,15 @@ const CATEGORIES = ["all", "news", "announcement", "report", "opinion", "press-r
 const STATUSES = ["all", "draft", "published", "archived"];
 
 export default function AdminNewsPage() {
-  const { posts, update, publish, remove } = useNews();
+  const { posts, add, update, publish, remove } = useNews();
+  const { currentUser } = useAuth();
 
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<NewsPost | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({ title: "", category: "news", excerpt: "", content: "" });
   const [form, setForm] = useState({
     title: "", category: "", status: "", authorName: "",
     excerpt: "", content: "",
@@ -88,11 +92,36 @@ export default function AdminNewsPage() {
     closeModal();
   }
 
+  function slugify(str: string) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim(); }
+
+  function handleCreate() {
+    if (!createForm.title.trim()) return;
+    add({
+      title: createForm.title.trim(),
+      slug: slugify(createForm.title),
+      category: createForm.category as NewsPost["category"],
+      status: "draft",
+      excerpt: createForm.excerpt || createForm.title,
+      content: createForm.content || "",
+      authorId: currentUser?.id ?? "admin",
+      authorName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
+      isFeatured: false,
+      isBreaking: false,
+      isPinned: false,
+      tags: [],
+      readingTimeMinutes: Math.max(1, Math.ceil((createForm.content.split(" ").length || 1) / 200)),
+    });
+    setCreating(false);
+    setCreateForm({ title: "", category: "news", excerpt: "", content: "" });
+  }
+
   const headers = ["Title", "Category", "Author", "Status", "Featured", "Breaking", "Views", "Published"];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="News" count={filtered.length} subtitle="Manage all news posts and announcements." />
+      <AdminPageHeader title="News" count={filtered.length} subtitle="Manage all news posts and announcements.">
+        <Btn variant="primary" size="sm" onClick={() => setCreating(true)}>+ New Post</Btn>
+      </AdminPageHeader>
 
       <AdminFilters search={search} onSearchChange={setSearch} filters={
         <>
@@ -104,7 +133,7 @@ export default function AdminNewsPage() {
       <AdminTable headers={headers} empty="No posts match your search.">
         {filtered.map(post => (
           <TR key={post.id} onClick={() => openModal(post)}>
-            <TD className="font-medium text-(--color-neutral-900) max-w-[220px] truncate">{post.title}</TD>
+            <TD className="font-medium text-(--color-neutral-900) max-w-55 truncate">{post.title}</TD>
             <TD><Badge value={post.category} /></TD>
             <TD>{post.authorName ?? "—"}</TD>
             <TD><Badge value={post.status} /></TD>
@@ -115,6 +144,31 @@ export default function AdminNewsPage() {
           </TR>
         ))}
       </AdminTable>
+
+      {creating && (
+        <AdminModal title="New Post" open={creating} onClose={() => setCreating(false)}>
+          <div className="space-y-4">
+            <FormField label="Title *">
+              <FormInput value={createForm.title} onChange={e => setCreateForm(p => ({ ...p, title: e.target.value }))} placeholder="Post title" />
+            </FormField>
+            <FormField label="Category">
+              <FormSelect value={createForm.category} onChange={e => setCreateForm(p => ({ ...p, category: e.target.value }))}>
+                {CATEGORIES.filter(c => c !== "all").map(c => <option key={c} value={c}>{c.replace("-", " ").replace(/\b\w/g, x => x.toUpperCase())}</option>)}
+              </FormSelect>
+            </FormField>
+            <FormField label="Excerpt">
+              <FormTextarea rows={2} value={createForm.excerpt} onChange={e => setCreateForm(p => ({ ...p, excerpt: e.target.value }))} placeholder="Short summary…" />
+            </FormField>
+            <FormField label="Content">
+              <FormTextarea rows={5} value={createForm.content} onChange={e => setCreateForm(p => ({ ...p, content: e.target.value }))} placeholder="Full post content…" />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
+              <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
+              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim()}>Create Post</Btn>
+            </div>
+          </div>
+        </AdminModal>
+      )}
 
       {selected && (
         <AdminModal title={selected.title} open={!!selected} onClose={closeModal}>

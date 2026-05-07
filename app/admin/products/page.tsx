@@ -13,12 +13,18 @@ const CATEGORIES = ["all", "apparel", "accessories", "stationery", "publications
 const STATUSES = ["all", "active", "out-of-stock", "discontinued", "draft"];
 
 export default function AdminProductsPage() {
-  const { products, update, adjustStock, remove } = useProducts();
+  const { products, add, update, adjustStock, remove } = useProducts();
 
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Product | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: "", category: "other", status: "draft",
+    price: "", stock: "0", description: "", shortDescription: "",
+    isFeatured: false, isMemberOnly: false,
+  });
   const [form, setForm] = useState({
     name: "", category: "", status: "",
     price: "", compareAtPrice: "", stock: "",
@@ -93,11 +99,36 @@ export default function AdminProductsPage() {
     closeModal();
   }
 
+  function slugify(str: string) {
+    return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim();
+  }
+
+  function handleCreate() {
+    if (!createForm.name.trim()) return;
+    add({
+      name: createForm.name.trim(),
+      slug: slugify(createForm.name),
+      category: createForm.category as Product["category"],
+      status: createForm.status as Product["status"],
+      price: Number(createForm.price) || 0,
+      stock: Number(createForm.stock) || 0,
+      description: createForm.description || createForm.name,
+      shortDescription: createForm.shortDescription || undefined,
+      isFeatured: createForm.isFeatured,
+      isMemberOnly: createForm.isMemberOnly,
+      tags: [],
+    });
+    setCreating(false);
+    setCreateForm({ name: "", category: "other", status: "draft", price: "", stock: "0", description: "", shortDescription: "", isFeatured: false, isMemberOnly: false });
+  }
+
   const headers = ["Name", "Category", "Price", "Stock", "Status", "Featured", "Member Only"];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Products" count={filtered.length} subtitle="Manage all products in the store." />
+      <AdminPageHeader title="Products" count={filtered.length} subtitle="Manage all products in the store.">
+        <Btn variant="primary" size="sm" onClick={() => setCreating(true)}>+ New Product</Btn>
+      </AdminPageHeader>
 
       <AdminFilters search={search} onSearchChange={setSearch} filters={
         <>
@@ -119,6 +150,48 @@ export default function AdminProductsPage() {
           </TR>
         ))}
       </AdminTable>
+
+      {creating && (
+        <AdminModal title="New Product" open={creating} onClose={() => setCreating(false)}>
+          <div className="space-y-4">
+            <FormField label="Name *">
+              <FormInput value={createForm.name} onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))} placeholder="Product name" />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Category">
+                <FormSelect value={createForm.category} onChange={e => setCreateForm(p => ({ ...p, category: e.target.value }))}>
+                  {CATEGORIES.filter(c => c !== "all").map(c => <option key={c} value={c}>{c.replace(/\b\w/g, x => x.toUpperCase())}</option>)}
+                </FormSelect>
+              </FormField>
+              <FormField label="Status">
+                <FormSelect value={createForm.status} onChange={e => setCreateForm(p => ({ ...p, status: e.target.value }))}>
+                  {["draft", "active", "out-of-stock", "discontinued"].map(s => <option key={s} value={s}>{s.replace("-", " ").replace(/\b\w/g, x => x.toUpperCase())}</option>)}
+                </FormSelect>
+              </FormField>
+              <FormField label="Price (₦)">
+                <FormInput type="number" min="0" value={createForm.price} onChange={e => setCreateForm(p => ({ ...p, price: e.target.value }))} placeholder="0" />
+              </FormField>
+              <FormField label="Stock">
+                <FormInput type="number" min="0" value={createForm.stock} onChange={e => setCreateForm(p => ({ ...p, stock: e.target.value }))} placeholder="0" />
+              </FormField>
+            </div>
+            <FormField label="Short Description">
+              <FormTextarea rows={2} value={createForm.shortDescription} onChange={e => setCreateForm(p => ({ ...p, shortDescription: e.target.value }))} />
+            </FormField>
+            <FormField label="Full Description">
+              <FormTextarea rows={3} value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} />
+            </FormField>
+            <div className="flex gap-5 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isFeatured} onChange={e => setCreateForm(p => ({ ...p, isFeatured: e.target.checked }))} className="accent-(--color-green-600)" /><span className="font-medium text-(--color-neutral-700)">Featured</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isMemberOnly} onChange={e => setCreateForm(p => ({ ...p, isMemberOnly: e.target.checked }))} className="accent-purple-600" /><span className="font-medium text-(--color-neutral-700)">Member Only</span></label>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
+              <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
+              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.name.trim()}>Create Product</Btn>
+            </div>
+          </div>
+        </AdminModal>
+      )}
 
       {selected && (
         <AdminModal title={selected.name} open={!!selected} onClose={closeModal}>

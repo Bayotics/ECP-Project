@@ -9,6 +9,7 @@ import { useNews } from "@/context/NewsContext";
 import { useProducts } from "@/context/ProductsContext";
 import { useOrders } from "@/context/OrdersContext";
 import { useDonations } from "@/context/DonationsContext";
+import { useDocuments } from "@/context/DocumentsContext";
 import { AdminStat, Badge } from "@/components/admin/AdminUI";
 
 export default function AdminDashboardPage() {
@@ -19,6 +20,7 @@ export default function AdminDashboardPage() {
   const { products } = useProducts();
   const { orders } = useOrders();
   const { donations, getTotalSuccessful } = useDonations();
+  const { documents } = useDocuments();
 
   const members = useMemo(() => users.filter(u => ["member", "admin", "super-admin"].includes(u.role)), [users]);
   const pendingApps = useMemo(() => applications.filter(a => ["pending", "under-review", "interview"].includes(a.status)), [applications]);
@@ -95,7 +97,7 @@ export default function AdminDashboardPage() {
               {recentOrders.map(o => (
                 <tr key={o.id} className="border-t border-(--color-neutral-100) hover:bg-(--color-neutral-50)">
                   <td className="px-4 py-2.5 font-mono text-xs text-(--color-neutral-600)">{o.orderNumber}</td>
-                  <td className="px-4 py-2.5 font-medium text-(--color-neutral-800) max-w-[120px] truncate">{o.customerName}</td>
+                  <td className="px-4 py-2.5 font-medium text-(--color-neutral-800) max-w-30 truncate">{o.customerName}</td>
                   <td className="px-4 py-2.5 text-right font-bold text-(--color-green-700)">₦{o.total.toLocaleString("en-NG")}</td>
                   <td className="px-4 py-2.5"><Badge value={o.status} /></td>
                 </tr>
@@ -108,13 +110,14 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { href: "/admin/applications", label: "Applications", icon: "✦", count: pendingApps.length },
           { href: "/admin/members",      label: "Members",      icon: "◉", count: members.length },
           { href: "/admin/events",       label: "Events",       icon: "◈", count: events.length },
           { href: "/admin/news",         label: "News",         icon: "📰", count: posts.length },
           { href: "/admin/products",     label: "Products",     icon: "🛍️", count: products.length },
+          { href: "/admin/documents",    label: "Documents",    icon: "◧", count: documents.length },
         ].map(item => (
           <Link
             key={item.href}

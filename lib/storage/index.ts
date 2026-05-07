@@ -9,3 +9,4 @@ export * from "./committees.db";
 export * from "./products.db";
 export * from "./orders.db";
 export * from "./donations.db";
+export * from "./documents.db";

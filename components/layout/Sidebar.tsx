@@ -31,6 +31,7 @@ const adminLinks = [
   { href: "/admin/events",        label: "Events",        icon: "◈" },
   { href: "/admin/news",          label: "News",          icon: "📰" },
   { href: "/admin/products",      label: "Products",      icon: "🛍️" },
+  { href: "/admin/documents",     label: "Documents",     icon: "◧" },
 ];
 
 function getInitials(name: string): string {
@@ -53,7 +54,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
 
   function handleLogout() {
     logout();
-    router.push("/login");
+    router.push("/auth/login");
   }
 
   return (

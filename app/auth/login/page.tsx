@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const { loginWithEmail, isAuthenticated } = useAuth();
+  const { loginWithEmail, isAuthenticated, currentUser } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -16,10 +16,11 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/member/dashboard");
+    if (isAuthenticated && currentUser) {
+      const isAdmin = currentUser.role === "admin" || currentUser.role === "super-admin";
+      router.replace(isAdmin ? "/admin/dashboard" : "/member/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, currentUser, router]);
 
   if (isAuthenticated) return null;
 
@@ -29,11 +30,10 @@ export default function LoginPage() {
     setIsSubmitting(true);
     const result = await loginWithEmail(email, password);
     setIsSubmitting(false);
-    if (result.success) {
-      router.push("/member/dashboard");
-    } else {
+    if (!result.success) {
       setError(result.error ?? "Login failed. Please try again.");
     }
+    // redirect is handled by the isAuthenticated useEffect above
   }
 
   return (
@@ -50,11 +50,20 @@ export default function LoginPage() {
       </div>
 
       {/* Demo hint */}
-      <div className="rounded-lg border border-(--color-green-200) bg-(--color-green-50) px-4 py-3 text-sm text-(--color-green-700)">
-        <span className="font-semibold">Demo:</span>{" "}
-        <span className="font-mono">tunde.adeyemi@email.com</span>{" "}
-        /{" "}
-        <span className="font-mono">ecp2024</span>
+      <div className="rounded-lg border border-(--color-green-200) bg-(--color-green-50) px-4 py-3 text-sm text-(--color-green-700) space-y-1.5">
+        <p className="font-semibold text-xs uppercase tracking-wide text-(--color-green-800) mb-1">Demo Accounts</p>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="font-semibold">Member:</span>{" "}
+          <span className="font-mono">tunde.adeyemi@email.com</span>{" "}
+          <span>/</span>{" "}
+          <span className="font-mono">ecp2024</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="font-semibold">Admin:</span>{" "}
+          <span className="font-mono">admin@ekoclubphiladelphia.org</span>{" "}
+          <span>/</span>{" "}
+          <span className="font-mono">ecp2024</span>
+        </div>
       </div>
 
       {error && (

@@ -40,7 +40,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
   function handleLogout() {
     setMenuOpen(false);
     logout();
-    router.push("/login");
+    router.push("/auth/login");
   }
 
   const displayName = currentUser?.displayName ?? "User";

@@ -14,6 +14,7 @@ import { ProductsProvider } from "./ProductsContext";
 import { OrdersProvider } from "./OrdersContext";
 import { DonationsProvider } from "./DonationsContext";
 import { CartProvider } from "./CartContext";
+import { DocumentsProvider } from "./DocumentsContext";
 
 function SeedRunner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -40,10 +41,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                       <ProductsProvider>
                         <OrdersProvider>
                           <DonationsProvider>
+                          <DocumentsProvider>
                           <CartProvider>
                             {children}
                             <ToastContainer />
                           </CartProvider>
+                          </DocumentsProvider>
                         </DonationsProvider>
                         </OrdersProvider>
                       </ProductsProvider>

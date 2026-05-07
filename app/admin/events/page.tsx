@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useEvents } from "@/context/EventsContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
@@ -13,12 +14,15 @@ const EVENT_TYPES = ["all", "town-hall", "workshop", "volunteer", "meetup", "sem
 const EVENT_STATUSES = ["all", "draft", "published", "cancelled", "completed"];
 
 export default function AdminEventsPage() {
-  const { events, update, publish, cancel, remove } = useEvents();
+  const { events, add, update, publish, cancel, remove } = useEvents();
+  const { currentUser } = useAuth();
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Event | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({ title: "", type: "meetup", date: "", time: "", location: "", description: "" });
   const [form, setForm] = useState({
     title: "", type: "", date: "", time: "", location: "", venue: "",
     status: "", maxAttendees: "", isFeatured: false, isPublic: false,
@@ -99,11 +103,38 @@ export default function AdminEventsPage() {
     closeModal();
   }
 
+  function slugify(str: string) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim(); }
+
+  function handleCreate() {
+    if (!createForm.title.trim() || !createForm.date) return;
+    add({
+      title: createForm.title.trim(),
+      slug: slugify(createForm.title),
+      description: createForm.description || createForm.title,
+      date: createForm.date,
+      time: createForm.time || undefined,
+      location: createForm.location || "TBD",
+      type: createForm.type as Event["type"],
+      status: "draft",
+      organizerId: currentUser?.id ?? "admin",
+      organizerName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
+      tags: [],
+      isFeatured: false,
+      isPublic: true,
+      isOnline: false,
+      registrationRequired: false,
+    });
+    setCreating(false);
+    setCreateForm({ title: "", type: "meetup", date: "", time: "", location: "", description: "" });
+  }
+
   const headers = ["Title", "Type", "Date", "Location", "Status", "Featured"];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Events" count={filtered.length} subtitle="Manage all events on the platform." />
+      <AdminPageHeader title="Events" count={filtered.length} subtitle="Manage all events on the platform.">
+        <Btn variant="primary" size="sm" onClick={() => setCreating(true)}>+ New Event</Btn>
+      </AdminPageHeader>
 
       <AdminFilters search={search} onSearchChange={setSearch} filters={
         <>
@@ -124,6 +155,39 @@ export default function AdminEventsPage() {
           </TR>
         ))}
       </AdminTable>
+
+      {creating && (
+        <AdminModal title="New Event" open={creating} onClose={() => setCreating(false)}>
+          <div className="space-y-4">
+            <FormField label="Title *">
+              <FormInput value={createForm.title} onChange={e => setCreateForm(p => ({ ...p, title: e.target.value }))} placeholder="Event title" />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Type">
+                <FormSelect value={createForm.type} onChange={e => setCreateForm(p => ({ ...p, type: e.target.value }))}>
+                  {EVENT_TYPES.filter(t => t !== "all").map(t => <option key={t} value={t}>{t.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                </FormSelect>
+              </FormField>
+              <FormField label="Date *">
+                <FormInput type="date" value={createForm.date} onChange={e => setCreateForm(p => ({ ...p, date: e.target.value }))} />
+              </FormField>
+              <FormField label="Time">
+                <FormInput type="time" value={createForm.time} onChange={e => setCreateForm(p => ({ ...p, time: e.target.value }))} />
+              </FormField>
+              <FormField label="Location">
+                <FormInput value={createForm.location} onChange={e => setCreateForm(p => ({ ...p, location: e.target.value }))} placeholder="Venue / Online" />
+              </FormField>
+            </div>
+            <FormField label="Description">
+              <FormTextarea rows={3} value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
+              <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
+              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim() || !createForm.date}>Create Event</Btn>
+            </div>
+          </div>
+        </AdminModal>
+      )}
 
       {selected && (
         <AdminModal title={selected.title} open={!!selected} onClose={closeModal}>

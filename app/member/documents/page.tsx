@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
+import { useDocuments } from "@/context/DocumentsContext";
 
 type DocCategory = "my-documents" | "organizational" | "all";
 
@@ -15,17 +16,6 @@ interface Doc {
   simulatedSize: string;
   fileType: "pdf" | "docx" | "xlsx" | "img";
 }
-
-// Static org documents every member can access
-const ORG_DOCS: Doc[] = [
-  { id: "org-1", name: "ECP_Constitution_2024.pdf",             label: "ECP Constitution",              category: "organizational", uploadedAt: "2024-01-01", simulatedSize: "2.4 MB",  fileType: "pdf"  },
-  { id: "org-2", name: "Annual_Report_2023.pdf",                label: "Annual Report 2023",            category: "organizational", uploadedAt: "2024-02-15", simulatedSize: "5.1 MB",  fileType: "pdf"  },
-  { id: "org-3", name: "Meeting_Minutes_Q4_2024.pdf",           label: "Meeting Minutes Q4 2024",       category: "organizational", uploadedAt: "2025-01-10", simulatedSize: "0.8 MB",  fileType: "pdf"  },
-  { id: "org-4", name: "Member_Handbook_v3.pdf",                label: "Member Handbook v3",            category: "organizational", uploadedAt: "2024-08-01", simulatedSize: "1.2 MB",  fileType: "pdf"  },
-  { id: "org-5", name: "ECP_Newsletter_Q1_2025.pdf",            label: "Newsletter Q1 2025",            category: "organizational", uploadedAt: "2025-04-05", simulatedSize: "3.3 MB",  fileType: "pdf"  },
-  { id: "org-6", name: "Lagos_Chapter_Budget_2025.xlsx",        label: "Lagos Chapter Budget 2025",     category: "organizational", uploadedAt: "2025-01-20", simulatedSize: "0.4 MB",  fileType: "xlsx" },
-  { id: "org-7", name: "Volunteer_Framework.docx",              label: "Volunteer Framework",           category: "organizational", uploadedAt: "2024-06-12", simulatedSize: "0.9 MB",  fileType: "docx" },
-];
 
 const FILE_ICONS: Record<string, string> = {
   pdf: "📄",
@@ -98,6 +88,7 @@ function DownloadButton({ docId }: { docId: string }) {
 export default function DocumentsPage() {
   const { currentUser } = useAuth();
   const { getByEmail, getByUserId } = useMembership();
+  const { documents: orgDocuments } = useDocuments();
 
   const application = currentUser
     ? (getByEmail(currentUser.email) ?? getByUserId(currentUser.id))
@@ -116,7 +107,20 @@ export default function DocumentsPage() {
       : "img",
   }));
 
-  const allDocs = [...myDocs, ...ORG_DOCS];
+  // Show public and members-only docs from the documents store
+  const visibleOrgDocs: Doc[] = orgDocuments
+    .filter(d => d.access === "public" || d.access === "members-only")
+    .map(d => ({
+      id: d.id,
+      name: d.name,
+      label: d.label,
+      category: "organizational" as const,
+      uploadedAt: d.uploadedAt,
+      simulatedSize: d.simulatedSize,
+      fileType: (["pdf", "docx", "xlsx", "img"].includes(d.fileType) ? d.fileType : "img") as Doc["fileType"],
+    }));
+
+  const allDocs = [...myDocs, ...visibleOrgDocs];
 
   const [category, setCategory] = useState<DocCategory>("all");
   const [search, setSearch] = useState("");
@@ -133,7 +137,7 @@ export default function DocumentsPage() {
   const counts = {
     all: allDocs.length,
     "my-documents": myDocs.length,
-    organizational: ORG_DOCS.length,
+    organizational: visibleOrgDocs.length,
   };
 
   return (
@@ -207,7 +211,7 @@ export default function DocumentsPage() {
           {filtered.map((doc) => (
             <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-(--color-neutral-50) transition group">
               {/* Icon */}
-              <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-lg ${FILE_COLORS[doc.fileType]}`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ${FILE_COLORS[doc.fileType]}`}>
                 {FILE_ICONS[doc.fileType]}
               </div>
               {/* Info */}
@@ -228,7 +232,7 @@ export default function DocumentsPage() {
                 </div>
               </div>
               {/* Download */}
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <DownloadButton docId={doc.id} />
               </div>
             </div>

@@ -11,3 +11,4 @@ export { useProducts, ProductsProvider } from "./ProductsContext";
 export { useOrders, OrdersProvider } from "./OrdersContext";
 export { useDonations, DonationsProvider } from "./DonationsContext";
 export { useCart, CartProvider } from "./CartContext";
+export { useDocuments, DocumentsProvider } from "./DocumentsContext";

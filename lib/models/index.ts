@@ -7,3 +7,4 @@ export * from "./committee";
 export * from "./product";
 export * from "./order";
 export * from "./donation";
+export * from "./document";

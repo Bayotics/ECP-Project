@@ -16,6 +16,7 @@ import {
   SEED_PRODUCTS,
   SEED_ORDERS,
   SEED_DONATIONS,
+  SEED_DOCUMENTS,
 } from "./seedData";
 
 export function runSeed(): void {
@@ -42,6 +43,7 @@ export function runSeed(): void {
   seedIfEmpty(STORAGE_KEYS.PRODUCTS, SEED_PRODUCTS);
   seedIfEmpty(STORAGE_KEYS.ORDERS, SEED_ORDERS);
   seedIfEmpty(STORAGE_KEYS.DONATIONS, SEED_DONATIONS);
+  seedIfEmpty(STORAGE_KEYS.DOCUMENTS, SEED_DOCUMENTS);
 
   // Set default logged-in user (first admin) for demo purposes
   const currentAuthUserId = storageReadOne<string>(STORAGE_KEYS.AUTH_USER_ID);

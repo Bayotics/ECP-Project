@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useUsers } from "@/context/UsersContext";
+import { usersDB, setUserPassword } from "@/lib/storage/users.db";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
@@ -13,12 +14,15 @@ const ROLES = ["all", "guest", "applicant", "member", "admin", "super-admin"];
 const STATUSES = ["all", "active", "inactive", "suspended", "pending"];
 
 export default function AdminMembersPage() {
-  const { users, update, setRole, setStatus } = useUsers();
+  const { users, update, setRole, setStatus, refresh } = useUsers();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<User | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
+  const [createError, setCreateError] = useState("");
 
   // local edit state
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lga: "", occupation: "", role: "", status: "" });
@@ -70,11 +74,40 @@ export default function AdminMembersPage() {
     closeModal();
   }
 
+  function handleCreateMember() {
+    if (!createForm.firstName.trim() || !createForm.email.trim()) {
+      setCreateError("First name and email are required.");
+      return;
+    }
+    const existing = usersDB.getByEmail(createForm.email.trim().toLowerCase());
+    if (existing) {
+      setCreateError("An account with this email already exists.");
+      return;
+    }
+    const user = usersDB.create({
+      firstName: createForm.firstName.trim(),
+      lastName: createForm.lastName.trim(),
+      displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`,
+      email: createForm.email.trim().toLowerCase(),
+      phone: createForm.phone || undefined,
+      lga: createForm.lga || undefined,
+      role: createForm.role as User["role"],
+      status: "active",
+    });
+    setUserPassword(user.id, createForm.password || "ecp2024");
+    refresh();
+    setCreating(false);
+    setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
+    setCreateError("");
+  }
+
   const headers = ["Name", "Email", "Role", "Status", "LGA", "Joined"];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Members" count={filtered.length} subtitle="Manage all registered users." />
+      <AdminPageHeader title="Members" count={filtered.length} subtitle="Manage all registered users.">
+        <Btn variant="primary" size="sm" onClick={() => { setCreating(true); setCreateError(""); }}>+ New Member</Btn>
+      </AdminPageHeader>
 
       <AdminFilters
         search={search}
@@ -107,6 +140,43 @@ export default function AdminMembersPage() {
           </TR>
         ))}
       </AdminTable>
+
+      {creating && (
+        <AdminModal title="New Member" open={creating} onClose={() => setCreating(false)}>
+          <div className="space-y-4">
+            {createError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{createError}</div>}
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="First Name *">
+                <FormInput value={createForm.firstName} onChange={e => setCreateForm(p => ({ ...p, firstName: e.target.value }))} />
+              </FormField>
+              <FormField label="Last Name">
+                <FormInput value={createForm.lastName} onChange={e => setCreateForm(p => ({ ...p, lastName: e.target.value }))} />
+              </FormField>
+              <div className="col-span-2"><FormField label="Email *">
+                <FormInput type="email" value={createForm.email} onChange={e => setCreateForm(p => ({ ...p, email: e.target.value }))} />
+              </FormField></div>
+              <FormField label="Phone">
+                <FormInput value={createForm.phone} onChange={e => setCreateForm(p => ({ ...p, phone: e.target.value }))} />
+              </FormField>
+              <FormField label="LGA">
+                <FormInput value={createForm.lga} onChange={e => setCreateForm(p => ({ ...p, lga: e.target.value }))} />
+              </FormField>
+              <FormField label="Role">
+                <FormSelect value={createForm.role} onChange={e => setCreateForm(p => ({ ...p, role: e.target.value }))}>
+                  {["member", "admin", "super-admin", "applicant"].map(r => <option key={r} value={r}>{r.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                </FormSelect>
+              </FormField>
+              <FormField label="Initial Password">
+                <FormInput value={createForm.password} onChange={e => setCreateForm(p => ({ ...p, password: e.target.value }))} placeholder="ecp2024" />
+              </FormField>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
+              <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
+              <Btn variant="primary" onClick={handleCreateMember} disabled={!createForm.firstName.trim() || !createForm.email.trim()}>Create Member</Btn>
+            </div>
+          </div>
+        </AdminModal>
+      )}
 
       {selected && (
         <AdminModal title={`${selected.firstName} ${selected.lastName}`} open={!!selected} onClose={closeModal}>
