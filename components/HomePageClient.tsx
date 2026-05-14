@@ -789,9 +789,10 @@ function DonationCallout() {
   return (
     <CTASection
       eyebrow="Support Our Work"
-      heading="Help Fund Our Community"
+      heading="Help Fund Our"
       headingAccent="Community"
-      description={`${count} donations totalling ${formatted} have supported Eko Club Philadelphia this year. Your contribution funds cultural events, scholarship programmes, social welfare initiatives, and the development of Lagos State.`}
+      description={`Eko Club Philadelphia (ECP) is committed to uplifting and strengthening our community through impactful programs and initiatives, including cultural events, scholarship programs, health education, social welfare outreach, and support for the development of Lagos State.
+      Your generous support is an investment in the future of our community. Contributions to ECP help sustain our mission, create opportunities, empower individuals, and build a stronger and more vibrant future for all.`}
       variant="green"
       pattern
       trustLabel="Every dollar goes directly to community programmes"
