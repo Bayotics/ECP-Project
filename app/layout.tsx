@@ -1,22 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppProvider";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 
 /* ─── Fonts ─────────────────────────────────────────── */
-const inter = Inter({
-  variable: "--font-inter",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 /* ─── Metadata ──────────────────────────────────────── */
@@ -68,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plusJakarta.variable} h-full antialiased`}
+      className={`${poppins.variable} h-full antialiased font-[family-name:var(--font-poppins)]`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-(--background) text-gray-500">

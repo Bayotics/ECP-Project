@@ -9,8 +9,8 @@
 /* ─── Tailwind v4 @theme (Lagos green / gold palette) ── */
 @theme inline {
   /* ── Fonts ── */
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-plus-jakarta);
+  --font-sans: var(--font-poppins);
+  --font-display: var(--font-poppins);
 
   /* ── Colors ── */
   --color-background: var(--background);
