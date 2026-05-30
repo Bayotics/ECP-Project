@@ -1,31 +1,122 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useSpring,
+  useTransform,
+  useMotionValue,
+  useInView,
+} from "framer-motion";
+import type { Event as AppEvent } from "@/lib/models/event";
 
 /* ─── Contexts ───────────────────────────────────────── */
 import { useEvents } from "@/context/EventsContext";
 import { useNews } from "@/context/NewsContext";
-import { useCommittees } from "@/context/CommitteesContext";
-import { useDonations } from "@/context/DonationsContext";
 
 /* ─── Components ─────────────────────────────────────── */
-import HeroBanner from "@/components/ui/HeroBanner";
 import SectionHeader from "@/components/ui/SectionHeader";
-import CTASection from "@/components/ui/CTASection";
-import GalleryLightbox from "@/components/ui/GalleryLightbox";
 import AlertBanner from "@/components/ui/AlertBanner";
-import EventCard from "@/components/cards/EventCard";
-import NewsCard from "@/components/cards/NewsCard";
-import SpotlightCard from "@/components/cards/SpotlightCard";
-import CommitteeCard from "@/components/cards/CommitteeCard";
 
 /* ─── Utils ──────────────────────────────────────────── */
 import { cn } from "@/utils/cn";
 import { useToast } from "@/hooks/useToast";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+
+/* ══════════════════════════════════════════════════════
+   BRAND COLORS — green · red · blue · yellow
+   ══════════════════════════════════════════════════════ */
+const EKO_GREEN  = "#059669";
+const EKO_RED    = "#dc2626";
+const EKO_BLUE   = "#2563eb";
+const EKO_YELLOW = "#d97706";
+const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
+
+/* ══════════════════════════════════════════════════════
+   SHARED HELPERS
+   ══════════════════════════════════════════════════════ */
+
+/** Magnetic-feel button/link wrapper */
+function MagneticButton({
+  children,
+  className,
+  href,
+  style,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  href?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+}) {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const x  = useSpring(mx, { stiffness: 300, damping: 20 });
+  const y  = useSpring(my, { stiffness: 300, damping: 20 });
+
+  function onMove(e: React.MouseEvent<HTMLElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set((e.clientX - r.left - r.width  / 2) * 0.35);
+    my.set((e.clientY - r.top  - r.height / 2) * 0.35);
+  }
+  function onLeave() { mx.set(0); my.set(0); }
+
+  if (href) {
+    return (
+      <motion.a
+        href={href}
+        className={className}
+        style={{ ...style, x, y }}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        {children}
+      </motion.a>
+    );
+  }
+  return (
+    <motion.button
+      className={className}
+      style={{ ...style, x, y }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+/** Animated count-up number */
+function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const dur = 1400;
+    const start = performance.now();
+    function tick(now: number) {
+      const t = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(ease * to));
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }, [inView, to]);
+
+  return <span ref={ref}>{val}{suffix}</span>;
+}
 
 /* ══════════════════════════════════════════════════════
    1. ANNOUNCEMENT BAR
@@ -57,177 +148,446 @@ function AnnouncementBar() {
 }
 
 /* ══════════════════════════════════════════════════════
-   3. STATS STRIP
+   2. HERO — cinematic carousel · 4-colour identity
    ══════════════════════════════════════════════════════ */
-const PLATFORM_STATS = [
-  { label: "Members", value: "500+", icon: "👥" },
-  { label: "Years of Service", value: "25+", icon: "🏆" },
-  { label: "Annual Events", value: "20+", icon: "🗓️" },
-  { label: "Community Projects", value: "50+", icon: "🏘️" },
-  { label: "Raised for Lagos", value: "$250K+", icon: "💚" },
+const HERO_SLIDES = [
+  { src: "/hero-1.jpg", alt: "Eko Club Philadelphia Adopt-a-Highway community service" },
+  { src: "/hero-2.jpg", alt: "Eko Club Philadelphia members holding club banner" },
+  { src: "/hero-3.jpg", alt: "Eko Club Philadelphia community dinner gathering" },
 ];
 
-function StatsStrip() {
+const HERO_WORDS = [
+  { text: "EKO",          color: EKO_GREEN  },
+  { text: "CLUB",         color: EKO_RED    },
+  { text: "PHILADELPHIA", color: "#ffffff"  },
+];
+
+function HeroSection() {
+  const [active, setActive] = useState(0);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const bgX = useTransform(mouseX, [-1, 1], ["-2%", "2%"]);
+  const bgY = useTransform(mouseY, [-1, 1], ["-2%", "2%"]);
+
+  useEffect(() => {
+    const id = setInterval(() => setActive(p => (p + 1) % HERO_SLIDES.length), 5800);
+    return () => clearInterval(id);
+  }, []);
+
+  function onMouseMove(e: React.MouseEvent<HTMLElement>) {
+    const { width, height, left, top } = e.currentTarget.getBoundingClientRect();
+    mouseX.set((e.clientX - left - width  / 2) / (width  / 2));
+    mouseY.set((e.clientY - top  - height / 2) / (height / 2));
+  }
+
+  const containerVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12 } },
+  };
+  const wordVariants = {
+    hidden: { opacity: 0, y: 60, skewY: 6 },
+    show:   { opacity: 1, y:  0, skewY: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } },
+  };
+
   return (
     <section
-      className="relative overflow-hidden py-10"
-      style={{ background: "var(--color-green-900)" }}
-      aria-label="Platform statistics"
+      className="relative min-h-svh overflow-hidden"
+      aria-labelledby="hero-heading"
+      onMouseMove={onMouseMove}
     >
-      {/* Subtle dot pattern overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, var(--color-green-300) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <ul className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-          {PLATFORM_STATS.map((stat, i) => (
-            <motion.li
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: i * 0.08, ease: "easeOut" }}
-              className="flex flex-col items-center gap-1 text-center"
+      {/* ── Slides ── */}
+      {HERO_SLIDES.map((slide, i) => (
+        <motion.div
+          key={slide.src}
+          className="absolute inset-0"
+          animate={{ opacity: i === active ? 1 : 0, scale: i === active ? 1 : 1.04 }}
+          transition={{ duration: 1.1, ease: "easeInOut" }}
+          style={{ x: bgX, y: bgY }}
+          aria-hidden={i !== active}
+        >
+          <Image src={slide.src} alt={slide.alt} fill priority={i === 0} className="object-cover object-center" sizes="100vw" />
+        </motion.div>
+      ))}
+
+      {/* ── Overlays ── */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(115deg,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.45) 55%,rgba(0,0,0,0.15) 100%)" }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56" style={{ background: "linear-gradient(to top,rgba(0,0,0,0.7),transparent)" }} />
+
+      {/* ── Floating orbs ── */}
+      {QUAD.map((c, i) => (
+        <motion.div
+          key={c}
+          className="pointer-events-none absolute rounded-full opacity-20 blur-3xl"
+          style={{ background: c, width: 340, height: 340, left: `${10 + i * 22}%`, top: `${8 + (i % 2) * 40}%` }}
+          animate={{ y: [0, -28, 0], scale: [1, 1.12, 1] }}
+          transition={{ duration: 7 + i * 1.3, repeat: Infinity, ease: "easeInOut", delay: i * 1.1 }}
+        />
+      ))}
+
+      {/* ── Content ── */}
+      <div className="relative mx-auto flex min-h-svh max-w-7xl flex-col justify-center px-4 py-28 sm:px-6 lg:px-8">
+        <div className="max-w-3xl">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-6 inline-flex items-center gap-2"
+          >
+            {QUAD.map(c => <span key={c} className="h-2 w-2 rounded-full" style={{ background: c }} />)}
+            <span className="ml-1 rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-white backdrop-blur-md">
+              Eko Club Philadelphia — Est. 1998
+            </span>
+          </motion.div>
+
+          {/* Stacked title words */}
+          <motion.div
+            id="hero-heading"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {HERO_WORDS.map(w => (
+              <motion.div key={w.text} variants={wordVariants} className="overflow-hidden">
+                <span
+                  className="block text-4xl font-black leading-none tracking-[-0.03em] sm:text-5xl lg:text-7xl"
+                  style={{ color: w.color, textShadow: w.color !== "#ffffff" ? `0 0 40px ${w.color}55` : undefined }}
+                >
+                  {w.text}
+                </span>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Date badge + subtitle */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
+            className="mt-5 flex flex-wrap items-center gap-3"
+          >
+            <span
+              className="rounded-full px-4 py-1.5 text-sm font-black text-black shadow-lg"
+              style={{ background: EKO_YELLOW }}
             >
-              <span className="text-2xl" aria-hidden="true">
-                {stat.icon}
-              </span>
-              <span
-                className="text-3xl font-extrabold tracking-tight"
-                style={{ color: "var(--color-gold-300)" }}
-              >
-                {stat.value}
-              </span>
-              <span className="text-sm font-medium text-white/80">
-                {stat.label}
-              </span>
-            </motion.li>
-          ))}
-        </ul>
+              December 6, 2026
+            </span>
+            <span className="text-sm font-semibold text-white/80">
+              Annual Gala &amp; Awards Night · Philadelphia, PA
+            </span>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.68, duration: 0.55 }}
+            className="mt-4 max-w-lg text-sm leading-relaxed text-white/70"
+          >
+            Our signature evening unites Lagosians across the Delaware Valley — honouring
+            community leaders, celebrating culture, and building lasting connections.
+            Join us for an unforgettable night.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+            className="mt-7 flex flex-wrap gap-3"
+          >
+            <MagneticButton
+              href="/events"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl focus-visible:outline-none"
+              style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}80` }}
+            >
+              Get Tickets
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </MagneticButton>
+            <MagneticButton
+              href="/membership/apply"
+              className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md focus-visible:outline-none"
+            >
+              Become a Member
+            </MagneticButton>
+          </motion.div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1, duration: 0.6 }}
+            className="mt-12 flex flex-wrap gap-8 border-t border-white/15 pt-8"
+          >
+            {[
+              { val: 500, suffix: "+", label: "Members" },
+              { val: 25,  suffix: "+", label: "Years Active" },
+              { val: 20,  suffix: "+", label: "Events / Year" },
+            ].map((s, i) => (
+              <div key={s.label} className="flex flex-col">
+                <span className="text-3xl font-black text-white">
+                  <CountUp to={s.val} suffix={s.suffix} />
+                </span>
+                <span className="mt-0.5 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: QUAD[i] }}>
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+
+      {/* ── Slide dots ── */}
+      <div className="absolute bottom-8 right-8 flex gap-2" role="tablist">
+        {HERO_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            role="tab"
+            aria-selected={i === active}
+            onClick={() => setActive(i)}
+            className="transition-all duration-300 focus-visible:outline-none"
+            style={{
+              height: "0.5rem",
+              width: i === active ? "2rem" : "0.5rem",
+              borderRadius: "9999px",
+              background: i === active ? EKO_YELLOW : "rgba(255,255,255,0.35)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── 4-colour flag bar at bottom ── */}
+      <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
+        {QUAD.map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
       </div>
     </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   4. MISSION SECTION
+   3. HIGHLIGHTS — editorial split layout
    ══════════════════════════════════════════════════════ */
-function MissionSection() {
+function HighlightsSection() {
   return (
     <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      style={{ background: "var(--color-neutral-50)" }}
-      aria-labelledby="mission-heading"
+      className="relative overflow-hidden bg-white py-20 px-4 sm:px-6 lg:px-8"
+      aria-labelledby="highlights-heading"
     >
-      <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:items-center">
-          {/* Text column */}
+      {/* Ghost numeral depth */}
+      <div
+        className="pointer-events-none absolute -right-4 top-0 select-none text-[20rem] font-black leading-none opacity-[0.04] text-neutral-900"
+        aria-hidden="true"
+      >
+        2025
+      </div>
+
+      <div className="relative mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.4fr]">
+          {/* Left text */}
           <motion.div
             initial={{ opacity: 0, x: -32 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex flex-col gap-6"
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col gap-5"
           >
-            <span
-              className="inline-block text-xs font-semibold uppercase tracking-widest"
-              style={{ color: "var(--color-green-600)" }}
-            >
-              Our Mission
-            </span>
+            <div className="flex h-2 w-24 overflow-hidden rounded-full">
+              {QUAD.map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
+            </div>
             <h2
-              id="mission-heading"
-              className="text-3xl font-extrabold leading-tight sm:text-4xl"
-              style={{ color: "var(--color-green-950)" }}
+              id="highlights-heading"
+              className="text-4xl font-black leading-tight tracking-tight text-neutral-950 sm:text-5xl"
             >
-              Uniting Lagosians in Philadelphia —{" "}
-              <span style={{ color: "var(--color-green-600)" }}>
-                keeping the Eko spirit alive.
-              </span>
+              2025 ECP Annual<br />
+              <span style={{ color: EKO_GREEN }}>Gala Highlights</span>
             </h2>
-            <p className="text-base leading-relaxed" style={{ color: "var(--color-neutral-600)" }}>
-              Eko Club Philadelphia is a vibrant chapter of Eko Club International —
-              a non-profit organization bringing together Lagosians in the diaspora.
-              We foster unity and fellowship among our members, celebrate the rich
-              cultural heritage of Lagos State, and contribute to the social and
-              economic development of our homeland through cultural events, social
-              welfare projects, and community activities.
+            <p className="text-base leading-relaxed text-neutral-500">
+              Relive the unforgettable moments from our most recent annual gathering —
+              a night of culture, recognition, and community celebration in Philadelphia.
             </p>
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {[
-                "Cultural celebrations & festivals",
-                "Social welfare initiatives",
-                "Scholarship & youth programmes",
-                "Lagos State development projects",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--color-neutral-700)" }}>
-                  <svg
-                    className="mt-0.5 h-4 w-4 shrink-0"
-                    style={{ color: "var(--color-green-500)" }}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{ background: "var(--color-green-700)" }}
-              >
-                Learn about us
-              </Link>
-              <Link
-                href="/auth/register"
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all hover:bg-white focus-visible:outline-none focus-visible:ring-2"
-                style={{
-                  borderColor: "var(--color-green-600)",
-                  color: "var(--color-green-700)",
-                }}
-              >
-                Join Eko Club Philadelphia
-              </Link>
+            <Link
+              href="/gallery"
+              className="inline-flex w-fit items-center gap-2 text-sm font-bold transition-all hover:gap-3"
+              style={{ color: EKO_GREEN }}
+            >
+              View full gallery
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </Link>
+          </motion.div>
+
+          {/* Right: video with 4-colour gradient border */}
+          <motion.div
+            initial={{ opacity: 0, x: 32, scale: 0.97 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div
+              className="rounded-2xl p-0.75 shadow-2xl"
+              style={{
+                background: `linear-gradient(135deg, ${EKO_GREEN} 0%, ${EKO_RED} 33%, ${EKO_BLUE} 66%, ${EKO_YELLOW} 100%)`,
+              }}
+            >
+              <div className="overflow-hidden rounded-[14px] bg-black">
+                <div className="relative aspect-video">
+                  <iframe
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    title="ECP Annual Gala 2025 Highlights"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   4A. COUNTDOWN TIMER HOOK
+   ══════════════════════════════════════════════════════ */
+function useCountdown(targetDate: string) {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    function calculate() {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) return setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    }
+    calculate();
+    const id = setInterval(calculate, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+
+  return timeLeft;
+}
+
+/* ══════════════════════════════════════════════════════
+   4B. MISSION — dark split with 4-colour accents
+   ══════════════════════════════════════════════════════ */
+const TICKET_FEATURES = [
+  { label: "All Access Pass — every event included",      color: EKO_GREEN  },
+  { label: "Cultural dinner &amp; drinks reception",       color: EKO_RED    },
+  { label: "Networking with Lagosians in the diaspora",   color: EKO_BLUE   },
+  { label: "Awards ceremony &amp; live entertainment",    color: EKO_YELLOW },
+];
+
+function MissionSection() {
+  return (
+    <section
+      className="relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8"
+      style={{ background: "#0d1a0f" }}
+      aria-labelledby="mission-heading"
+    >
+      {/* Corner colour bars */}
+      {QUAD.map((c, i) => (
+        <div
+          key={c}
+          aria-hidden="true"
+          className="pointer-events-none absolute h-1 w-32"
+          style={{
+            background: c,
+            top:    i < 2 ? 0 : undefined,
+            bottom: i < 2 ? undefined : 0,
+            left:   i % 2 === 0 ? 0 : undefined,
+            right:  i % 2 === 0 ? undefined : 0,
+          }}
+        />
+      ))}
+
+      <div className="relative mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          {/* Image with colour-border treatment */}
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div
+              className="rounded-2xl p-0.75"
+              style={{ background: `linear-gradient(135deg,${EKO_GREEN} 0%,${EKO_RED} 33%,${EKO_BLUE} 66%,${EKO_YELLOW} 100%)` }}
+            >
+              <div className="relative overflow-hidden rounded-[14px]" style={{ aspectRatio: "4/3" }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=900"
+                  alt="Eko Club Philadelphia community members"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </div>
             </div>
           </motion.div>
 
-          {/* SpotlightCard */}
+          {/* Text */}
           <motion.div
             initial={{ opacity: 0, x: 32 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col gap-5"
           >
-            <SpotlightCard
-              eyebrow="Our Community"
-              title="500+ Lagosians in Philadelphia"
-              titleClassName="text-green-400"
-              subtitle="Members across the Delaware Valley"
-              description="Eko Club Philadelphia has been bringing together Lagosians in the diaspora for over two decades — through cultural galas, scholarship funds, community service, and a deep commitment to the development of Lagos State."
-              stats={[
-                { label: "Active Members", value: "500+" },
-                { label: "Annual Events", value: "20+" },
-                { label: "Years Active", value: "25+" },
-              ]}
-              ctas={[
-                { label: "About Us", href: "/about", variant: "primary" },
-                { label: "Join Us", href: "/register", variant: "outline" },
-              ]}
-              imageUrl="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600"
-              imageAlt="Eko Club Philadelphia community at cultural event"
-              accentColor="green"
-            />
+            <div className="flex h-1.5 w-20 overflow-hidden rounded-full">
+              {QUAD.map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
+            </div>
+            <h2
+              id="mission-heading"
+              className="text-3xl font-black leading-tight text-white sm:text-4xl"
+            >
+              Registration Tickets<br />
+              <span style={{ color: EKO_YELLOW }}>Now Available</span>
+            </h2>
+            <p className="text-sm leading-relaxed text-white/70">
+              Your ticket includes an Annual ECP keepsake, All-Access Pass for every
+              event of the evening, premium networking with Lagosians across the
+              Delaware Valley, plus a cultural dinner with drinks and live entertainment.
+            </p>
+
+            <ul className="space-y-2.5">
+              {TICKET_FEATURES.map((f) => (
+                <li key={f.label} className="flex items-center gap-3 text-sm text-white/80">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-black"
+                    style={{ background: f.color }}
+                    aria-hidden="true"
+                  >✓</span>
+                  <span dangerouslySetInnerHTML={{ __html: f.label }} />
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <MagneticButton
+                href="/events"
+                className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-black text-black focus-visible:outline-none"
+                style={{ background: EKO_YELLOW }}
+              >
+                Get Tickets Now
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </MagneticButton>
+              <MagneticButton
+                href="/about"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 text-sm font-bold text-white focus-visible:outline-none hover:border-white/60"
+              >
+                About Us
+              </MagneticButton>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -236,480 +596,692 @@ function MissionSection() {
 }
 
 /* ══════════════════════════════════════════════════════
-   5. UPCOMING EVENTS PREVIEW
+   4C. COUNTDOWN — 4-colour flip boxes
    ══════════════════════════════════════════════════════ */
-function EventsPreview() {
-  const { getUpcoming, getPublished } = useEvents();
+function FlipDigit({ value, color }: { value: number; color: string }) {
+  const padded = String(value).padStart(2, "0");
+  return (
+    <div className="relative overflow-hidden" style={{ width: 80, height: 80 }}>
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={padded}
+          initial={{ y: "-100%", opacity: 0 }}
+          animate={{ y: "0%",    opacity: 1 }}
+          exit={{   y: "100%",   opacity: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-0 flex items-center justify-center text-4xl font-black"
+          style={{ color: "#fff" }}
+        >
+          {padded}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
 
-  const upcoming = useMemo(() => {
-    const evts = getUpcoming().filter((e) => e.status === "published").slice(0, 3);
-    if (evts.length > 0) return evts;
-    return getPublished().slice(0, 3);
-  }, [getUpcoming, getPublished]);
+function CountdownSection() {
+  const GALA_DATE = "2026-12-06T18:00:00.000Z";
+  const { days, hours, minutes, seconds } = useCountdown(GALA_DATE);
+
+  const units = [
+    { value: days,    label: "Days",    color: EKO_GREEN  },
+    { value: hours,   label: "Hours",   color: EKO_RED    },
+    { value: minutes, label: "Minutes", color: EKO_BLUE   },
+    { value: seconds, label: "Seconds", color: EKO_YELLOW },
+  ];
 
   return (
     <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      aria-labelledby="events-heading"
+      className="relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8"
+      style={{ background: "#08100a" }}
+      aria-labelledby="countdown-heading"
     >
-      <div className="mx-auto max-w-7xl">
+      {/* 4-colour top bar */}
+      <div className="absolute inset-x-0 top-0 flex h-1" aria-hidden="true">
+        {QUAD.map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
+      </div>
+
+      <div className="relative mx-auto max-w-5xl text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em]" style={{ color: EKO_GREEN }}>Counting down to</p>
+          <h2
+            id="countdown-heading"
+            className="text-3xl font-black leading-tight text-white sm:text-5xl"
+          >
+            ECP’s{" "}
+            <span style={{ color: EKO_RED    }}>Annual</span>{" "}
+            <span style={{ color: EKO_BLUE   }}>Gala</span>{" "}
+            <span style={{ color: EKO_YELLOW }}>&amp; Awards</span>
+          </h2>
+          <p className="mt-2 text-sm text-white/50">December 6, 2026 · Philadelphia, PA</p>
+
+          <div className="mt-12 flex flex-wrap justify-center gap-4 sm:gap-8">
+            {units.map(u => (
+              <div key={u.label} className="flex flex-col items-center gap-3">
+                <div
+                  className="flex items-center justify-center rounded-2xl shadow-2xl"
+                  style={{
+                    background: u.color,
+                    width: 96, height: 96,
+                    boxShadow: `0 0 40px ${u.color}55`,
+                  }}
+                >
+                  <FlipDigit value={u.value} color={u.color} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-white/60">
+                  {u.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="absolute inset-x-0 bottom-0 flex h-1" aria-hidden="true">
+        {[...QUAD].reverse().map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   6. EVENT TIMELINE
+   ══════════════════════════════════════════════════════ */
+type TimelineEventItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  type: AppEvent["type"];
+  status: AppEvent["status"];
+  organizerName: string;
+  tags: string[];
+  imageUrl?: string;
+  isOnline: boolean;
+};
+
+const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
+  {
+    id: "ev-001",
+    slug: "lagos-civic-town-hall-2026",
+    title: "Lagos Civic Town Hall 2026",
+    description:
+      "Our flagship gathering uniting members, stakeholders, and civic voices around infrastructure, education, healthcare, and accountability.",
+    date: "2026-06-14T10:00:00.000Z",
+    location: "Lagos State House of Assembly Complex, Alausa, Ikeja",
+    type: "town-hall",
+    status: "published",
+    organizerName: "Eko Club Philadelphia",
+    tags: ["governance", "accountability", "town-hall"],
+    imageUrl: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200",
+    isOnline: false,
+  },
+  {
+    id: "ev-006",
+    slug: "community-health-fair-kosofe-2026",
+    title: "Community Health Fair — Kosofe Edition",
+    description:
+      "A full-day outreach programme offering screenings, health education, and resource access for families across the community.",
+    date: "2026-06-21T09:00:00.000Z",
+    location: "Kosofe Local Government Secretariat, Lagos",
+    type: "volunteer",
+    status: "published",
+    organizerName: "Fatima Sule",
+    tags: ["health", "community", "outreach"],
+    imageUrl: "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=1200",
+    isOnline: false,
+  },
+  {
+    id: "ev-005",
+    slug: "know-your-rights-electoral-law-seminar-2026",
+    title: "Know Your Rights: Electoral Law Seminar",
+    description:
+      "A guided virtual session unpacking voting rights, reporting pathways, and how members can advocate with confidence.",
+    date: "2026-06-07T10:00:00.000Z",
+    location: "Online (Zoom)",
+    type: "seminar",
+    status: "published",
+    organizerName: "Kemi Adewale",
+    tags: ["law", "rights", "seminar"],
+    imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+    isOnline: true,
+  },
+  {
+    id: "ev-004",
+    slug: "environmental-advocacy-volunteer-day",
+    title: "Environmental Advocacy Volunteer Day",
+    description:
+      "Members rolled up their sleeves for community clean-up, tree planting, and environmental awareness activation in Alimosho.",
+    date: "2026-05-30T08:00:00.000Z",
+    location: "Iyana-Ipaja Bus Terminal, Alimosho, Lagos",
+    type: "volunteer",
+    status: "published",
+    organizerName: "Bode Ogunleye",
+    tags: ["environment", "volunteer", "community"],
+    imageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200",
+    isOnline: false,
+  },
+  {
+    id: "ev-002",
+    slug: "digital-skills-civic-advocacy-workshop",
+    title: "Digital Skills for Civic Advocacy Workshop",
+    description:
+      "An immersive training session helping members use social, data, and digital storytelling tools to drive civic impact.",
+    date: "2026-05-24T09:00:00.000Z",
+    location: "Co-Creation Hub, Yaba, Lagos",
+    type: "workshop",
+    status: "published",
+    organizerName: "Tunde Adeyemi",
+    tags: ["digital", "workshop", "advocacy"],
+    imageUrl: "https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1200",
+    isOnline: false,
+  },
+  {
+    id: "ev-007",
+    slug: "ecp-annual-gala-2025",
+    title: "ECP Annual Gala Dinner 2025",
+    description:
+      "A signature night of celebration, recognition, and fundraising that spotlighted the people powering the mission forward.",
+    date: "2025-12-07T18:00:00.000Z",
+    location: "Eko Hotels & Suites, Victoria Island, Lagos",
+    type: "meetup",
+    status: "completed",
+    organizerName: "Eko Club Philadelphia",
+    tags: ["gala", "awards", "annual"],
+    imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200",
+    isOnline: false,
+  },
+];
+
+const TIMELINE_TYPE_STYLES: Record<
+  AppEvent["type"],
+  { label: string; badgeClassName: string; dotClassName: string; fallbackImage: string }
+> = {
+  "town-hall": {
+    label: "Town Hall",
+    badgeClassName: "bg-emerald-100 text-emerald-800",
+    dotClassName: "bg-emerald-500",
+    fallbackImage: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200",
+  },
+  workshop: {
+    label: "Workshop",
+    badgeClassName: "bg-sky-100 text-sky-800",
+    dotClassName: "bg-sky-500",
+    fallbackImage: "https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1200",
+  },
+  volunteer: {
+    label: "Volunteer",
+    badgeClassName: "bg-amber-100 text-amber-800",
+    dotClassName: "bg-amber-500",
+    fallbackImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200",
+  },
+  meetup: {
+    label: "Meetup",
+    badgeClassName: "bg-fuchsia-100 text-fuchsia-800",
+    dotClassName: "bg-fuchsia-500",
+    fallbackImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200",
+  },
+  seminar: {
+    label: "Seminar",
+    badgeClassName: "bg-violet-100 text-violet-800",
+    dotClassName: "bg-violet-500",
+    fallbackImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+  },
+  "press-conference": {
+    label: "Press Conference",
+    badgeClassName: "bg-rose-100 text-rose-800",
+    dotClassName: "bg-rose-500",
+    fallbackImage: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1200",
+  },
+  other: {
+    label: "Event",
+    badgeClassName: "bg-slate-100 text-slate-800",
+    dotClassName: "bg-slate-500",
+    fallbackImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200",
+  },
+};
+
+const timelineDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
+const timelineShortDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+});
+
+function mapEventToTimelineItem(event: AppEvent): TimelineEventItem {
+  return {
+    id: event.id,
+    slug: event.slug,
+    title: event.title,
+    description: event.shortDescription ?? event.description,
+    date: event.date,
+    location: event.location,
+    type: event.type,
+    status: event.status,
+    organizerName: event.organizerName,
+    tags: event.tags,
+    imageUrl: event.imageUrl,
+    isOnline: event.isOnline,
+  };
+}
+
+function TimelineCard({
+  item,
+  align,
+  currentTime,
+}: {
+  item: TimelineEventItem;
+  align: "left" | "right";
+  currentTime: number;
+}) {
+  const typeMeta = TIMELINE_TYPE_STYLES[item.type] ?? TIMELINE_TYPE_STYLES.other;
+  const eventDate = new Date(item.date);
+  const isUpcoming = eventDate.getTime() >= currentTime && item.status !== "completed";
+  const href = `/events/${item.slug}`;
+
+  return (
+    <Link href={href} className="group block focus-visible:outline-none">
+      <motion.article
+        whileHover={{ y: -6, scale: 1.01 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        className="relative overflow-visible"
+      >
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute top-10 hidden h-6 w-6 rotate-45 rounded-[6px] border shadow-sm lg:block",
+            align === "left" ? "-right-3" : "-left-3"
+          )}
+          style={{
+            borderColor: "rgba(255,255,255,0.7)",
+            background: "rgba(255,255,255,0.94)",
+          }}
+        />
+
+        <div
+          className="relative overflow-hidden rounded-[30px] border p-4 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:p-5"
+          style={{
+            borderColor: "rgba(255,255,255,0.75)",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(248,250,252,0.94) 100%)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-80"
+            style={{
+              background:
+                align === "left"
+                  ? "linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0))"
+                  : "linear-gradient(225deg, rgba(245,158,11,0.18), rgba(245,158,11,0))",
+            }}
+          />
+
+          <div className="relative flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn("inline-flex h-2.5 w-2.5 rounded-full", typeMeta.dotClassName)}
+                  aria-hidden="true"
+                />
+                <span
+                  className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em]"
+                  style={{
+                    background: "rgba(15,23,42,0.06)",
+                    color: "var(--color-neutral-700)",
+                  }}
+                >
+                  {eventDate.getFullYear()} • {timelineShortDateFormatter.format(eventDate)}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", typeMeta.badgeClassName)}>
+                  {typeMeta.label}
+                </span>
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{
+                    background: isUpcoming ? "rgba(16,185,129,0.12)" : "rgba(15,23,42,0.06)",
+                    color: isUpcoming ? "rgb(6 95 70)" : "var(--color-neutral-700)",
+                  }}
+                >
+                  {isUpcoming ? "Upcoming" : item.status === "completed" ? "Past Event" : "Featured"}
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-[22px] border" style={{ borderColor: "rgba(15,23,42,0.08)" }}>
+              <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
+                <Image
+                  src={item.imageUrl ?? typeMeta.fallbackImage}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover transition duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-xl font-extrabold leading-tight transition-colors group-hover:text-(--color-green-700)"
+                  style={{ color: "var(--color-green-950)" }}
+                >
+                  {item.title}
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--color-neutral-600)" }}>
+                  {item.description}
+                </p>
+              </div>
+
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-2xl border px-4 py-3" style={{ borderColor: "rgba(15,23,42,0.08)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-(--color-neutral-500)">
+                    When
+                  </p>
+                  <p className="mt-1 font-semibold text-(--color-neutral-800)">
+                    {timelineDateFormatter.format(eventDate)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border px-4 py-3" style={{ borderColor: "rgba(15,23,42,0.08)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-(--color-neutral-500)">
+                    Where
+                  </p>
+                  <p className="mt-1 font-semibold text-(--color-neutral-800)">
+                    {item.isOnline ? "Online Experience" : item.location}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {item.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border px-3 py-1 text-xs font-medium"
+                    style={{
+                      borderColor: "rgba(15,23,42,0.08)",
+                      color: "var(--color-neutral-600)",
+                      background: "rgba(255,255,255,0.7)",
+                    }}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4" style={{ borderColor: "rgba(15,23,42,0.08)" }}>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-(--color-neutral-500)">
+                    Hosted by
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-(--color-neutral-800)">
+                    {item.organizerName}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-(--color-green-700)">
+                  View event details
+                  <svg className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.article>
+    </Link>
+  );
+}
+
+function EventTimelineSection() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const { events } = useEvents();
+  const [currentTime] = useState(() => Date.now());
+
+  const timelineEvents = useMemo(() => {
+    const source = events.length > 0
+      ? events
+          .filter((event) => event.status !== "draft" && event.isPublic)
+          .map(mapEventToTimelineItem)
+      : TIMELINE_FALLBACK_EVENTS;
+
+    return [...source]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 6);
+  }, [events]);
+
+  const timelineStats = useMemo(() => {
+    const years = new Set(timelineEvents.map((event) => new Date(event.date).getFullYear()));
+    const formats = new Set(timelineEvents.map((event) => event.type));
+    return [
+      { label: "Featured moments", value: String(timelineEvents.length).padStart(2, "0") },
+      { label: "Years represented", value: `${years.size}` },
+      { label: "Event formats", value: `${formats.size}` },
+    ];
+  }, [timelineEvents]);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start 0.72", "end 0.2"],
+  });
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 26,
+    mass: 0.35,
+  });
+  const progressOpacity = useTransform(progress, [0, 1], [0.35, 1]);
+  const progressGlow = useTransform(
+    progress,
+    [0, 1],
+    ["0 0 0 rgba(16,185,129,0)", "0 0 28px rgba(16,185,129,0.45)"]
+  );
+  const heroShift = useTransform(progress, [0, 1], [0, -28]);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(16,185,129,0.10), transparent 28%), linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+      }}
+      aria-labelledby="event-timeline-heading"
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-20 top-20 h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl" />
+        <div className="absolute right-0 top-1/3 h-72 w-72 rounded-full bg-amber-100/40 blur-3xl" />
+      </div>
+
+      <motion.div className="relative mx-auto max-w-7xl" style={{ y: heroShift }}>
         <SectionHeader
-          eyebrow="What's On"
-          heading="Upcoming Events"
-          headingAccent="Events"
-          subheading="Town halls, workshops, volunteer days, and community meetups across Lagos."
-          align="left"
+          eyebrow="Event Timeline"
+          heading="A Living Archive of Our Signature Gatherings"
+          headingAccent="Gatherings"
+          subheading="A richer homepage story: scroll the timeline to explore key Eko Club Philadelphia events, with a motion-driven progress beam that deepens as the section unfolds."
+          align="center"
           withBar
           action={
             <Link
               href="/events"
-              className="shrink-0 text-sm font-semibold transition-colors hover:underline"
-              style={{ color: "var(--color-green-600)" }}
+              className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition hover:bg-white"
+              style={{
+                borderColor: "rgba(5, 150, 105, 0.3)",
+                color: "var(--color-green-700)",
+                background: "rgba(255,255,255,0.75)",
+              }}
             >
-              View all events →
+              View full calendar
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           }
         />
 
-        {upcoming.length === 0 ? (
-          <p className="mt-10 text-center text-sm" style={{ color: "var(--color-neutral-500)" }}>
-            No upcoming events found. Check back soon!
-          </p>
-        ) : (
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {upcoming.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: i * 0.1, ease: "easeOut" }}
-              >
-                <EventCard
-                  id={event.id}
-                  title={event.title}
-                  date={event.date}
-                  endDate={event.endDate}
-                  time={event.time}
-                  location={event.location}
-                  isOnline={event.isOnline}
-                  type={event.type as import("@/components/cards/EventCard").EventType}
-                  description={event.shortDescription ?? event.description}
-                  imageUrl={event.imageUrl}
-                  organizer={event.organizerName}
-                  maxAttendees={event.maxAttendees}
-                  isFeatured={event.isFeatured}
-                  tags={event.tags}
-                  registrationUrl={`/events/${event.slug}`}
-                />
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {timelineStats.map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: index * 0.08, ease: "easeOut" }}
+              className="rounded-3xl border px-5 py-4 shadow-sm backdrop-blur-sm"
+              style={{
+                borderColor: "rgba(255,255,255,0.8)",
+                background: "rgba(255,255,255,0.74)",
+              }}
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-(--color-neutral-500)">
+                {stat.label}
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-(--color-green-900)">
+                {stat.value}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
-        {/* CTA row */}
-        <div className="mt-10 flex justify-center">
+      <div className="relative mx-auto mt-16 max-w-6xl">
+        <div className="pointer-events-none absolute bottom-0 left-6 top-0 w-px bg-black/10 lg:left-1/2 lg:-ml-px" />
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 left-6 top-0 w-px origin-top bg-linear-to-b from-emerald-300 via-emerald-500 to-emerald-950 lg:left-1/2 lg:-ml-px"
+          style={{
+            scaleY: progress,
+            opacity: progressOpacity,
+            boxShadow: progressGlow,
+          }}
+        />
+
+        <div className="space-y-10 lg:space-y-14">
+          {timelineEvents.map((item, index) => {
+            const align = index % 2 === 0 ? "left" : "right";
+
+            return (
+              <motion.article
+                key={item.id}
+                initial={{ opacity: 0, y: 48 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.55, delay: index * 0.06, ease: "easeOut" }}
+              >
+                <div className="grid grid-cols-[auto_1fr] gap-5 lg:hidden">
+                  <div className="relative flex min-h-full flex-col items-center pt-6">
+                    <motion.span
+                      whileInView={{ scale: [0.85, 1.08, 1] }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.45, ease: "easeOut" }}
+                      className="relative z-10 block h-6 w-6 rounded-full border-[6px] border-black bg-white shadow-[0_0_0_10px_rgba(255,255,255,0.6)]"
+                    />
+                    <span className="mt-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-bold tracking-[0.18em] text-(--color-neutral-600) shadow-sm backdrop-blur-sm">
+                      {new Date(item.date).getFullYear()}
+                    </span>
+                  </div>
+                  <TimelineCard item={item} align="left" currentTime={currentTime} />
+                </div>
+
+                <div className="hidden items-start gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)]">
+                  <div>{align === "left" ? <TimelineCard item={item} align="left" currentTime={currentTime} /> : null}</div>
+
+                  <div className="relative flex flex-col items-center pt-6">
+                    <motion.span
+                      whileInView={{ scale: [0.8, 1.1, 1] }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="relative z-10 block h-8 w-8 rounded-full border-8 border-black bg-white shadow-[0_0_0_14px_rgba(255,255,255,0.65)]"
+                    />
+                    <span className="mt-4 rounded-full bg-white/85 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-(--color-neutral-700) shadow-sm backdrop-blur-sm">
+                      {new Date(item.date).getFullYear()}
+                    </span>
+                  </div>
+
+                  <div>{align === "right" ? <TimelineCard item={item} align="right" currentTime={currentTime} /> : null}</div>
+                </div>
+              </motion.article>
+            );
+          })}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="mt-14 flex justify-center"
+        >
           <Link
             href="/events"
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ background: "var(--color-green-700)" }}
+            className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-(--color-green-800)"
           >
-            Browse all events
+            Explore more events
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   6. NEWS PREVIEW
+   7. STATS STRIP — 4 full-colour cards
    ══════════════════════════════════════════════════════ */
-function NewsPreview() {
-  const { getFeatured, getPublished, getBreaking } = useNews();
-
-  const { featured, rest } = useMemo(() => {
-    const breaking = getBreaking()[0] ?? null;
-    const featuredList = getFeatured();
-    const top = breaking ?? featuredList[0] ?? getPublished()[0];
-    const remaining = getPublished()
-      .filter((p) => p.id !== top?.id)
-      .slice(0, 4);
-    return { featured: top, rest: remaining };
-  }, [getFeatured, getPublished, getBreaking]);
-
-  if (!featured) return null;
-
-  return (
-    <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      style={{ background: "var(--color-neutral-50)" }}
-      aria-labelledby="news-heading"
-    >
-      <div className="mx-auto max-w-7xl">
-        <SectionHeader
-          eyebrow="Latest News"
-          heading="News & Announcements"
-          headingAccent="News"
-          subheading="Stay up to date with Eko Club Philadelphia events, member news, and Lagos development updates."
-          align="left"
-          withBar
-          action={
-            <Link
-              href="/news"
-              className="shrink-0 text-sm font-semibold transition-colors hover:underline"
-              style={{ color: "var(--color-green-600)" }}
-            >
-              All news →
-            </Link>
-          }
-        />
-
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-5">
-          {/* Featured left column */}
-          <motion.div
-            className="lg:col-span-3"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <NewsCard
-              id={featured.id}
-              title={featured.title}
-              slug={featured.slug}
-              excerpt={featured.excerpt}
-              category={featured.category}
-              publishedAt={featured.publishedAt ?? featured.createdAt}
-              author={
-                featured.authorName
-                  ? { name: featured.authorName, avatarUrl: featured.authorAvatarUrl }
-                  : undefined
-              }
-              imageUrl={featured.imageUrl}
-              readingTime={featured.readingTimeMinutes}
-              isBreaking={featured.isBreaking}
-              isPinned={featured.isPinned}
-              layout="featured"
-            />
-          </motion.div>
-
-          {/* Right column: list */}
-          <div className="flex flex-col gap-4 lg:col-span-2">
-            {rest.map((post, i) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: "easeOut" }}
-              >
-                <NewsCard
-                  id={post.id}
-                  title={post.title}
-                  slug={post.slug}
-                  excerpt={post.excerpt}
-                  category={post.category}
-                  publishedAt={post.publishedAt ?? post.createdAt}
-                  author={
-                    post.authorName
-                      ? { name: post.authorName, avatarUrl: post.authorAvatarUrl }
-                      : undefined
-                  }
-                  imageUrl={post.imageUrl}
-                  readingTime={post.readingTimeMinutes}
-                  layout="horizontal"
-                />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════
-   7. SPOTLIGHT PREVIEW
-   ══════════════════════════════════════════════════════ */
-function SpotlightPreview() {
-  const { committees } = useCommittees();
-
-  const techCommittee = useMemo(
-    () =>
-      committees.find((c) => c.slug === "technology-innovation-committee") ??
-      committees[committees.length - 1] ??
-      null,
-    [committees]
-  );
-
-  if (!techCommittee) return null;
-
-  const chairperson = techCommittee.members.find((m) => m.isChairperson) ?? techCommittee.members[0];
-
-  return (
-    <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      style={{ background: "var(--color-green-950)" }}
-      aria-labelledby="spotlight-heading"
-    >
-      <div className="mx-auto max-w-7xl">
-        <SectionHeader
-          eyebrow="Member Spotlight"
-          heading="People Driving Our Mission"
-          headingAccent="Mission"
-          subheading="Meet the dedicated members and committee leaders powering Eko Club Philadelphia."
-          align="center"
-          dark
-        />
-
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-          {committees.slice(0, 3).map((committee, i) => {
-            const chair = committee.members.find((m) => m.isChairperson);
-            if (!chair) return null;
-            return (
-              <motion.div
-                key={committee.id}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-              >
-                <SpotlightCard
-                  eyebrow={committee.name}
-                  title={chair.name}
-                  subtitle={chair.role}
-                  description={
-                    chair.bio ??
-                    `${chair.role} of the ${committee.name}, working to advance Eko Club Philadelphia's mission.`
-                  }
-                  imageUrl={chair.imageUrl}
-                  imageAlt={chair.name}
-                  accentColor={i === 0 ? "green" : i === 1 ? "gold" : "neutral"}
-                  theme="dark"
-                  ctas={[
-                    {
-                      label: "View Committee",
-                      href: `/committees/${committee.slug}`,
-                      variant: "outline",
-                    },
-                  ]}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════
-   8. COMMITTEES PREVIEW
-   ══════════════════════════════════════════════════════ */
-function CommitteesPreview() {
-  const { getActive } = useCommittees();
-
-  const committees = useMemo(() => getActive().slice(0, 4), [getActive]);
-
-  return (
-    <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      aria-labelledby="committees-heading"
-    >
-      <div className="mx-auto max-w-7xl">
-        <SectionHeader
-          eyebrow="Structure"
-          heading="Our Committees"
-          headingAccent="Committees"
-          subheading="Eko Club Philadelphia is organised into standing committees, each focused on key areas of our community mission."
-          align="center"
-          withBar
-        />
-
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-          {committees.map((committee, i) => {
-            const chair = committee.members.find((m) => m.isChairperson) ?? committee.members[0];
-            return (
-              <motion.div
-                key={committee.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: i * 0.1, ease: "easeOut" }}
-              >
-                {/* Committee card */}
-                <Link
-                  href={`/committees/${committee.slug}`}
-                  className="group flex h-full flex-col gap-4 rounded-2xl border p-6 transition-all hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                  style={{
-                    borderColor: "var(--color-neutral-200)",
-                    background: "var(--color-neutral-50)",
-                  }}
-                >
-                  {/* Type badge */}
-                  <span
-                    className="inline-block self-start rounded-full px-3 py-0.5 text-xs font-semibold capitalize"
-                    style={{
-                      background: "var(--color-green-100)",
-                      color: "var(--color-green-800)",
-                    }}
-                  >
-                    {committee.type}
-                  </span>
-
-                  {/* Name */}
-                  <h3
-                    className="text-base font-bold leading-snug transition-colors group-hover:underline"
-                    style={{ color: "var(--color-green-900)" }}
-                  >
-                    {committee.name}
-                  </h3>
-
-                  {/* Description */}
-                  <p
-                    className="line-clamp-3 text-sm leading-relaxed"
-                    style={{ color: "var(--color-neutral-600)" }}
-                  >
-                    {committee.description}
-                  </p>
-
-                  {/* Chair */}
-                  {chair && (
-                    <div className="mt-auto flex items-center gap-2 border-t pt-4" style={{ borderColor: "var(--color-neutral-200)" }}>
-                      {chair.imageUrl ? (
-                        <Image
-                          src={chair.imageUrl}
-                          alt={chair.name}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                          style={{ background: "var(--color-green-700)" }}
-                        >
-                          {chair.name.charAt(0)}
-                        </span>
-                      )}
-                      <div>
-                        <p className="text-xs font-semibold" style={{ color: "var(--color-neutral-800)" }}>
-                          {chair.name}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
-                          {chair.role}
-                        </p>
-                      </div>
-                      {/* member count */}
-                      <span
-                        className="ml-auto text-xs"
-                        style={{ color: "var(--color-neutral-600)" }}
-                      >
-                        {committee.members.length} member{committee.members.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  )}
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          <Link
-            href="/committees"
-            className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition hover:bg-white focus-visible:outline-none focus-visible:ring-2"
-            style={{
-              borderColor: "var(--color-green-600)",
-              color: "var(--color-green-700)",
-            }}
-          >
-            View all committees
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════
-   9. GALLERY TEASER
-   ══════════════════════════════════════════════════════ */
-const GALLERY_IMAGES = [
-  {
-    src: "https://images.unsplash.com/photo-1529390079861-591de354faf5?w=800",
-    alt: "Eko Club Philadelphia cultural gala celebration",
-    caption: "Annual Cultural Gala 2025",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=800",
-    alt: "Eko Club Philadelphia community meeting in Philadelphia",
-    caption: "General Assembly — Philadelphia 2025",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1531058020387-3be344556be6?w=800",
-    alt: "Scholarship award ceremony for Lagosian students",
-    caption: "Scholarship Presentation Ceremony",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-    alt: "Eko Club Philadelphia annual dinner and awards",
-    caption: "Annual Dinner & Awards Night",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800",
-    alt: "Youth engagement programme hosted by Eko Club Philadelphia",
-    caption: "Youth & Culture Forum",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
-    alt: "Community outreach and social welfare project",
-    caption: "Community Outreach Day",
-  },
+const PLATFORM_STATS = [
+  { label: "Active Members",   to: 500, prefix: "",  suffix: "+",  color: EKO_GREEN,  textDark: false },
+  { label: "Years of Service", to: 25,  prefix: "",  suffix: "+",  color: EKO_RED,    textDark: false },
+  { label: "Events Per Year",  to: 20,  prefix: "",  suffix: "+",  color: EKO_BLUE,   textDark: false },
+  { label: "Raised for Lagos", to: 250, prefix: "$", suffix: "K+", color: EKO_YELLOW, textDark: true  },
 ];
 
-function GalleryTeaser() {
+function StatsStrip() {
   return (
-    <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      style={{ background: "var(--color-neutral-50)" }}
-      aria-labelledby="gallery-heading"
-    >
-      <div className="mx-auto max-w-7xl">
-        <SectionHeader
-          eyebrow="In Pictures"
-          heading="Eko Club Philadelphia in Action"
-          headingAccent="Action"
-          subheading="A glimpse into our cultural galas, community gatherings, scholarship ceremonies, and outreach events."
-          align="center"
-          withBar
-        />
-
-        <div className="mt-10">
-          <GalleryLightbox images={GALLERY_IMAGES} columns={3} />
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <Link
-            href="/gallery"
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ background: "var(--color-green-700)" }}
+    <section className="grid grid-cols-2 lg:grid-cols-4" aria-label="Platform statistics">
+      {PLATFORM_STATS.map((stat, i) => (
+        <motion.div
+          key={stat.label}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center justify-center gap-2 py-14 px-6 text-center"
+          style={{ background: stat.color }}
+        >
+          <span
+            className="text-5xl font-black tracking-tight sm:text-6xl"
+            style={{ color: stat.textDark ? "#000" : "#fff" }}
           >
-            View full gallery
-          </Link>
-        </div>
-      </div>
+            {stat.prefix}<CountUp to={stat.to} suffix={stat.suffix} />
+          </span>
+          <span
+            className="text-xs font-black uppercase tracking-[0.2em]"
+            style={{ color: stat.textDark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.75)" }}
+          >
+            {stat.label}
+          </span>
+        </motion.div>
+      ))}
     </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   10. SPONSORS BAND
+   9. SPONSORS BAND
    ══════════════════════════════════════════════════════ */
 const SPONSORS = [
   { name: "Eko Club International", logo: null },
@@ -720,92 +1292,167 @@ const SPONSORS = [
   { name: "Lagos Diaspora Forum", logo: null },
 ];
 
+/* ══════════════════════════════════════════════════════
+   9. SPONSORS BAND — dark with quad-accented cards
+   ══════════════════════════════════════════════════════ */
 function SponsorsBand() {
   return (
     <section
-      className="py-14 px-4 sm:px-6 lg:px-8 border-y"
-      style={{ borderColor: "var(--color-neutral-200)", background: "#fff" }}
+      className="relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8"
+      style={{ background: "#07130a" }}
       aria-label="Our partners and sponsors"
     >
-      <div className="mx-auto max-w-7xl">
-        <p
-          className="mb-8 text-center text-xs font-semibold uppercase tracking-widest"
-          style={{ color: "var(--color-neutral-600)" }}
-        >
-          Trusted partners & supporters
-        </p>
+      {/* Philadelphia city background */}
+      <div className="absolute inset-0">
+        <Image
+          src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600"
+          alt=""
+          fill
+          className="object-cover object-center opacity-20"
+          sizes="100vw"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom,rgba(7,19,10,0.7),rgba(7,19,10,0.92))" }} />
+      </div>
 
-        {/* Marquee-style infinite scroll */}
-        <div className="relative overflow-hidden">
-          <div className="flex animate-[scroll_30s_linear_infinite] gap-16 will-change-transform">
-            {[...SPONSORS, ...SPONSORS].map((sponsor, i) => (
-              <div
-                key={`${sponsor.name}-${i}`}
-                className="flex shrink-0 items-center justify-center"
-              >
-                {sponsor.logo ? (
-                  <Image
-                    src={sponsor.logo}
-                    alt={sponsor.name}
-                    width={100}
-                    height={40}
-                    className="h-8 w-auto object-contain opacity-50 grayscale transition hover:opacity-80 hover:grayscale-0"
-                    unoptimized
-                  />
-                ) : (
-                  <span
-                    className="whitespace-nowrap text-sm font-semibold opacity-60"
-                    style={{ color: "var(--color-neutral-700)" }}
-                  >
-                    {sponsor.name}
-                  </span>
-                )}
-              </div>
-            ))}
+      <div className="relative mx-auto max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mb-12 text-center"
+        >
+          <div className="mx-auto mb-4 flex w-fit overflow-hidden rounded-full">
+            {QUAD.map(c => <div key={c} className="h-1.5 w-10" style={{ background: c }} />)}
           </div>
+          <h2 className="text-4xl font-black text-white sm:text-5xl">Past Partners &amp; Sponsors</h2>
+        </motion.div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {[...SPONSORS, ...SPONSORS.slice(0, 6)].slice(0, 12).map((sponsor, i) => (
+            <motion.div
+              key={`${sponsor.name}-${i}`}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.38, delay: i * 0.045 }}
+              whileHover={{ scale: 1.05 }}
+              className="relative flex h-24 items-center justify-center overflow-hidden rounded-2xl bg-white px-4 py-4 shadow-md"
+            >
+              {/* Top colour bar using QUAD */}
+              <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: QUAD[i % 4] }} />
+              {sponsor.logo ? (
+                <Image src={sponsor.logo} alt={sponsor.name} width={100} height={40} className="h-8 w-auto object-contain" unoptimized />
+              ) : (
+                <span className="text-center text-xs font-bold leading-tight text-neutral-800">{sponsor.name}</span>
+              )}
+            </motion.div>
+          ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-12 text-center"
+        >
+          <MagneticButton
+            href="/about"
+            className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3 text-sm font-bold text-white focus-visible:outline-none hover:bg-white/10"
+          >
+            Become a Sponsor
+          </MagneticButton>
+        </motion.div>
       </div>
     </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   11. DONATION CALLOUT
+   10. DONATION CALLOUT — split layout
    ══════════════════════════════════════════════════════ */
 function DonationCallout() {
-  const { getTotalSuccessful, donations } = useDonations();
-
-  const { total, count } = useMemo(() => ({
-    total: getTotalSuccessful(),
-    count: donations.filter((d) => d.status === "successful").length,
-  }), [getTotalSuccessful, donations]);
-
-  const formatted = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 0,
-  }).format(total);
-
   return (
-    <CTASection
-      eyebrow="Support Our Work"
-      heading="Help Fund Our"
-      headingAccent="Community"
-      description={`Eko Club Philadelphia (ECP) is committed to uplifting and strengthening our community through impactful programs and initiatives, including cultural events, scholarship programs, health education, social welfare outreach, and support for the development of Lagos State.
-      Your generous support is an investment in the future of our community. Contributions to ECP help sustain our mission, create opportunities, empower individuals, and build a stronger and more vibrant future for all.`}
-      variant="green"
-      pattern
-      trustLabel="Every dollar goes directly to community programmes"
-      buttons={[
-        { label: "Donate Now", href: "/donate", variant: "white" },
-        { label: "Our Impact", href: "/news", variant: "outline" },
-      ]}
-    />
+    <section
+      className="relative overflow-hidden"
+      style={{ background: "#060e08" }}
+      aria-labelledby="donate-heading"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2">
+        {/* Image side */}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.04 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative min-h-72 lg:min-h-full"
+        >
+          <Image
+            src="https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1000"
+            alt="Community members at an Eko Club Philadelphia event"
+            fill
+            className="object-cover object-center"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+          />
+          {/* Green gradient border on right edge */}
+          <div
+            className="absolute inset-y-0 right-0 w-2"
+            style={{ background: `linear-gradient(to bottom, ${EKO_GREEN}, ${EKO_BLUE})` }}
+          />
+        </motion.div>
+
+        {/* Text side */}
+        <motion.div
+          initial={{ opacity: 0, x: 32 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col justify-center gap-6 px-8 py-20 lg:px-16"
+        >
+          <div className="flex h-1.5 w-24 overflow-hidden rounded-full">
+            {QUAD.map(c => <div key={c} className="flex-1" style={{ background: c }} />)}
+          </div>
+          <h2
+            id="donate-heading"
+            className="text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl"
+          >
+            Your Support<br />
+            <span style={{ color: EKO_GREEN }}>Creates Opportunity</span>
+          </h2>
+          <p className="text-sm leading-relaxed text-white/70">
+            As a nonprofit, your donation supports cultural events, scholarship funds,
+            community welfare initiatives, and programmes that uplift Lagosians both
+            in Philadelphia and in Lagos State.
+          </p>
+          <p className="text-sm font-bold text-white/90">
+            Every contribution helps us build a stronger future together.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <MagneticButton
+              href="/donate"
+              className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-sm font-black text-black focus-visible:outline-none"
+              style={{ background: EKO_GREEN, boxShadow: `0 0 28px ${EKO_GREEN}55` }}
+            >
+              Donate Now
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </MagneticButton>
+            <MagneticButton
+              href="/about"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-7 py-4 text-sm font-bold text-white focus-visible:outline-none"
+            >
+              Learn More
+            </MagneticButton>
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   12. NEWSLETTER SIGNUP
+   11. NEWSLETTER — animated quad dots
    ══════════════════════════════════════════════════════ */
 function NewsletterSignup() {
   const { success, error } = useToast();
@@ -825,7 +1472,6 @@ function NewsletterSignup() {
       return;
     }
     setSubmitting(true);
-    // Simulate async save
     setTimeout(() => {
       setSubscribers([...subscribers, trimmed]);
       setEmail("");
@@ -836,11 +1482,22 @@ function NewsletterSignup() {
 
   return (
     <section
-      className="py-20 px-4 sm:px-6 lg:px-8"
-      style={{ background: "var(--color-gold-50)" }}
+      className="relative overflow-hidden py-20 px-4 sm:px-6 lg:px-8"
+      style={{ background: "#f8faf8" }}
       aria-labelledby="newsletter-heading"
     >
-      <div className="mx-auto max-w-2xl text-center">
+      {/* Animated quad background dots */}
+      {QUAD.map((c, i) => (
+        <motion.div
+          key={c}
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-full opacity-10"
+          style={{ background: c, width: 200, height: 200, left: `${5 + i * 24}%`, top: `${-10 + (i % 2) * 60}%` }}
+          animate={{ y: [0, -20, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 8 + i, repeat: Infinity, ease: "easeInOut", delay: i * 1.5 }}
+        />
+      ))}
+      <div className="relative mx-auto max-w-2xl text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -848,27 +1505,17 @@ function NewsletterSignup() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="flex flex-col items-center gap-6"
         >
-          <span
-            className="text-3xl"
-            role="img"
-            aria-label="Letter"
-          >
-            ✉️
-          </span>
           <h2
             id="newsletter-heading"
-            className="text-3xl font-extrabold leading-tight sm:text-4xl"
-            style={{ color: "var(--color-green-950)" }}
+            className="text-3xl font-black leading-tight sm:text-4xl"
+            style={{ color: "#0a1a0b" }}
           >
-            Stay Connected.{" "}
-            <span style={{ color: "var(--color-green-600)" }}>
-              Stay Engaged.
-            </span>
+            <span style={{ color: EKO_GREEN }}>Stay</span>{" "}
+            <span style={{ color: EKO_RED   }}>Connected.</span>{" "}
+            <span style={{ color: EKO_BLUE  }}>Stay</span>{" "}
+            <span style={{ color: EKO_YELLOW }}>Engaged.</span>
           </h2>
-          <p
-            className="text-base leading-relaxed"
-            style={{ color: "var(--color-neutral-600)" }}
-          >
+          <p className="text-base leading-relaxed text-neutral-500">
             Get the Eko Club Philadelphia newsletter — cultural event updates,
             community news, and Lagos development highlights — delivered straight
             to your inbox. No spam. Unsubscribe anytime.
@@ -880,9 +1527,7 @@ function NewsletterSignup() {
             noValidate
             aria-label="Newsletter signup form"
           >
-            <label htmlFor="newsletter-email" className="sr-only">
-              Email address
-            </label>
+            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
             <input
               id="newsletter-email"
               type="email"
@@ -901,8 +1546,8 @@ function NewsletterSignup() {
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60"
-              style={{ background: "var(--color-green-700)" }}
+              className="flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow transition hover:opacity-90 focus-visible:outline-none disabled:opacity-60"
+              style={{ background: EKO_GREEN }}
             >
               {submitting ? (
                 <>
@@ -918,7 +1563,7 @@ function NewsletterSignup() {
             </button>
           </form>
 
-          <p className="text-xs" style={{ color: "var(--color-neutral-600)" }}>
+          <p className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
             Join {subscribers.length > 0 ? `${subscribers.length.toLocaleString()}+` : "hundreds of"} Eko Club Philadelphia members already subscribed.
           </p>
         </motion.div>
@@ -936,55 +1581,31 @@ export default function HomePageClient() {
       {/* 1. Announcement bar */}
       <AnnouncementBar />
 
-      {/* 2. Hero section */}
-      <HeroBanner
-        eyebrow="Eko Club Philadelphia — Est. 1998"
-        headline="Lagosians United"
-        headlineAccent="in Philadelphia"
-        description="Eko Club Philadelphia is a chapter of Eko Club International, bringing together Lagosians in the diaspora to celebrate our culture, support our community, and advance the development of Lagos State."
-        ctas={[
-          { label: "Become a Member", href: "/register", variant: "primary" },
-          { label: "Explore Events", href: "/events", variant: "secondary" },
-          { label: "Donate Today", href: "/donate", variant: "outline" },
-        ]}
-        imageUrl="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=900"
-        imageAlt="Eko Club Philadelphia members at a community celebration"
-        variant="gradient"
-        stats={[
-          { label: "Members", value: "500+" },
-          { label: "Years Active", value: "25+" },
-          { label: "Events / Year", value: "20+" },
-        ]}
-      />
+      {/* 2. Full-bleed hero */}
+      <HeroSection />
 
-      {/* 3. Stats strip */}
-      <StatsStrip />
+      {/* 3. Highlights / video section */}
+      <HighlightsSection />
 
-      {/* 4. Mission section */}
+      {/* 4. Countdown timer */}
+      <CountdownSection />
+
+      {/* 5. Registration / ticket split */}
       <MissionSection />
 
-      {/* 5. Upcoming events */}
-      <EventsPreview />
+      {/* 6. Stats strip — 4-colour cards */}
+      <StatsStrip />
 
-      {/* 6. News preview */}
-      <NewsPreview />
+      {/* 7. Event timeline — untouched */}
+      <EventTimelineSection />
 
-      {/* 7. Spotlight */}
-      <SpotlightPreview />
-
-      {/* 8. Committees */}
-      <CommitteesPreview />
-
-      {/* 9. Gallery teaser */}
-      <GalleryTeaser />
-
-      {/* 10. Sponsors */}
+      {/* 9. Partners & sponsors on city background */}
       <SponsorsBand />
 
-      {/* 11. Donation callout */}
+      {/* 10. Donation callout */}
       <DonationCallout />
 
-      {/* 12. Newsletter */}
+      {/* 11. Newsletter */}
       <NewsletterSignup />
     </>
   );
