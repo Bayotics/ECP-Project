@@ -1,580 +1,515 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
-/* ─── Animation helpers ───────────────────────────── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  show: (i = 0) => ({
+const EKO_GREEN = "#059669";
+const EKO_RED = "#dc2626";
+const EKO_BLUE = "#2563eb";
+const EKO_YELLOW = "#d97706";
+const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
+
+const riseIn = {
+  hidden: { opacity: 0, y: 32 },
+  show: (delay = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.08, ease: "easeOut" as const },
+    transition: {
+      duration: 0.65,
+      delay,
+      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+    },
   }),
 };
 
-/* ─── Types ───────────────────────────────────────── */
-type ProjectStatus = "active" | "completed" | "planned";
-type ProjectCategory =
-  | "all"
-  | "youth"
-  | "healthcare"
-  | "environment"
-  | "education"
-  | "infrastructure"
-  | "culture";
-
-interface Project {
-  id: string;
-  title: string;
-  category: Exclude<ProjectCategory, "all">;
-  status: ProjectStatus;
-  year: string;
-  description: string;
-  impact: string;
-  icon: string;
-  raised?: string;
-  goal?: string;
-  beneficiaries?: string;
-  featured?: boolean;
-}
-
-/* ─── Data ────────────────────────────────────────── */
-const PROJECTS: Project[] = [
-  {
-    id: "youth-mentorship-2024",
-    title: "Youth Mentorship Programme",
-    category: "youth",
-    status: "active",
-    year: "2024",
-    description:
-      "A 12-month structured mentorship scheme pairing young Lagosians (16–25) in the Delaware Valley with established professionals in law, medicine, technology, and finance.",
-    impact: "Matched 48 mentees with senior professionals across 8 industries.",
-    icon: "🎓",
-    beneficiaries: "48 young people",
-    raised: "₦3.2M",
-    goal: "₦5M",
-    featured: true,
+const stagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.1,
+    },
   },
-  {
-    id: "free-health-screening-2024",
-    title: "Free Community Health Screening",
-    category: "healthcare",
-    status: "active",
-    year: "2024",
-    description:
-      "Monthly free health screenings for blood pressure, diabetes, and HIV — held at the Philadelphia African Cultural Centre every last Saturday.",
-    impact: "Over 320 community members screened, 14 referred for urgent care.",
-    icon: "🏥",
-    beneficiaries: "320+ residents",
-    raised: "₦1.8M",
-    goal: "₦2.5M",
-    featured: true,
-  },
-  {
-    id: "clean-waterway-lagos-2023",
-    title: "Lagos Waterway Clean-Up Initiative",
-    category: "environment",
-    status: "completed",
-    year: "2023",
-    description:
-      "Partnered with Lagos State Ministry of Environment to sponsor a two-week waterway clean-up project targeting the Isale-Eko lagoon frontage.",
-    impact: "12 tonnes of waste removed; 200 volunteer hours contributed.",
-    icon: "🌿",
-    beneficiaries: "Isale-Eko community",
-    raised: "₦6M",
-    goal: "₦6M",
-    featured: true,
-  },
-  {
-    id: "ecp-merit-scholarship-2024",
-    title: "ECP Merit Scholarship",
-    category: "education",
-    status: "active",
-    year: "2024",
-    description:
-      "Annual merit-based bursary awarded to children of ECP members attending accredited colleges and universities in the United States.",
-    impact: "12 scholarships awarded worth $1,500 each since programme inception.",
-    icon: "✏️",
-    beneficiaries: "12 university students",
-    raised: "₦4.5M",
-    goal: "₦5M",
-  },
-  {
-    id: "ileya-festival-2024",
-    title: "Annual Ileya Cultural Festival",
-    category: "culture",
-    status: "completed",
-    year: "2024",
-    description:
-      "Philadelphia's biggest Lagos-themed cultural celebration featuring food, music, traditional attire, and a business expo.",
-    impact: "900+ attendees; 22 Lagos-owned businesses showcased.",
-    icon: "🎭",
-    beneficiaries: "900+ attendees",
-    raised: "₦8M",
-    goal: "₦8M",
-  },
-  {
-    id: "drainage-advocacy-2023",
-    title: "Lagos Island Drainage Advocacy",
-    category: "infrastructure",
-    status: "completed",
-    year: "2023",
-    description:
-      "Lobbied Lagos State Government and engaged international donors for drainage upgrades in flood-prone Lagos Island neighbourhoods.",
-    impact: "Official commitment secured from LASG for 3 drainage projects.",
-    icon: "🏗️",
-    beneficiaries: "4,000+ residents",
-    raised: "₦2M",
-    goal: "₦2M",
-  },
-  {
-    id: "civic-literacy-drive-2025",
-    title: "Civic Literacy Drive",
-    category: "youth",
-    status: "planned",
-    year: "2025",
-    description:
-      "A six-week civic education curriculum delivered to secondary schools in Philadelphia, covering voting rights, community advocacy, and governance.",
-    impact: "Target: 200 students across 4 schools.",
-    icon: "📖",
-    beneficiaries: "200 students (target)",
-    raised: "₦0",
-    goal: "₦3.5M",
-  },
-  {
-    id: "mental-health-awareness-2025",
-    title: "Mental Health Awareness Campaign",
-    category: "healthcare",
-    status: "planned",
-    year: "2025",
-    description:
-      "A social-media-driven and in-person campaign de-stigmatising mental health conversations in the Nigerian-American community.",
-    impact: "Target: 1,000 engagements; 3 community workshops.",
-    icon: "🧠",
-    beneficiaries: "1,000+ (target)",
-    goal: "₦2M",
-    raised: "₦500K",
-  },
-  {
-    id: "school-supplies-drive-2024",
-    title: "Back-to-School Supplies Drive",
-    category: "education",
-    status: "completed",
-    year: "2024",
-    description:
-      "Collected and distributed school supplies to 150 children from low-income Lagos-heritage families in the Philadelphia area.",
-    impact: "150 children equipped for the new academic year.",
-    icon: "🎒",
-    beneficiaries: "150 children",
-    raised: "₦1.2M",
-    goal: "₦1.2M",
-  },
-];
-
-const CATEGORIES: { value: ProjectCategory; label: string; icon: string }[] = [
-  { value: "all", label: "All Projects", icon: "🗂️" },
-  { value: "youth", label: "Youth", icon: "🎓" },
-  { value: "healthcare", label: "Healthcare", icon: "🏥" },
-  { value: "environment", label: "Environment", icon: "🌿" },
-  { value: "education", label: "Education", icon: "✏️" },
-  { value: "infrastructure", label: "Infrastructure", icon: "🏗️" },
-  { value: "culture", label: "Culture", icon: "🎭" },
-];
-
-const STATUS_STYLES: Record<ProjectStatus, { bg: string; text: string; label: string }> = {
-  active: { bg: "bg-green-100", text: "text-green-700", label: "Active" },
-  completed: { bg: "bg-blue-100", text: "text-blue-700", label: "Completed" },
-  planned: { bg: "bg-yellow-100", text: "text-yellow-700", label: "Planned" },
 };
 
-const IMPACT_STATS = [
-  { value: "15+", label: "Projects Launched" },
-  { value: "5,000+", label: "Community Beneficiaries" },
-  { value: "₦30M+", label: "Invested in Projects" },
-  { value: "8", label: "Focus Areas" },
+const PROJECT_STATS = [
+  { value: "5", label: "Annual service programmes", color: EKO_GREEN },
+  { value: "2", label: "High school awards", color: EKO_RED },
+  { value: "3", label: "College awards", color: EKO_BLUE },
+  { value: "2mi", label: "Bucks County clean-up", color: EKO_YELLOW },
 ];
 
-/* ─── Progress bar ────────────────────────────────── */
-function ProgressBar({ raised, goal }: { raised?: string; goal?: string }) {
-  if (!raised || !goal) return null;
-  const parse = (s: string) =>
-    parseFloat(s.replace(/[₦,KM]/g, "").trim()) *
-    (s.includes("M") ? 1_000_000 : s.includes("K") ? 1_000 : 1);
-  const pct = Math.min(100, Math.round((parse(raised) / parse(goal)) * 100));
+const MISSION_VISION = [
+  {
+    title: "Our Mission",
+    text: "We preserve and support our cultural heritage, render humanitarian assistance to those in need, encourage community development and outreach, and organise the family and friends of Lagos, Nigeria, for worthy causes.",
+    color: EKO_GREEN,
+  },
+  {
+    title: "Our Vision",
+    text: "We envision a world where peace prevails and where abundant opportunities exist for our youth and for a strong, vibrant senior community.",
+    color: EKO_RED,
+  },
+  {
+    title: "Core Values",
+    text: "Professionalism, discipline, and integrity shape the way we plan, serve, and deliver our initiatives.",
+    color: EKO_BLUE,
+  },
+];
+
+const FOCUS_AREAS = [
+  {
+    title: "Community services",
+    text: "We provide a variety of services to underprivileged Lagosian Americans and other minorities in Philadelphia and the surrounding area.",
+    icon: "🏙️",
+    color: EKO_GREEN,
+  },
+  {
+    title: "Scholarships",
+    text: "We provide scholarships to minority high school and college students as part of our educational outreach.",
+    icon: "🎓",
+    color: EKO_RED,
+  },
+  {
+    title: "Humanitarian support",
+    text: "We assist homeless families with humanitarian services and practical support where it is most needed.",
+    icon: "🤲",
+    color: EKO_BLUE,
+  },
+  {
+    title: "Thanksgiving outreach",
+    text: "We provide an annual Thanksgiving food drive to the community as a recurring expression of service and care.",
+    icon: "🧺",
+    color: EKO_YELLOW,
+  },
+];
+
+const SERVICE_PROGRAMS = [
+  {
+    title: "Ronald McDonald House Make-A-Meal Program",
+    subtitle: "Family care through direct service",
+    text: "We provide breakfast at the PA-RMH for families staying at Ronald McDonald House. The programme has remained a strong and consistent success over the past four years.",
+    icon: "🍽️",
+    accent: EKO_GREEN,
+  },
+  {
+    title: "Back to School with HomeFront Program",
+    subtitle: "Helping children start strong",
+    text: "Our participants provide backpacks, school uniforms, school supplies, and monetary donations to children in need as families prepare for a new school year.",
+    icon: "🎒",
+    accent: EKO_RED,
+  },
+  {
+    title: "ECP Scholarship Program",
+    subtitle: "Opening doors through education",
+    text: "We award scholarships to 2 high school graduates and 3 college students, extending educational support where it can make a lasting difference.",
+    icon: "🏅",
+    accent: EKO_BLUE,
+  },
+  {
+    title: "PA Adopt-A-Highway Program",
+    subtitle: "Visible environmental stewardship",
+    text: "We walk a two-mile stretch in Bucks County, Pennsylvania, picking up visible trash and waste as part of our environmental service commitment.",
+    icon: "🛣️",
+    accent: EKO_YELLOW,
+  },
+  {
+    title: "Thanksgiving Basket Food Drive",
+    subtitle: "Seasonal support for families",
+    text: "Each year, we host our annual Thanksgiving food drive to provide assistance to families in need within our community.",
+    icon: "🦃",
+    accent: EKO_GREEN,
+  },
+];
+
+const IMPACT_POINTS = [
+  {
+    title: "Students supported",
+    text: "Our scholarship programme specifically names awards for 2 high school graduates and 3 college students.",
+    color: EKO_GREEN,
+  },
+  {
+    title: "Families served",
+    text: "From Ronald McDonald House service to the Thanksgiving drive, our work stays close to the needs of families.",
+    color: EKO_RED,
+  },
+  {
+    title: "Community presence",
+    text: "Our initiatives stay visible in Philadelphia, Bucks County, and the surrounding region through recurring, practical outreach.",
+    color: EKO_BLUE,
+  },
+  {
+    title: "Service with discipline",
+    text: "Professionalism, discipline, and integrity remain the standard behind every project we present and every programme we run.",
+    color: EKO_YELLOW,
+  },
+];
+
+function QuadBar() {
   return (
-    <div className="mt-3">
-      <div className="flex justify-between text-xs text-(--color-neutral-500) mb-1">
-        <span>Raised: <strong className="text-(--color-neutral-700)">{raised}</strong></span>
-        <span>Goal: <strong className="text-(--color-neutral-700)">{goal}</strong></span>
-      </div>
-      <div className="h-1.5 rounded-full bg-(--color-neutral-100) overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, background: "var(--color-green-500)" }}
-        />
-      </div>
-      <p className="text-xs text-(--color-neutral-400) mt-0.5 text-right">{pct}% funded</p>
+    <div className="flex h-1.5 w-28 overflow-hidden rounded-full" aria-hidden="true">
+      {QUAD.map((color) => (
+        <div key={color} className="flex-1" style={{ background: color }} />
+      ))}
     </div>
   );
 }
 
-/* ─── Project Card ────────────────────────────────── */
-function ProjectCard({ project, index }: { project: Project; index: number }) {
-  const status = STATUS_STYLES[project.status];
+function SectionIntro({
+  eyebrow,
+  title,
+  text,
+  align = "left",
+}: {
+  eyebrow: string;
+  title: string;
+  text: string;
+  align?: "left" | "center";
+}) {
   return (
     <motion.div
-      layout
-      variants={fadeUp}
+      variants={stagger}
       initial="hidden"
-      animate="show"
-      exit={{ opacity: 0, scale: 0.96 }}
-      custom={index % 4}
-      className="bg-white rounded-2xl border border-(--color-neutral-200) hover:shadow-md transition-shadow flex flex-col overflow-hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}
     >
-      {/* Card header */}
-      <div
-        className="px-6 pt-6 pb-4"
-        style={{ background: "var(--color-neutral-50)" }}
+      <motion.div variants={riseIn} custom={0} className={align === "center" ? "flex justify-center" : "flex"}>
+        <QuadBar />
+      </motion.div>
+      <motion.span
+        variants={riseIn}
+        custom={0.08}
+        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-neutral-500"
       >
-        <div className="flex items-start justify-between gap-3">
-          <span className="text-3xl" aria-hidden="true">{project.icon}</span>
-          <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${status.bg} ${status.text}`}
-          >
-            {status.label}
-          </span>
-        </div>
-        <h3 className="mt-3 font-bold text-lg leading-snug text-(--color-neutral-900)">
-          {project.title}
-        </h3>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-(--color-neutral-400)">{project.year}</span>
-          <span className="text-(--color-neutral-300)">·</span>
-          <span className="text-xs capitalize text-(--color-neutral-500)">{project.category}</span>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="px-6 pb-6 flex flex-col flex-1">
-        <p className="text-sm text-(--color-neutral-600) leading-relaxed mt-2">{project.description}</p>
-
-        {/* Impact */}
-        <div
-          className="mt-4 rounded-xl px-4 py-3 text-sm"
-          style={{ background: "var(--color-green-50)", color: "var(--color-green-800)" }}
-        >
-          <span className="font-semibold">Impact: </span>{project.impact}
-        </div>
-
-        {/* Beneficiaries */}
-        {project.beneficiaries && (
-          <p className="mt-2 text-xs text-(--color-neutral-500)">
-            👥 <strong>{project.beneficiaries}</strong>
-          </p>
-        )}
-
-        {/* Progress */}
-        <ProgressBar raised={project.raised} goal={project.goal} />
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Donate CTA for active projects */}
-        {project.status === "active" && (
-          <Link
-            href="/donate"
-            className="mt-5 inline-flex justify-center items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: "var(--color-green-600)" }}
-          >
-            Support This Project
-          </Link>
-        )}
-      </div>
+        {eyebrow}
+      </motion.span>
+      <motion.h2
+        variants={riseIn}
+        custom={0.16}
+        className="mt-5 text-3xl font-black tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+      >
+        {title}
+      </motion.h2>
+      <motion.p
+        variants={riseIn}
+        custom={0.24}
+        className="mt-4 text-base leading-8 text-neutral-600 sm:text-lg"
+      >
+        {text}
+      </motion.p>
     </motion.div>
   );
 }
 
-/* ─── Page ────────────────────────────────────────── */
 export default function ProjectsPage() {
-  const [activeCategory, setActiveCategory] = useState<ProjectCategory>("all");
-  const [activeStatus, setActiveStatus] = useState<ProjectStatus | "all">("all");
-
-  const filtered = PROJECTS.filter((p) => {
-    const catMatch = activeCategory === "all" || p.category === activeCategory;
-    const statusMatch = activeStatus === "all" || p.status === activeStatus;
-    return catMatch && statusMatch;
-  });
-
-  const featuredProjects = PROJECTS.filter((p) => p.featured);
-
   return (
-    <div className="bg-white text-(--color-neutral-900)">
-
-      {/* ── Hero ─────────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden py-24 md:py-32"
-        style={{ background: "var(--color-green-900)" }}
-      >
+    <div className="bg-white text-neutral-950">
+      <section className="relative isolate overflow-hidden bg-neutral-950">
         <div
-          className="pointer-events-none absolute inset-0 opacity-5"
+          className="absolute inset-0"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, var(--color-gold-400) 1px, transparent 1px)",
-            backgroundSize: "30px 30px",
+            background:
+              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
           }}
         />
-        <div
-          className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full opacity-10 blur-3xl"
-          style={{ background: "var(--color-gold-400)" }}
-        />
 
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.span
-            variants={fadeUp} initial="hidden" animate="show" custom={0}
-            className="inline-block rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-widest mb-4 text-white"
-            style={{ background: "var(--color-gold-500)" }}
-          >
-            Our Impact
-          </motion.span>
-          <motion.h1
-            variants={fadeUp} initial="hidden" animate="show" custom={1}
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight"
-          >
-            Projects &amp;{" "}
-            <span style={{ color: "var(--color-gold-400)" }}>Initiatives</span>
-          </motion.h1>
-          <motion.p
-            variants={fadeUp} initial="hidden" animate="show" custom={2}
-            className="mt-6 max-w-2xl mx-auto text-lg text-white/75 leading-relaxed"
-          >
-            From youth mentorship to environmental advocacy — every project we run
-            is powered by the generosity and dedication of the ECP community.
-          </motion.p>
-
-          {/* Stats */}
+        {QUAD.map((color, index) => (
           <motion.div
-            variants={fadeUp} initial="hidden" animate="show" custom={3}
-            className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-6"
-          >
-            {IMPACT_STATS.map((s) => (
-              <div key={s.label} className="flex flex-col items-center">
-                <span
-                  className="text-3xl font-extrabold"
-                  style={{ color: "var(--color-gold-400)" }}
-                >
-                  {s.value}
+            key={color}
+            className="pointer-events-none absolute rounded-full blur-3xl"
+            style={{
+              background: color,
+              opacity: 0.18,
+              width: 260,
+              height: 260,
+              left: `${8 + index * 20}%`,
+              top: index % 2 === 0 ? "10%" : "52%",
+            }}
+            animate={{ y: [0, -24, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.45 }}
+          />
+        ))}
+
+        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-28 lg:px-8 lg:py-32">
+          <div className="grid items-end gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
+              <motion.div
+                variants={riseIn}
+                custom={0}
+                className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md"
+              >
+                {QUAD.map((color) => (
+                  <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
+                ))}
+                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">
+                  Projects & Initiatives
                 </span>
-                <span className="mt-1 text-sm text-white/60">{s.label}</span>
+              </motion.div>
+
+              <motion.h1
+                variants={riseIn}
+                custom={0.08}
+                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+              >
+                The <span style={{ color: EKO_GREEN }}>work we do</span>, the
+                <span style={{ color: EKO_YELLOW }}> people we serve</span>.
+              </motion.h1>
+
+              <motion.p
+                variants={riseIn}
+                custom={0.16}
+                className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg"
+              >
+                Our projects page now reflects the real initiatives of Eko Club Philadelphia: direct
+                family support, scholarships, community outreach, environmental service, and seasonal
+                assistance carried out with discipline and purpose.
+              </motion.p>
+
+              <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href="#service-programs"
+                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
+                >
+                  Explore service programmes
+                </Link>
+                <Link
+                  href="/donate"
+                  className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                >
+                  Support our work
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
+            >
+              <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">What this page presents</p>
+                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                  Real club initiatives, not placeholder programmes.
+                </p>
+                <p className="mt-3 text-sm leading-7 text-white/65">
+                  We now present the mission, focus areas, and annual service programmes drawn from the
+                  club’s own initiative text, all in the same visual language as the home and about pages.
+                </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {PROJECT_STATS.map((item) => (
+                  <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
+                      {item.value}
+                    </div>
+                    <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
+          {QUAD.map((color) => (
+            <div key={color} className="flex-1" style={{ background: color }} />
+          ))}
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[14rem] font-black leading-none text-neutral-100">
+          EKO
+        </div>
+
+        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
+          <SectionIntro
+            eyebrow="Purpose"
+            title="Our mission and vision guide every initiative we run"
+            text="The club’s projects do not stand alone. They flow directly from our mission to preserve heritage, provide humanitarian assistance, strengthen community development and outreach, and bring family and friends of Lagos together for worthy causes."
+          />
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="grid gap-5"
+          >
+            {MISSION_VISION.map((item, index) => (
+              <motion.article
+                key={item.title}
+                variants={riseIn}
+                custom={index * 0.08}
+                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                  <span className="h-3 w-3 rounded-full" style={{ background: item.color }} />
+                </div>
+                <p className="mt-4 text-sm leading-7 text-neutral-600 sm:text-base">{item.text}</p>
+              </motion.article>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ── Featured Projects ─────────────────────────── */}
-      <section className="py-20" style={{ background: "var(--color-neutral-50)" }}>
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <span
-              className="inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ background: "var(--color-green-100)", color: "var(--color-green-700)" }}
-            >
-              Spotlight
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-(--color-neutral-900)">
-              Featured{" "}
-              <span style={{ color: "var(--color-green-600)" }}>Projects</span>
-            </h2>
-          </div>
+      <section className="bg-neutral-50 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <SectionIntro
+            eyebrow="Our focus"
+            title="The areas that shape our projects and outreach"
+            text="We focus our service on practical areas where the club can make a visible difference: community support, scholarships, humanitarian assistance, and recurring food outreach."
+            align="center"
+          />
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {featuredProjects.map((project, i) => (
-              <motion.div
-                key={project.id}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true, margin: "-60px" }}
-                custom={i}
-                className="relative bg-white rounded-2xl border-2 overflow-hidden hover:shadow-lg transition-shadow"
-                style={{ borderColor: "var(--color-green-200)" }}
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4"
+          >
+            {FOCUS_AREAS.map((item, index) => (
+              <motion.article
+                key={item.title}
+                variants={riseIn}
+                custom={index * 0.07}
+                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]"
               >
-                {/* Featured badge */}
-                <div
-                  className="absolute top-4 right-4 text-xs font-bold px-2.5 py-1 rounded-full text-white"
-                  style={{ background: "var(--color-gold-500)" }}
-                >
-                  Featured
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${item.color}12` }}>
+                  {item.icon}
                 </div>
-
-                <div className="p-6">
-                  <span className="text-4xl" aria-hidden="true">{project.icon}</span>
-                  <h3 className="mt-4 font-bold text-xl text-(--color-neutral-900) leading-snug">
-                    {project.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-(--color-neutral-600) leading-relaxed line-clamp-3">
-                    {project.description}
-                  </p>
-
-                  <div
-                    className="mt-4 rounded-xl px-4 py-3 text-sm"
-                    style={{ background: "var(--color-green-50)", color: "var(--color-green-800)" }}
-                  >
-                    <span className="font-semibold">Impact: </span>{project.impact}
-                  </div>
-
-                  <ProgressBar raised={project.raised} goal={project.goal} />
-
-                  {project.status === "active" && (
-                    <Link
-                      href="/donate"
-                      className="mt-5 inline-flex justify-center w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
-                      style={{ background: "var(--color-green-600)" }}
-                    >
-                      Support This Project
-                    </Link>
-                  )}
-                </div>
-              </motion.div>
+                <h3 className="mt-5 text-xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-neutral-600">{item.text}</p>
+                <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: item.color }} />
+              </motion.article>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ── All Projects ──────────────────────────────── */}
-      <section className="py-20 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-(--color-neutral-900)">
-              All{" "}
-              <span style={{ color: "var(--color-green-600)" }}>Projects</span>
-            </h2>
-          </div>
+      <section id="service-programs" className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <SectionIntro
+            eyebrow="Annual service programs"
+            title="The initiatives we present as part of our recurring service"
+            text="These programmes are the real initiatives of our club. They show how we support families, students, children, and neighbourhoods through direct and repeatable action."
+            align="center"
+          />
 
-          {/* Filters */}
-          <div className="flex flex-col gap-4 mb-10">
-            {/* Category filters */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setActiveCategory(cat.value)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    activeCategory === cat.value
-                      ? "text-white shadow-sm"
-                      : "bg-(--color-neutral-50) border border-(--color-neutral-200) text-(--color-neutral-600) hover:border-(--color-green-300) hover:text-(--color-green-700)"
-                  }`}
-                  style={
-                    activeCategory === cat.value
-                      ? { background: "var(--color-green-600)" }
-                      : {}
-                  }
-                >
-                  <span>{cat.icon}</span>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Status filters */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {(["all", "active", "completed", "planned"] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setActiveStatus(s)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all capitalize ${
-                    activeStatus === s
-                      ? "text-white"
-                      : "bg-(--color-neutral-100) text-(--color-neutral-600) hover:bg-(--color-neutral-200)"
-                  }`}
-                  style={
-                    activeStatus === s
-                      ? { background: "var(--color-green-500)" }
-                      : {}
-                  }
-                >
-                  {s === "all" ? "All Statuses" : STATUS_STYLES[s].label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Results count */}
-          <p className="text-sm text-(--color-neutral-500) mb-6 text-center">
-            Showing <strong>{filtered.length}</strong> project{filtered.length !== 1 ? "s" : ""}
-          </p>
-
-          {/* Grid */}
-          <AnimatePresence mode="popLayout">
-            {filtered.length > 0 ? (
-              <motion.div
-                layout
-                className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mt-14 grid gap-6 lg:grid-cols-2 xl:grid-cols-3"
+          >
+            {SERVICE_PROGRAMS.map((item, index) => (
+              <motion.article
+                key={item.title}
+                variants={riseIn}
+                custom={index * 0.06}
+                className="group rounded-[1.75rem] border border-neutral-200 bg-neutral-50 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)] transition-transform duration-300 hover:-translate-y-1"
               >
-                {filtered.map((project, i) => (
-                  <ProjectCard key={project.id} project={project} index={i} />
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="py-20 text-center text-(--color-neutral-400)"
-              >
-                <p className="text-5xl mb-4">🗂️</p>
-                <p className="text-lg font-medium">No projects found for the selected filters.</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl" style={{ background: `${item.accent}12` }}>
+                    {item.icon}
+                  </div>
+                  <span
+                    className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-900"
+                    style={{ background: `${item.accent}18` }}
+                  >
+                    Service
+                  </span>
+                </div>
+
+                <div className="mt-5 h-1.5 w-16 rounded-full" style={{ background: item.accent }} />
+                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-neutral-500">{item.subtitle}</p>
+                <p className="mt-4 text-sm leading-7 text-neutral-600">{item.text}</p>
+              </motion.article>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* ── Get Involved CTA ──────────────────────────── */}
-      <section
-        className="py-20 text-center relative overflow-hidden"
-        style={{ background: "var(--color-green-900)" }}
-      >
+      <section className="bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <SectionIntro
+            eyebrow="What this work delivers"
+            title="How our initiatives create practical impact"
+            text="Our projects are designed to be concrete, disciplined, and community-facing. We feed families, support students, show up for children, and remain present in the places where service is needed."
+            align="center"
+          />
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4"
+          >
+            {IMPACT_POINTS.map((item, index) => (
+              <motion.article
+                key={item.title}
+                variants={riseIn}
+                custom={index * 0.06}
+                className="rounded-[1.75rem] border border-white/10 bg-white/6 p-6 backdrop-blur-md"
+              >
+                <div className="h-2 w-16 rounded-full" style={{ background: item.color }} />
+                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-white">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-white/68">{item.text}</p>
+              </motion.article>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div
-          className="pointer-events-none absolute inset-0 opacity-5"
+          className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, var(--color-gold-400) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
+            background: `linear-gradient(135deg, ${EKO_GREEN} 0%, ${EKO_RED} 33%, ${EKO_BLUE} 66%, ${EKO_YELLOW} 100%)`,
           }}
         />
-        <div className="relative mx-auto max-w-2xl px-4 sm:px-6">
-          <motion.h2
-            variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-extrabold text-white"
-          >
-            Help Us Make a{" "}
-            <span style={{ color: "var(--color-gold-400)" }}>Bigger Impact</span>
-          </motion.h2>
-          <motion.p
-            variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} custom={1}
-            className="mt-4 text-white/70 text-lg"
-          >
-            Your donation, time, or skills can transform a community.
-            Every contribution — large or small — matters.
-          </motion.p>
+        <div className="relative mx-auto max-w-4xl text-center">
           <motion.div
-            variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} custom={2}
-            className="mt-8 flex flex-wrap justify-center gap-4"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Link
-              href="/donate"
-              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 font-semibold text-sm text-white transition-all hover:opacity-90"
-              style={{ background: "var(--color-gold-500)" }}
-            >
-              Donate Now
-            </Link>
-            <Link
-              href="/membership/apply"
-              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 font-semibold text-sm border-2 border-white/40 text-white hover:bg-white/10 transition-all"
-            >
-              Volunteer / Join Us
-            </Link>
+            <div className="flex justify-center">
+              <QuadBar />
+            </div>
+            <h2 className="mt-6 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+              Help us keep <span style={{ color: EKO_YELLOW }}>these initiatives moving</span>.
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
+              Support the projects that define our service: family care, scholarship, outreach, food
+              support, and community responsibility delivered with the Eko spirit.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/donate"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+                style={{ background: EKO_GREEN }}
+              >
+                Donate now
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+              >
+                Read our story
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

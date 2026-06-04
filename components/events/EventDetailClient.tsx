@@ -9,19 +9,44 @@ import EventCard from "@/components/cards/EventCard";
 import ShareButtons from "@/components/ui/ShareButtons";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-import Button from "@/components/ui/Button";
 import RSVPForm from "@/components/events/RSVPForm";
 import { formatDate } from "@/utils/formatters";
 import type { BadgeColor } from "@/components/ui/Badge";
 import type { Event, EventType as ModelEventType } from "@/lib/models";
 
-/* ─── Types ───────────────────────────────────────────── */
 type CardEventType = "town-hall" | "workshop" | "volunteer" | "meetup" | "seminar" | "other";
 
-/* ─── Helpers ─────────────────────────────────────────── */
-function toCardType(t: ModelEventType): CardEventType {
-  if (t === "press-conference") return "other";
-  return t as CardEventType;
+const EKO_GREEN = "#059669";
+const EKO_RED = "#dc2626";
+const EKO_BLUE = "#2563eb";
+const EKO_YELLOW = "#d97706";
+const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
+
+const riseIn = {
+  hidden: { opacity: 0, y: 28 },
+  show: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      delay,
+      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+    },
+  }),
+};
+
+const stagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.09,
+    },
+  },
+};
+
+function toCardType(type: ModelEventType): CardEventType {
+  if (type === "press-conference") return "other";
+  return type as CardEventType;
 }
 
 const TYPE_LABEL: Record<ModelEventType, string> = {
@@ -55,13 +80,39 @@ function isHTML(str: string) {
   return /<[a-z][\s\S]*>/i.test(str);
 }
 
-/* ─── Sub-components ──────────────────────────────────── */
-function MetaItem({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function QuadBar() {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 text-(--color-green-600) shrink-0">{icon}</span>
-      <span className="text-(--color-neutral-700) text-sm leading-relaxed">{children}</span>
+    <div className="flex h-1.5 w-28 overflow-hidden rounded-full" aria-hidden="true">
+      {QUAD.map((color) => (
+        <div key={color} className="flex-1" style={{ background: color }} />
+      ))}
     </div>
+  );
+}
+
+function MetaItem({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 shrink-0 text-neutral-950">{icon}</span>
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">{label}</p>
+          <div className="mt-1 text-sm leading-7 text-neutral-700">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)] sm:p-8">
+      <div className="flex items-center gap-4">
+        <QuadBar />
+        <h2 className="text-2xl font-black tracking-[-0.03em] text-neutral-950 sm:text-3xl">{title}</h2>
+      </div>
+      <div className="mt-6">{children}</div>
+    </section>
   );
 }
 
@@ -132,10 +183,8 @@ function TagIcon() {
   );
 }
 
-/* ─── Add-to-Calendar mock ────────────────────────────── */
 function AddToCalendarButton({ event }: { event: Event }) {
   function handleClick() {
-    // Mock: in a real app would generate .ics or link to Google Calendar
     const startDate = new Date(event.date);
     const pad = (n: number) => n.toString().padStart(2, "0");
     const fmt = (d: Date) =>
@@ -144,57 +193,48 @@ function AddToCalendarButton({ event }: { event: Event }) {
     const endDate = event.endDate ? new Date(event.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
     const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${fmt(startDate)}/${fmt(endDate)}&details=${encodeURIComponent(event.shortDescription ?? event.description.slice(0, 200))}&location=${encodeURIComponent(event.location)}`;
-
     window.open(googleUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
     <button
       onClick={handleClick}
-      className="flex items-center gap-2.5 w-full rounded-lg border border-(--color-neutral-200) bg-white hover:bg-(--color-neutral-50) px-4 py-3 text-sm font-medium text-(--color-neutral-700) transition-colors group"
+      className="flex w-full items-center gap-3 rounded-full border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-700 transition-colors hover:bg-neutral-50"
     >
-      <span className="text-(--color-green-600)"><CalendarIcon /></span>
+      <span className="text-neutral-950"><CalendarIcon /></span>
       <span className="flex-1 text-left">Add to Calendar</span>
-      <span className="text-xs text-(--color-neutral-400) group-hover:text-(--color-neutral-600)">Google Calendar ↗</span>
+      <span className="text-xs text-neutral-400">Google ↗</span>
     </button>
   );
 }
 
-/* ─── EventDetailClient ───────────────────────────────── */
 export default function EventDetailClient({ slug }: { slug: string }) {
   const { events, isLoading, getBySlug } = useEvents();
   const { countConfirmed } = useRSVP();
 
   const event = getBySlug(slug);
-
   const now = new Date();
 
-  /* Related events: same type, published, not this one */
   const relatedEvents = useMemo(() => {
     if (!event) return [];
     return events
-      .filter(
-        (ev) =>
-          ev.id !== event.id &&
-          ev.status === "published" &&
-          ev.type === event.type
-      )
+      .filter((item) => item.id !== event.id && item.status === "published" && item.type === event.type)
       .slice(0, 3);
   }, [events, event]);
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-12 space-y-6 animate-pulse">
-        <div className="h-80 rounded-2xl bg-(--color-neutral-100)" />
-        <div className="h-8 w-2/3 rounded bg-(--color-neutral-100)" />
-        <div className="h-4 w-1/3 rounded bg-(--color-neutral-100)" />
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-12 animate-pulse">
+        <div className="h-96 rounded-4xl bg-neutral-100" />
+        <div className="h-8 w-2/3 rounded bg-neutral-100" />
+        <div className="h-4 w-1/3 rounded bg-neutral-100" />
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-20">
+      <div className="mx-auto max-w-3xl px-4 py-20">
         <EmptyState
           title="Event not found"
           description="This event may have been removed or the URL is incorrect."
@@ -209,304 +249,368 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   const isFull = spotsLeft != null && spotsLeft <= 0;
   const isUpcoming = new Date(event.date) >= now;
   const showRSVP = event.registrationRequired && event.status === "published";
+  const pageUrl = typeof window !== "undefined" ? window.location.href : `https://ekoclubphiladelphia.org/events/${event.slug}`;
 
-  const pageUrl = typeof window !== "undefined"
-    ? window.location.href
-    : `https://ekoclubphiladelphia.org/events/${event.slug}`;
+  const statCards = [
+    {
+      label: "Confirmed RSVPs",
+      value: confirmedCount.toLocaleString(),
+      color: EKO_GREEN,
+    },
+    {
+      label: "Capacity",
+      value: event.maxAttendees != null ? event.maxAttendees.toLocaleString() : "Open",
+      color: EKO_RED,
+    },
+    {
+      label: "Spots left",
+      value: spotsLeft == null ? "Open" : Math.max(spotsLeft, 0).toLocaleString(),
+      color: EKO_BLUE,
+    },
+    {
+      label: "Access",
+      value: event.isPublic ? "Public" : "Members",
+      color: EKO_YELLOW,
+    },
+  ];
 
   return (
-    <div>
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 pt-6 pb-3">
-        <ol className="flex items-center gap-1.5 text-sm text-(--color-neutral-500)">
-          <li><Link href="/" className="hover:text-(--color-green-600) transition-colors">Home</Link></li>
-          <li aria-hidden="true" className="text-(--color-neutral-300)">/</li>
-          <li><Link href="/events" className="hover:text-(--color-green-600) transition-colors">Events</Link></li>
-          <li aria-hidden="true" className="text-(--color-neutral-300)">/</li>
-          <li className="text-(--color-neutral-700) font-medium truncate max-w-[220px]" aria-current="page">
-            {event.title}
-          </li>
-        </ol>
-      </nav>
+    <div className="bg-white text-neutral-950">
+      <section className="relative isolate overflow-hidden bg-neutral-950">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
+          }}
+        />
 
-      <div className="max-w-6xl mx-auto px-4 pb-16">
-        {/* Hero image */}
-        {event.imageUrl && (
+        {QUAD.map((color, index) => (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="relative w-full h-56 md:h-80 rounded-2xl overflow-hidden mb-8 shadow-md"
-          >
-            <Image
-              src={event.imageUrl}
-              alt={event.title}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, 1200px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            key={color}
+            className="pointer-events-none absolute rounded-full blur-3xl"
+            style={{
+              background: color,
+              opacity: 0.18,
+              width: 260,
+              height: 260,
+              left: `${8 + index * 20}%`,
+              top: index % 2 === 0 ? "10%" : "52%",
+            }}
+            animate={{ y: [0, -24, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.45 }}
+          />
+        ))}
 
-            {/* Overlay badges */}
-            <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
-              <Badge color={TYPE_COLOR[event.type]}>
-                {TYPE_LABEL[event.type]}
-              </Badge>
-              {event.status !== "published" && (
-                <Badge color={STATUS_COLOR[event.status] ?? "neutral"}>
-                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                </Badge>
-              )}
-              {event.isFeatured && (
-                <Badge color="gold">⭐ Featured</Badge>
-              )}
-              {event.isOnline && (
-                <Badge color="info">🌐 Online</Badge>
-              )}
-              {isFull && (
-                <Badge color="danger">Fully Booked</Badge>
-              )}
-            </div>
-          </motion.div>
+        {event.imageUrl && (
+          <div className="absolute inset-0 opacity-20">
+            <Image src={event.imageUrl} alt={event.title} fill className="object-cover" priority sizes="100vw" />
+          </div>
         )}
 
-        {/* Main layout: content + sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="absolute inset-0 bg-black/45" />
 
-          {/* ── Left / Main ─────────────────────────────── */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Title & badges (no image fallback) */}
-            {!event.imageUrl && (
-              <div className="flex flex-wrap gap-2 mb-2">
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-12 lg:px-8 lg:py-16">
+          <nav aria-label="Breadcrumb" className="mb-8">
+            <ol className="flex flex-wrap items-center gap-2 text-sm text-white/65">
+              <li><Link href="/" className="transition-colors hover:text-white">Home</Link></li>
+              <li aria-hidden="true">/</li>
+              <li><Link href="/events" className="transition-colors hover:text-white">Events</Link></li>
+              <li aria-hidden="true">/</li>
+              <li className="font-medium text-white">{event.title}</li>
+            </ol>
+          </nav>
+
+          <div className="grid items-end gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
+              <motion.div variants={riseIn} custom={0} className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
+                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">Event details</span>
+                <span className="mx-1 h-1 w-1 rounded-full bg-white/40" />
+                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">{TYPE_LABEL[event.type]}</span>
+              </motion.div>
+
+              <motion.h1
+                variants={riseIn}
+                custom={0.08}
+                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+              >
+                {event.title}
+              </motion.h1>
+
+              <motion.p
+                variants={riseIn}
+                custom={0.16}
+                className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg"
+              >
+                {event.shortDescription ?? event.description.slice(0, 220)}
+              </motion.p>
+
+              <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-2">
                 <Badge color={TYPE_COLOR[event.type]}>{TYPE_LABEL[event.type]}</Badge>
-                {event.isOnline && <Badge color="info">🌐 Online</Badge>}
-                {event.isFeatured && <Badge color="gold">⭐ Featured</Badge>}
+                {event.status !== "published" && (
+                  <Badge color={STATUS_COLOR[event.status] ?? "neutral"}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </Badge>
+                )}
+                {event.isFeatured && <Badge color="gold">Featured</Badge>}
+                {event.isOnline && <Badge color="info">Online</Badge>}
                 {isFull && <Badge color="danger">Fully Booked</Badge>}
-              </div>
-            )}
+              </motion.div>
+
+              <motion.div variants={riseIn} custom={0.32} className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="#event-content"
+                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
+                >
+                  See full details
+                </a>
+                {showRSVP && (
+                  <a
+                    href="#rsvp-panel"
+                    className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                  >
+                    RSVP now
+                  </a>
+                )}
+              </motion.div>
+            </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
-              <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-100) font-display leading-snug mb-4">
-                {event.title}
-              </h1>
+              <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">At a glance</p>
+                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                  Everything a visitor needs before showing up.
+                </p>
+                <p className="mt-3 text-sm leading-7 text-white/65">
+                  Date, access, capacity, RSVP, location, and related events are now presented in the
+                  same polished system as the rest of the site.
+                </p>
+              </div>
 
-              {/* Meta block */}
-              <div className="space-y-3 p-5 rounded-xl bg-(--color-neutral-50) border border-(--color-neutral-100)">
-                <MetaItem icon={<CalendarIcon />}>
-                  <span className="font-medium">{formatDate(event.date)}</span>
+              <div className="grid grid-cols-2 gap-3">
+                {statCards.map((item) => (
+                  <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
+                      {item.value}
+                    </div>
+                    <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
+          {QUAD.map((color) => (
+            <div key={color} className="flex-1" style={{ background: color }} />
+          ))}
+        </div>
+      </section>
+
+      <section id="event-content" className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <div className="space-y-8">
+            <SectionCard title="Event information">
+              <div className="grid gap-4 md:grid-cols-2">
+                <MetaItem icon={<CalendarIcon />} label="Date">
+                  <span className="font-semibold text-neutral-950">{formatDate(event.date)}</span>
                   {event.endDate && event.endDate !== event.date && (
-                    <span className="text-(--color-neutral-500)"> – {formatDate(event.endDate)}</span>
+                    <span className="text-neutral-500"> – {formatDate(event.endDate)}</span>
                   )}
                 </MetaItem>
 
                 {event.time && (
-                  <MetaItem icon={<ClockIcon />}>
-                    <span className="font-medium">{event.time}</span>
-                    {event.endTime && <span className="text-(--color-neutral-500)"> – {event.endTime}</span>}
+                  <MetaItem icon={<ClockIcon />} label="Time">
+                    <span className="font-semibold text-neutral-950">{event.time}</span>
+                    {event.endTime && <span className="text-neutral-500"> – {event.endTime}</span>}
                   </MetaItem>
                 )}
 
-                <MetaItem icon={event.isOnline ? <VideoIcon /> : <LocationIcon />}>
-                  <span className="font-medium">{event.location}</span>
-                  {event.venue && <span className="text-(--color-neutral-500)"> · {event.venue}</span>}
+                <MetaItem icon={event.isOnline ? <VideoIcon /> : <LocationIcon />} label={event.isOnline ? "Online access" : "Location"}>
+                  <span className="font-semibold text-neutral-950">{event.location}</span>
+                  {event.venue && <span className="text-neutral-500"> · {event.venue}</span>}
                   {event.isOnline && event.meetingUrl && (
-                    <span className="block mt-0.5">
-                      <a
-                        href={event.meetingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-(--color-green-600) underline hover:no-underline text-xs"
-                      >
+                    <span className="mt-1 block">
+                      <a href={event.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-green-700 underline hover:no-underline">
                         Join online meeting ↗
                       </a>
                     </span>
                   )}
                 </MetaItem>
 
-                <MetaItem icon={<UserIcon />}>
-                  Organised by <span className="font-medium">{event.organizerName}</span>
+                <MetaItem icon={<UserIcon />} label="Organiser">
+                  <span className="font-semibold text-neutral-950">{event.organizerName}</span>
                 </MetaItem>
 
                 {event.maxAttendees != null && (
-                  <MetaItem icon={<UsersIcon />}>
-                    <span>
-                      <span className="font-medium">{confirmedCount}</span>
-                      <span className="text-(--color-neutral-500)"> / {event.maxAttendees} registered</span>
-                      {spotsLeft != null && spotsLeft > 0 && (
-                        <span className={`ml-2 text-xs font-semibold ${spotsLeft <= 20 ? "text-orange-600" : "text-(--color-green-600)"}`}>
-                          {spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} left
-                        </span>
-                      )}
-                    </span>
-                    {/* Capacity bar */}
-                    <div className="mt-2 w-full max-w-xs h-1.5 rounded-full bg-(--color-neutral-200) overflow-hidden">
+                  <MetaItem icon={<UsersIcon />} label="Capacity">
+                    <span className="font-semibold text-neutral-950">{confirmedCount}</span>
+                    <span className="text-neutral-500"> / {event.maxAttendees} registered</span>
+                    {spotsLeft != null && spotsLeft > 0 && (
+                      <span className="ml-2 text-xs font-bold text-green-700">{spotsLeft} spots left</span>
+                    )}
+                    <div className="mt-3 h-2 w-full rounded-full bg-neutral-100">
                       <div
-                        className="h-full rounded-full bg-(--color-green-500) transition-all"
-                        style={{ width: `${Math.min((confirmedCount / event.maxAttendees!) * 100, 100).toFixed(0)}%` }}
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min((confirmedCount / event.maxAttendees) * 100, 100)}%`,
+                          background: EKO_GREEN,
+                        }}
                       />
                     </div>
                   </MetaItem>
                 )}
 
                 {event.registrationDeadline && (
-                  <MetaItem icon={<CalendarIcon />}>
-                    <span className="text-(--color-neutral-500)">Registration closes:</span>{" "}
-                    <span className="font-medium">{formatDate(event.registrationDeadline)}</span>
+                  <MetaItem icon={<CalendarIcon />} label="Registration deadline">
+                    <span className="font-semibold text-neutral-950">{formatDate(event.registrationDeadline)}</span>
                   </MetaItem>
                 )}
               </div>
-            </motion.div>
+            </SectionCard>
 
-            {/* Description */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
-              className="prose prose-sm prose-neutral max-w-none text-(--color-neutral-700)"
-            >
-              <h2 className="text-lg font-bold text-(--color-neutral-100) mb-3">About This Event</h2>
-              {isHTML(event.description) ? (
-                <div dangerouslySetInnerHTML={{ __html: event.description }} />
-              ) : (
-                <p className="leading-relaxed whitespace-pre-wrap text-gray-200">{event.description}</p>
-              )}
-            </motion.div>
+            <SectionCard title="About this event">
+              <div className="prose prose-neutral max-w-none text-neutral-700">
+                {isHTML(event.description) ? (
+                  <div dangerouslySetInnerHTML={{ __html: event.description }} />
+                ) : (
+                  <p className="whitespace-pre-wrap text-base leading-8 text-neutral-700">{event.description}</p>
+                )}
+              </div>
+            </SectionCard>
 
-            {/* Tags */}
             {event.tags.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.12, ease: "easeOut" }}
-              >
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-(--color-green-600)"><TagIcon /></span>
+              <SectionCard title="Tags and topics">
+                <div className="flex flex-wrap gap-2">
                   {event.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs font-medium bg-(--color-green-50) text-(--color-green-700) border border-(--color-green-200) rounded-full px-2.5 py-1"
+                      className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-green-700"
                     >
-                      #{tag}
+                      <span className="text-green-700"><TagIcon /></span>
+                      {tag}
                     </span>
                   ))}
                 </div>
-              </motion.div>
+              </SectionCard>
             )}
 
-            {/* Mobile RSVP (shown only on small screens) */}
-            {showRSVP && (
-              <div className="lg:hidden rounded-xl border border-(--color-neutral-200) p-5 bg-white shadow-sm">
-                <h2 className="text-lg font-bold text-(--color-neutral-800) mb-4">Reserve Your Spot</h2>
-                <RSVPForm event={event} confirmedCount={confirmedCount} />
-              </div>
-            )}
-
-            {/* Related events */}
             {relatedEvents.length > 0 && (
-              <section>
-                <h2 className="text-xl font-bold text-(--color-neutral-800) mb-5">Related Events</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {relatedEvents.map((ev) => (
+              <SectionCard title="Related events">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {relatedEvents.map((item) => (
                     <EventCard
-                      key={ev.id}
-                      id={ev.slug}
-                      title={ev.title}
-                      date={ev.date}
-                      endDate={ev.endDate}
-                      time={ev.time}
-                      location={ev.location}
-                      isOnline={ev.isOnline}
-                      type={toCardType(ev.type)}
-                      description={ev.shortDescription ?? ev.description.slice(0, 120)}
-                      imageUrl={ev.imageUrl}
-                      organizer={ev.organizerName}
-                      attendees={countConfirmed(ev.id)}
-                      maxAttendees={ev.maxAttendees}
-                      registrationUrl={`/events/${ev.slug}`}
-                      isFeatured={ev.isFeatured}
-                      isFull={!!(ev.maxAttendees && countConfirmed(ev.id) >= ev.maxAttendees)}
-                      tags={ev.tags}
+                      key={item.id}
+                      id={item.slug}
+                      title={item.title}
+                      date={item.date}
+                      endDate={item.endDate}
+                      time={item.time}
+                      location={item.location}
+                      isOnline={item.isOnline}
+                      type={toCardType(item.type)}
+                      description={item.shortDescription ?? item.description.slice(0, 120)}
+                      imageUrl={item.imageUrl}
+                      organizer={item.organizerName}
+                      attendees={countConfirmed(item.id)}
+                      maxAttendees={item.maxAttendees}
+                      registrationUrl={`/events/${item.slug}`}
+                      isFeatured={item.isFeatured}
+                      isFull={!!(item.maxAttendees && countConfirmed(item.id) >= item.maxAttendees)}
+                      tags={item.tags}
                       layout="card"
                     />
                   ))}
                 </div>
-                <div className="mt-5">
-                  <Link
-                    href="/events"
-                    className="text-sm text-(--color-green-600) font-semibold hover:underline"
-                  >
-                    ← Browse all events
+                <div className="mt-6">
+                  <Link href="/events" className="text-sm font-bold text-green-700 underline underline-offset-4 hover:no-underline">
+                    Browse all events
                   </Link>
                 </div>
-              </section>
+              </SectionCard>
             )}
           </div>
 
-          {/* ── Right / Sidebar ──────────────────────────── */}
-          <aside className="space-y-5">
-            {/* RSVP card (desktop) */}
+          <aside className="space-y-5 lg:sticky lg:top-24">
             {showRSVP && (
-              <div className="hidden lg:block rounded-xl border border-(--color-neutral-200) p-5 bg-white shadow-sm sticky top-24">
-                <h2 className="text-lg font-bold text-(--color-neutral-800) mb-4">Reserve Your Spot</h2>
-                <RSVPForm event={event} confirmedCount={confirmedCount} />
+              <div id="rsvp-panel" className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Reserve your spot</p>
+                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-neutral-950">RSVP for this event</h2>
+                <p className="mt-2 text-sm leading-7 text-neutral-600">
+                  Complete your reservation to stay connected to this gathering and help us plan attendance well.
+                </p>
+                <div className="mt-5">
+                  <RSVPForm event={event} confirmedCount={confirmedCount} />
+                </div>
               </div>
             )}
 
-            {/* No RSVP needed banner */}
             {!event.registrationRequired && event.status === "published" && (
-              <div className="rounded-xl border border-(--color-green-200) p-5 bg-(--color-green-50) text-center">
-                <p className="text-sm font-semibold text-(--color-green-800)">✅ Free Entry</p>
-                <p className="text-xs text-(--color-green-700) mt-1">No registration required. Just show up!</p>
+              <div className="rounded-4xl border border-green-200 bg-green-50 p-6 text-center">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-green-700">Open entry</p>
+                <p className="mt-3 text-lg font-black text-green-900">No registration required</p>
+                <p className="mt-2 text-sm leading-7 text-green-800">This is a free-entry event. Visitors can simply show up and participate.</p>
               </div>
             )}
 
-            {/* Add to Calendar */}
             {isUpcoming && event.status === "published" && (
-              <div className="rounded-xl border border-(--color-neutral-200) p-4 bg-white">
-                <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-3">Save to your calendar</p>
-                <AddToCalendarButton event={event} />
+              <div className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Save the date</p>
+                <div className="mt-4">
+                  <AddToCalendarButton event={event} />
+                </div>
               </div>
             )}
 
-            {/* Share */}
-            <div className="rounded-xl border border-(--color-neutral-200) p-4 bg-white">
-              <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-3">Share this event</p>
-              <ShareButtons
-                url={pageUrl}
-                title={event.title}
-                description={event.shortDescription ?? event.description.slice(0, 120)}
-                platforms={["whatsapp", "twitter", "facebook", "linkedin", "copy"]}
-              />
+            <div className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Share this event</p>
+              <div className="mt-4">
+                <ShareButtons
+                  url={pageUrl}
+                  title={event.title}
+                  description={event.shortDescription ?? event.description.slice(0, 120)}
+                  platforms={["whatsapp", "twitter", "facebook", "linkedin", "copy"]}
+                />
+              </div>
             </div>
 
-            {/* Quick info card */}
-            <div className="rounded-xl border border-(--color-neutral-100) p-4 bg-(--color-neutral-50) space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-(--color-neutral-500)">Status</span>
-                <Badge color={STATUS_COLOR[event.status] ?? "neutral"}>
-                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-(--color-neutral-500)">Visibility</span>
-                <span className="font-medium text-(--color-neutral-700)">{event.isPublic ? "Public" : "Members only"}</span>
-              </div>
-              {event.maxAttendees != null && (
-                <div className="flex justify-between">
-                  <span className="text-(--color-neutral-500)">Capacity</span>
-                  <span className="font-medium text-(--color-neutral-700)">{event.maxAttendees} attendees</span>
+            <div className="rounded-4xl border border-neutral-200 bg-neutral-50 p-6">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Quick facts</p>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-neutral-500">Status</span>
+                  <Badge color={STATUS_COLOR[event.status] ?? "neutral"}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </Badge>
                 </div>
-              )}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-neutral-500">Visibility</span>
+                  <span className="font-semibold text-neutral-800">{event.isPublic ? "Public" : "Members only"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-neutral-500">Type</span>
+                  <span className="font-semibold text-neutral-800">{TYPE_LABEL[event.type]}</span>
+                </div>
+                {event.maxAttendees != null && (
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">Capacity</span>
+                    <span className="font-semibold text-neutral-800">{event.maxAttendees} attendees</span>
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
-

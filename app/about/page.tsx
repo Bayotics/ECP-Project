@@ -33,54 +33,87 @@ const stagger = {
 };
 
 const IMPACT_STATS = [
-  { value: "500+", label: "Members connected", color: EKO_GREEN },
-  { value: "25+", label: "Years of community", color: EKO_RED },
-  { value: "1690s", label: "Recorded royal era", color: EKO_BLUE },
-  { value: "5", label: "Core Lagos island divisions", color: EKO_YELLOW },
+  { value: "5", label: "Service programmes", color: EKO_GREEN },
+  { value: "2", label: "High school awards", color: EKO_RED },
+  { value: "3", label: "College awards", color: EKO_BLUE },
+  { value: "2mi", label: "Adopt-a-highway stretch", color: EKO_YELLOW },
 ];
 
 const STORY_PILLARS = [
   {
     title: "Mission",
-    text: "We unite Lagosians in Philadelphia through service, advocacy, fellowship, and visible cultural pride.",
+    text: "We preserve and support our cultural heritage, render humanitarian assistance to those in need, encourage community development and outreach, and organise the family and friends of Lagos, Nigeria, for worthy causes.",
     color: EKO_GREEN,
   },
   {
     title: "Vision",
-    text: "We are building a diaspora community that keeps Eko heritage alive while investing in people at home and abroad.",
+    text: "We envision a world where peace prevails and where abundant opportunities exist for our youth and for a strong, vibrant senior community.",
     color: EKO_RED,
   },
   {
-    title: "Promise",
-    text: "We represent Lagos with dignity, modern energy, and deep respect for the city’s royal, civic, and communal traditions.",
+    title: "Core Values",
+    text: "Professionalism, discipline, and integrity guide the way we serve, lead, and represent Eko Club Philadelphia.",
     color: EKO_BLUE,
   },
 ];
 
 const VALUES = [
   {
-    icon: "🤝",
-    title: "Unity in the diaspora",
-    desc: "We create a trusted home for Lagosians across generations, professions, and neighbourhoods.",
+    icon: "🏙️",
+    title: "Support in our communities",
+    desc: "We provide a variety of services to underprivileged Lagosian Americans and other minorities in Philadelphia and the surrounding area.",
     color: EKO_GREEN,
   },
   {
-    icon: "🏛️",
-    title: "Heritage with depth",
-    desc: "We preserve the story of Eko beyond slogans, honouring the monarchy, land-owning lineages, and civic memory.",
+    icon: "🎓",
+    title: "Scholarship support",
+    desc: "We provide scholarships to minority high school and college students as part of our long-term investment in education.",
     color: EKO_RED,
   },
   {
-    icon: "🌍",
-    title: "Service that travels",
-    desc: "Our work connects Philadelphia to Lagos through outreach, support, and practical impact.",
+    icon: "🤲",
+    title: "Humanitarian assistance",
+    desc: "We assist homeless families with humanitarian services and practical care wherever help is needed most.",
     color: EKO_BLUE,
   },
   {
-    icon: "💡",
-    title: "Modern Eko spirit",
-    desc: "We pair tradition with innovation, presenting Lagos as historic, ambitious, and globally relevant.",
+    icon: "🧺",
+    title: "Thanksgiving outreach",
+    desc: "We provide an annual Thanksgiving food drive to the community as part of our commitment to consistent service.",
     color: EKO_YELLOW,
+  },
+];
+
+const SERVICE_PROGRAMS = [
+  {
+    title: "Ronald McDonald House Make-A-Meal Program",
+    text: "We provide breakfast at the PA-RMH for families staying at Ronald McDonald House, and the programme has remained a strong and consistent success over the past four years.",
+    icon: "🍽️",
+    accent: EKO_GREEN,
+  },
+  {
+    title: "Back to School with HomeFront Program",
+    text: "Our participants provide backpacks, school uniforms, school supplies, and monetary donations to children in need as families prepare for a new school year.",
+    icon: "🎒",
+    accent: EKO_RED,
+  },
+  {
+    title: "ECP Scholarship Program",
+    text: "We award scholarships to 2 high school graduates and 3 college students, extending educational support where it can make a lasting difference.",
+    icon: "🏅",
+    accent: EKO_BLUE,
+  },
+  {
+    title: "PA Adopt-A-Highway Program",
+    text: "We walk a two-mile stretch in Bucks County, Pennsylvania, picking up visible trash and waste as part of our environmental service commitment.",
+    icon: "🛣️",
+    accent: EKO_YELLOW,
+  },
+  {
+    title: "Thanksgiving Basket Food Drive",
+    text: "Each year, we host our annual Thanksgiving food drive to provide assistance to families in need within our community.",
+    icon: "🦃",
+    accent: EKO_GREEN,
   },
 ];
 
@@ -226,29 +259,6 @@ const ROYAL_TIMELINE = [
   },
 ];
 
-const EKO_TODAY = [
-  {
-    title: "Culture",
-    text: "Eko remains a cultural watershed where monarchy, chieftaincy, and modern city identity continue to meet.",
-    color: EKO_GREEN,
-  },
-  {
-    title: "Commerce",
-    text: "We present Lagos as the commercial, financial, and maritime nerve-centre of Nigeria.",
-    color: EKO_RED,
-  },
-  {
-    title: "Mobility",
-    text: "Ports, coastlines, and migration patterns made Lagos a gateway city drawing people from across Nigeria and beyond.",
-    color: EKO_BLUE,
-  },
-  {
-    title: "Community",
-    text: "Eko Club Philadelphia carries that cosmopolitan energy into diaspora organising, fellowship, and collective uplift.",
-    color: EKO_YELLOW,
-  },
-];
-
 function QuadBar() {
   return (
     <div className="flex h-1.5 w-28 overflow-hidden rounded-full" aria-hidden="true">
@@ -364,8 +374,8 @@ export default function AboutPage() {
                 custom={0.08}
                 className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
               >
-                Built on the <span style={{ color: EKO_GREEN }}>spirit of Eko</span>, shaped by
-                <span style={{ color: EKO_YELLOW }}> history</span>, service, and community.
+                Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
+                <span style={{ color: EKO_YELLOW }}> service</span>, our story.
               </motion.h1>
 
               <motion.p
@@ -373,9 +383,9 @@ export default function AboutPage() {
                 custom={0.16}
                 className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg"
               >
-                We are a modern diaspora home for Lagosians, and we present our story as part of the
-                larger history of Lagos itself, from royal succession and traditional institutions to
-                the rise of the city as Nigeria’s commercial heartbeat.
+                We are Eko Club Philadelphia. We preserve our cultural heritage, serve families and
+                communities in need, and keep the story of Lagos alive through fellowship, outreach,
+                and visible impact.
               </motion.p>
 
               <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
@@ -404,11 +414,11 @@ export default function AboutPage() {
               <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">What drives us</p>
                 <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
-                  Preserving Lagos identity with a home-page level experience.
+                  Presenting our mission, vision, and service with clarity.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
-                  Here, we present our history and the history of Lagos in clear sections, with the
-                  same modern visual energy that defines our home page.
+                  This page brings together who we are, what we believe, how we serve, and the Lagos
+                  history we proudly carry as part of our identity.
                 </p>
               </div>
 
@@ -443,8 +453,8 @@ export default function AboutPage() {
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
           <SectionIntro
             eyebrow="Why we exist"
-            title="A diaspora chapter with roots deep in Lagos memory"
-            text="We are sharing more than the story of a club. We are presenting a story of belonging: a community shaped by the heritage of Eko and committed to carrying that heritage into new generations in Philadelphia."
+            title="Our mission, vision, and values"
+            text="We are guided by a clear purpose: to preserve our heritage, serve people in need, strengthen community, and organise family and friends of Lagos, Nigeria, for worthy causes."
           />
 
           <motion.div
@@ -475,9 +485,9 @@ export default function AboutPage() {
       <section className="bg-neutral-50 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
           <SectionIntro
-            eyebrow="Eko values"
-            title="The principles behind our programmes, partnerships, and presence"
-            text="Everything we do is anchored in community trust, visible culture, and practical service. As we present our history, we also show the values that keep our movement alive."
+            eyebrow="Our focus"
+            title="How we turn our mission into practical service"
+            text="Our work is not abstract. It is expressed through scholarships, humanitarian support, community outreach, and consistent service to families in Philadelphia and beyond."
             align="center"
           />
 
@@ -695,9 +705,9 @@ export default function AboutPage() {
       <section className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
           <SectionIntro
-            eyebrow="Lagos now"
-            title="Why this history still matters to the Eko story today"
-            text="For us, this history does not stay in the past. It helps explain why Lagos still carries unusual cultural weight, institutional memory, and economic magnetism, and why communities like ours continue to organise around that identity."
+            eyebrow="Annual service programs"
+            title="The initiatives through which we serve each year"
+            text="These programmes reflect the real work of our club: feeding families, supporting students, caring for children, keeping our environment clean, and showing up consistently for the community."
             align="center"
           />
 
@@ -708,18 +718,37 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4"
           >
-            {EKO_TODAY.map((item, index) => (
+            {SERVICE_PROGRAMS.map((item, index) => (
               <motion.article
                 key={item.title}
                 variants={riseIn}
                 custom={index * 0.06}
                 className="rounded-[1.75rem] border border-neutral-200 bg-neutral-50 p-6"
               >
-                <div className="h-2 w-16 rounded-full" style={{ background: item.color }} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${item.accent}12` }}>
+                  {item.icon}
+                </div>
+                <div className="mt-5 h-2 w-16 rounded-full" style={{ background: item.accent }} />
                 <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-neutral-600">{item.text}</p>
               </motion.article>
             ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 flex justify-center"
+          >
+            <Link
+              href="/projects"
+              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+              style={{ background: EKO_BLUE }}
+            >
+              View full projects page
+            </Link>
           </motion.div>
         </div>
       </section>

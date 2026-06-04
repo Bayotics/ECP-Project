@@ -36,6 +36,27 @@ const EKO_BLUE   = "#2563eb";
 const EKO_YELLOW = "#d97706";
 const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
 
+const GALLERY_ASSETS = {
+  hero: [
+    { src: "/gallery/event1.JPG", alt: "Eko Club Philadelphia gallery highlight" },
+    { src: "/gallery/event2.JPG", alt: "Eko Club Philadelphia members in community" },
+    { src: "/gallery/event3.JPG", alt: "Eko Club Philadelphia event celebration" },
+  ],
+  mission: "/gallery/event4.JPG",
+  timeline: {
+    townHall: "/gallery/event5.JPG",
+    health: "/gallery/event6.JPG",
+    seminar: "/gallery/event7.JPG",
+    volunteer: "/gallery/event8.JPG",
+    workshop: "/gallery/event9.JPG",
+    meetup: "/gallery/event3.JPG",
+    pressConference: "/gallery/event2.JPG",
+    other: "/gallery/event1.JPG",
+  },
+  sponsorsBackdrop: "/gallery/event2.JPG",
+  donation: "/gallery/event6.JPG",
+} as const;
+
 /* ══════════════════════════════════════════════════════
    SHARED HELPERS
    ══════════════════════════════════════════════════════ */
@@ -150,11 +171,7 @@ function AnnouncementBar() {
 /* ══════════════════════════════════════════════════════
    2. HERO — cinematic carousel · 4-colour identity
    ══════════════════════════════════════════════════════ */
-const HERO_SLIDES = [
-  { src: "/hero-1.jpg", alt: "Eko Club Philadelphia Adopt-a-Highway community service" },
-  { src: "/hero-2.jpg", alt: "Eko Club Philadelphia members holding club banner" },
-  { src: "/hero-3.jpg", alt: "Eko Club Philadelphia community dinner gathering" },
-];
+const HERO_SLIDES = GALLERY_ASSETS.hero;
 
 const HERO_WORDS = [
   { text: "EKO",          color: EKO_GREEN  },
@@ -525,7 +542,7 @@ function MissionSection() {
             >
               <div className="relative overflow-hidden rounded-[14px]" style={{ aspectRatio: "4/3" }}>
                 <Image
-                  src="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=900"
+                  src={GALLERY_ASSETS.mission}
                   alt="Eko Club Philadelphia community members"
                   fill
                   className="object-cover"
@@ -721,7 +738,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "published",
     organizerName: "Eko Club Philadelphia",
     tags: ["governance", "accountability", "town-hall"],
-    imageUrl: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.townHall,
     isOnline: false,
   },
   {
@@ -736,7 +753,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "published",
     organizerName: "Fatima Sule",
     tags: ["health", "community", "outreach"],
-    imageUrl: "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.health,
     isOnline: false,
   },
   {
@@ -751,7 +768,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "published",
     organizerName: "Kemi Adewale",
     tags: ["law", "rights", "seminar"],
-    imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.seminar,
     isOnline: true,
   },
   {
@@ -766,7 +783,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "published",
     organizerName: "Bode Ogunleye",
     tags: ["environment", "volunteer", "community"],
-    imageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.volunteer,
     isOnline: false,
   },
   {
@@ -781,7 +798,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "published",
     organizerName: "Tunde Adeyemi",
     tags: ["digital", "workshop", "advocacy"],
-    imageUrl: "https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.workshop,
     isOnline: false,
   },
   {
@@ -796,7 +813,7 @@ const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
     status: "completed",
     organizerName: "Eko Club Philadelphia",
     tags: ["gala", "awards", "annual"],
-    imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200",
+    imageUrl: GALLERY_ASSETS.timeline.meetup,
     isOnline: false,
   },
 ];
@@ -809,43 +826,43 @@ const TIMELINE_TYPE_STYLES: Record<
     label: "Town Hall",
     badgeClassName: "bg-emerald-100 text-emerald-800",
     dotClassName: "bg-emerald-500",
-    fallbackImage: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.townHall,
   },
   workshop: {
     label: "Workshop",
     badgeClassName: "bg-sky-100 text-sky-800",
     dotClassName: "bg-sky-500",
-    fallbackImage: "https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.workshop,
   },
   volunteer: {
     label: "Volunteer",
     badgeClassName: "bg-amber-100 text-amber-800",
     dotClassName: "bg-amber-500",
-    fallbackImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.volunteer,
   },
   meetup: {
     label: "Meetup",
     badgeClassName: "bg-fuchsia-100 text-fuchsia-800",
     dotClassName: "bg-fuchsia-500",
-    fallbackImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.meetup,
   },
   seminar: {
     label: "Seminar",
     badgeClassName: "bg-violet-100 text-violet-800",
     dotClassName: "bg-violet-500",
-    fallbackImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.seminar,
   },
   "press-conference": {
     label: "Press Conference",
     badgeClassName: "bg-rose-100 text-rose-800",
     dotClassName: "bg-rose-500",
-    fallbackImage: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.pressConference,
   },
   other: {
     label: "Event",
     badgeClassName: "bg-slate-100 text-slate-800",
     dotClassName: "bg-slate-500",
-    fallbackImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200",
+    fallbackImage: GALLERY_ASSETS.timeline.other,
   },
 };
 
@@ -1305,7 +1322,7 @@ function SponsorsBand() {
       {/* Philadelphia city background */}
       <div className="absolute inset-0">
         <Image
-          src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600"
+          src={GALLERY_ASSETS.sponsorsBackdrop}
           alt=""
           fill
           className="object-cover object-center opacity-20"
@@ -1390,7 +1407,7 @@ function DonationCallout() {
           className="relative min-h-72 lg:min-h-full"
         >
           <Image
-            src="https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1000"
+            src={GALLERY_ASSETS.donation}
             alt="Community members at an Eko Club Philadelphia event"
             fill
             className="object-cover object-center"
