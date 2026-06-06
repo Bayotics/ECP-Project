@@ -1,9 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User } from "@/lib/models";
-import { usersDB } from "@/lib/storage";
-import { storageReadOne, storageWriteOne, storageRemoveKey } from "@/lib/storage/storage";
-import { STORAGE_KEYS } from "@/lib/storage/keys";
+import { apiRequest } from "@/lib/client/api";
 import type { CreateUserInput } from "@/lib/models/user";
 
 type RegisterInput = Omit<CreateUserInput, "role" | "status"> & { password: string };
@@ -14,9 +12,9 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isMember: boolean;
-  login: (userId: string) => void;
+  login: (userId: string) => Promise<void>;
   logout: () => void;
-  refreshCurrentUser: () => void;
+  refreshCurrentUser: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (input: RegisterInput) => Promise<{ success: boolean; error?: string }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean }>;
@@ -28,67 +26,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadUser = useCallback(() => {
-    const userId = storageReadOne<string>(STORAGE_KEYS.AUTH_USER_ID);
-    if (userId) {
-      const user = usersDB.getById(userId);
-      setCurrentUser(user ?? null);
-    } else {
+  const loadUser = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const user = await apiRequest<User | null>("/api/auth/session");
+      setCurrentUser(user);
+    } catch {
       setCurrentUser(null);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    let isActive = true;
 
-  const login = useCallback((userId: string) => {
-    storageWriteOne(STORAGE_KEYS.AUTH_USER_ID, userId);
-    const user = usersDB.getById(userId);
-    if (user) {
-      usersDB.update(userId, { lastLoginAt: new Date().toISOString() });
-      setCurrentUser({ ...user, lastLoginAt: new Date().toISOString() });
+    async function loadInitialUser() {
+      try {
+        const user = await apiRequest<User | null>("/api/auth/session");
+        if (isActive) {
+          setCurrentUser(user);
+        }
+      } catch {
+        if (isActive) {
+          setCurrentUser(null);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
     }
+
+    void loadInitialUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const login = useCallback(async (userId: string) => {
+    const user = await apiRequest<User>(`/api/users/${userId}`);
+    setCurrentUser(user);
   }, []);
 
   const logout = useCallback(() => {
-    storageRemoveKey(STORAGE_KEYS.AUTH_USER_ID);
     setCurrentUser(null);
+    void apiRequest<null>("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   }, []);
 
-  const refreshCurrentUser = useCallback(() => {
-    loadUser();
+  const refreshCurrentUser = useCallback(async () => {
+    await loadUser();
   }, [loadUser]);
 
   const loginWithEmail = useCallback(
     async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
       if (!email || !password) return { success: false, error: "Email and password are required." };
-      const user = usersDB.findByCredentials(email.trim().toLowerCase(), password);
-      if (!user) return { success: false, error: "Invalid email or password." };
-      if (user.status === "suspended") return { success: false, error: "This account has been suspended." };
-      login(user.id);
-      return { success: true };
+      try {
+        const user = await apiRequest<User>("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
+        setCurrentUser(user);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Invalid email or password." };
+      }
     },
-    [login]
+    []
   );
 
   const register = useCallback(
     async (input: RegisterInput): Promise<{ success: boolean; error?: string }> => {
-      const existing = usersDB.getByEmail(input.email.trim().toLowerCase());
-      if (existing) return { success: false, error: "An account with this email already exists." };
       if (!input.password || input.password.length < 6)
         return { success: false, error: "Password must be at least 6 characters." };
-      const user = usersDB.registerUser({ ...input, email: input.email.trim().toLowerCase() });
-      login(user.id);
-      return { success: true };
+
+      try {
+        const user = await apiRequest<User>("/api/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ ...input, email: input.email.trim().toLowerCase() }),
+        });
+        setCurrentUser(user);
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Registration failed.",
+        };
+      }
     },
-    [login]
+    []
   );
 
   const sendPasswordReset = useCallback(async (email: string): Promise<{ success: boolean }> => {
-    // Mock: always reports success regardless of whether account exists (security best practice)
-    void usersDB.getByEmail(email); // no-op lookup so tree shaking keeps it
+    await apiRequest<{ message: string }>("/api/auth/password-reset", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
     return { success: true };
   }, []);
 

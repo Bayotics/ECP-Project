@@ -41,7 +41,7 @@ function RelatedCard({ post }: { post: NewsPost }) {
       className="group flex gap-3 p-3 rounded-xl hover:bg-(--color-neutral-100) transition-colors"
     >
       {post.imageUrl && (
-        <div className="relative w-20 h-16 flex-shrink-0 rounded-lg overflow-hidden">
+        <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg">
           <Image src={post.imageUrl} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="80px" />
         </div>
       )}
@@ -62,7 +62,9 @@ export default function NewsArticlePage() {
   const post = getBySlug(params.slug);
 
   useEffect(() => {
-    if (post) incrementViews(post.id);
+    if (post) {
+      void incrementViews(post.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post?.id]);
 
@@ -147,7 +149,7 @@ export default function NewsArticlePage() {
 
           {/* Hero image */}
           {post.imageUrl && (
-            <div className="relative w-full h-72 md:h-[420px] rounded-2xl overflow-hidden mb-8">
+            <div className="relative mb-8 h-72 w-full overflow-hidden rounded-2xl md:h-105">
               <Image
                 src={post.imageUrl}
                 alt={post.imageAlt ?? post.title}

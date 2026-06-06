@@ -1,5 +1,6 @@
 import type { Collection, IndexDescription } from "mongodb";
 import type {
+  Cart,
   Committee,
   Donation,
   Event,
@@ -24,6 +25,7 @@ export const COLLECTIONS = {
   orders: "orders",
   donations: "donations",
   documents: "documents",
+  carts: "carts",
 } as const;
 
 export interface AppCollections {
@@ -37,6 +39,7 @@ export interface AppCollections {
   orders: Order;
   donations: Donation;
   documents: OrgDocument;
+  carts: Cart;
 }
 
 type CollectionName = keyof AppCollections;
@@ -98,6 +101,11 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
   documents: [
     { key: { id: 1 }, unique: true },
     { key: { category: 1 } },
+  ],
+  carts: [
+    { key: { id: 1 }, unique: true },
+    { key: { userId: 1 }, unique: true, sparse: true },
+    { key: { sessionId: 1 }, unique: true, sparse: true },
   ],
 };
 

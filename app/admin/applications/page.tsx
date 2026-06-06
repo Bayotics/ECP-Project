@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
-  FormField, FormTextarea, Btn, SectionDivider, EmptyState,
+  FormField, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { MembershipApplication } from "@/lib/models/membership";
 
@@ -44,18 +44,35 @@ export default function AdminApplicationsPage() {
   }
   function closeModal() { setSelected(null); }
 
-  function saveNotes() {
+  async function saveNotes() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, { reviewNotes });
-    setSaving(false);
+    try {
+      await update(selected.id, { reviewNotes });
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     if (!selected || !msgContent.trim()) return;
     const name = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin";
-    addAdminMessage(selected.id, name, msgContent.trim());
+    await addAdminMessage(selected.id, name, msgContent.trim());
     setMsgContent("");
+  }
+
+  async function updateStatus(status: "under-review" | "interview" | "approved" | "rejected") {
+    if (!selected) return;
+
+    const actions = {
+      "under-review": setUnderReview,
+      interview: setInterview,
+      approved: approve,
+      rejected: reject,
+    } as const;
+
+    await actions[status](selected.id, reviewedBy);
+    setSelected((prev) => prev ? { ...prev, status } as MembershipApplication : null);
   }
 
   const reviewedBy = currentUser?.id ?? "admin";
@@ -138,10 +155,10 @@ export default function AdminApplicationsPage() {
 
             <SectionDivider label="Update Status" />
             <div className="flex flex-wrap gap-2">
-              <Btn size="sm" variant="secondary" onClick={() => { setUnderReview(selected.id, reviewedBy); setSelected(prev => prev ? { ...prev, status: "under-review" } as MembershipApplication : null); }}>Under Review</Btn>
-              <Btn size="sm" variant="warning"   onClick={() => { setInterview(selected.id, reviewedBy); setSelected(prev => prev ? { ...prev, status: "interview" } as MembershipApplication : null); }}>Interview</Btn>
-              <Btn size="sm" variant="success"   onClick={() => { approve(selected.id, reviewedBy); setSelected(prev => prev ? { ...prev, status: "approved" } as MembershipApplication : null); }}>Approve</Btn>
-              <Btn size="sm" variant="danger"    onClick={() => { reject(selected.id, reviewedBy); setSelected(prev => prev ? { ...prev, status: "rejected" } as MembershipApplication : null); }}>Reject</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => void updateStatus("under-review")}>Under Review</Btn>
+              <Btn size="sm" variant="warning"   onClick={() => void updateStatus("interview")}>Interview</Btn>
+              <Btn size="sm" variant="success"   onClick={() => void updateStatus("approved")}>Approve</Btn>
+              <Btn size="sm" variant="danger"    onClick={() => void updateStatus("rejected")}>Reject</Btn>
             </div>
 
             <SectionDivider label="Review Notes" />

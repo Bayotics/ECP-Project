@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Committee, CommitteeMemberProfile, CreateCommitteeInput, UpdateCommitteeInput } from "@/lib/models";
-import { committeesDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface CommitteesContextValue {
   committees: Committee[];
@@ -10,12 +10,12 @@ interface CommitteesContextValue {
   getBySlug: (slug: string) => Committee | null;
   getActive: () => Committee[];
   getByType: (type: Committee["type"]) => Committee[];
-  add: (input: CreateCommitteeInput) => Committee;
-  update: (id: string, patch: UpdateCommitteeInput) => Committee | null;
-  addMember: (id: string, member: CommitteeMemberProfile) => Committee | null;
-  removeMember: (id: string, memberName: string) => Committee | null;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateCommitteeInput) => Promise<Committee>;
+  update: (id: string, patch: UpdateCommitteeInput) => Promise<Committee | null>;
+  addMember: (id: string, member: CommitteeMemberProfile) => Promise<Committee | null>;
+  removeMember: (id: string, memberName: string) => Promise<Committee | null>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const CommitteesContext = createContext<CommitteesContextValue | null>(null);
@@ -24,41 +24,87 @@ export function CommitteesProvider({ children }: { children: React.ReactNode }) 
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setCommittees(committeesDB.getAll());
-    setIsLoading(false);
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const nextCommittees = await apiRequest<Committee[]>("/api/committees");
+      setCommittees(nextCommittees);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let isActive = true;
 
-  const add = useCallback((input: CreateCommitteeInput): Committee => {
-    const created = committeesDB.create(input);
-    setCommittees(committeesDB.getAll());
+    async function loadInitialCommittees() {
+      try {
+        const nextCommittees = await apiRequest<Committee[]>("/api/committees");
+        if (isActive) {
+          setCommittees(nextCommittees);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialCommittees();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateCommitteeInput): Promise<Committee> => {
+    const created = await apiRequest<Committee>("/api/committees", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setCommittees((prev) => [created, ...prev.filter((committee) => committee.id !== created.id)]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateCommitteeInput): Committee | null => {
-    const updated = committeesDB.update(id, patch);
-    setCommittees(committeesDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateCommitteeInput): Promise<Committee | null> => {
+    const updated = await apiRequest<Committee>(`/api/committees/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setCommittees((prev) => prev.map((committee) => (committee.id === id ? updated : committee)));
     return updated;
   }, []);
 
-  const addMember = useCallback((id: string, member: CommitteeMemberProfile): Committee | null => {
-    const updated = committeesDB.addMember(id, member);
-    setCommittees(committeesDB.getAll());
-    return updated;
-  }, []);
+  const addMember = useCallback(async (id: string, member: CommitteeMemberProfile): Promise<Committee | null> => {
+    const committee = committees.find((item) => item.id === id) ?? null;
+    if (!committee) return null;
 
-  const removeMember = useCallback((id: string, memberName: string): Committee | null => {
-    const updated = committeesDB.removeMember(id, memberName);
-    setCommittees(committeesDB.getAll());
+    const updated = await apiRequest<Committee>(`/api/committees/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ members: [...committee.members, member] }),
+    });
+    setCommittees((prev) => prev.map((item) => (item.id === id ? updated : item)));
     return updated;
-  }, []);
+  }, [committees]);
 
-  const remove = useCallback((id: string): boolean => {
-    const result = committeesDB.delete(id);
-    setCommittees(committeesDB.getAll());
-    return result;
+  const removeMember = useCallback(async (id: string, memberName: string): Promise<Committee | null> => {
+    const committee = committees.find((item) => item.id === id) ?? null;
+    if (!committee) return null;
+
+    const updated = await apiRequest<Committee>(`/api/committees/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        members: committee.members.filter((member) => member.name !== memberName),
+      }),
+    });
+    setCommittees((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    return updated;
+  }, [committees]);
+
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/committees/${id}`);
+    setCommittees((prev) => prev.filter((committee) => committee.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => committees.find(c => c.id === id) ?? null, [committees]);

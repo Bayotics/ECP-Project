@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
-import { runSeed } from "@/lib/seed/seed";
+import React from "react";
 import { ToastProvider } from "@/hooks/useToast";
 import ToastContainer from "@/components/ui/Toast";
 import { AuthProvider } from "./AuthContext";
@@ -16,13 +15,6 @@ import { DonationsProvider } from "./DonationsContext";
 import { CartProvider } from "./CartContext";
 import { DocumentsProvider } from "./DocumentsContext";
 
-function SeedRunner({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    runSeed();
-  }, []);
-  return <>{children}</>;
-}
-
 /**
  * Combined provider tree for the entire ECP app.
  * Wrap around the root layout's children.
@@ -30,34 +22,32 @@ function SeedRunner({ children }: { children: React.ReactNode }) {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <SeedRunner>
-        <AuthProvider>
-          <UsersProvider>
-            <MembershipProvider>
-              <EventsProvider>
-                <RSVPProvider>
-                  <NewsProvider>
-                    <CommitteesProvider>
-                      <ProductsProvider>
-                        <OrdersProvider>
-                          <DonationsProvider>
+      <AuthProvider>
+        <UsersProvider>
+          <MembershipProvider>
+            <EventsProvider>
+              <RSVPProvider>
+                <NewsProvider>
+                  <CommitteesProvider>
+                    <ProductsProvider>
+                      <OrdersProvider>
+                        <DonationsProvider>
                           <DocumentsProvider>
-                          <CartProvider>
-                            {children}
-                            <ToastContainer />
-                          </CartProvider>
+                            <CartProvider>
+                              {children}
+                              <ToastContainer />
+                            </CartProvider>
                           </DocumentsProvider>
                         </DonationsProvider>
-                        </OrdersProvider>
-                      </ProductsProvider>
-                    </CommitteesProvider>
-                  </NewsProvider>
-                </RSVPProvider>
-              </EventsProvider>
-            </MembershipProvider>
-          </UsersProvider>
-        </AuthProvider>
-      </SeedRunner>
+                      </OrdersProvider>
+                    </ProductsProvider>
+                  </CommitteesProvider>
+                </NewsProvider>
+              </RSVPProvider>
+            </EventsProvider>
+          </MembershipProvider>
+        </UsersProvider>
+      </AuthProvider>
     </ToastProvider>
   );
 }

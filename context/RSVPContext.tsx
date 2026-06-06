@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { RSVP, CreateRSVPInput, UpdateRSVPInput } from "@/lib/models";
-import { rsvpsDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface RSVPContextValue {
   rsvps: RSVP[];
@@ -11,12 +11,12 @@ interface RSVPContextValue {
   getByUser: (userId: string) => RSVP[];
   getConfirmedByEvent: (eventId: string) => RSVP[];
   countConfirmed: (eventId: string) => number;
-  add: (input: CreateRSVPInput) => RSVP;
-  update: (id: string, patch: UpdateRSVPInput) => RSVP | null;
-  cancel: (id: string) => RSVP | null;
-  checkIn: (id: string) => RSVP | null;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateRSVPInput) => Promise<RSVP>;
+  update: (id: string, patch: UpdateRSVPInput) => Promise<RSVP | null>;
+  cancel: (id: string) => Promise<RSVP | null>;
+  checkIn: (id: string) => Promise<RSVP | null>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const RSVPContext = createContext<RSVPContextValue | null>(null);
@@ -25,41 +25,79 @@ export function RSVPProvider({ children }: { children: React.ReactNode }) {
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setRsvps(rsvpsDB.getAll());
-    setIsLoading(false);
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const nextRsvps = await apiRequest<RSVP[]>("/api/rsvps");
+      setRsvps(nextRsvps);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let isActive = true;
 
-  const add = useCallback((input: CreateRSVPInput): RSVP => {
-    const created = rsvpsDB.create(input);
-    setRsvps(rsvpsDB.getAll());
+    async function loadInitialRsvps() {
+      try {
+        const nextRsvps = await apiRequest<RSVP[]>("/api/rsvps");
+        if (isActive) {
+          setRsvps(nextRsvps);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialRsvps();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateRSVPInput): Promise<RSVP> => {
+    const created = await apiRequest<RSVP>("/api/rsvps", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setRsvps((prev) => [created, ...prev.filter((rsvp) => rsvp.id !== created.id)]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateRSVPInput): RSVP | null => {
-    const updated = rsvpsDB.update(id, patch);
-    setRsvps(rsvpsDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateRSVPInput): Promise<RSVP | null> => {
+    const updated = await apiRequest<RSVP>(`/api/rsvps/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setRsvps((prev) => prev.map((rsvp) => (rsvp.id === id ? updated : rsvp)));
     return updated;
   }, []);
 
-  const cancel = useCallback((id: string): RSVP | null => {
-    const updated = rsvpsDB.cancel(id);
-    setRsvps(rsvpsDB.getAll());
+  const cancel = useCallback(async (id: string): Promise<RSVP | null> => {
+    const updated = await apiRequest<RSVP>(`/api/rsvps/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "cancelled" }),
+    });
+    setRsvps((prev) => prev.map((rsvp) => (rsvp.id === id ? updated : rsvp)));
     return updated;
   }, []);
 
-  const checkIn = useCallback((id: string): RSVP | null => {
-    const updated = rsvpsDB.checkIn(id);
-    setRsvps(rsvpsDB.getAll());
+  const checkIn = useCallback(async (id: string): Promise<RSVP | null> => {
+    const updated = await apiRequest<RSVP>(`/api/rsvps/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ checkedInAt: new Date().toISOString() }),
+    });
+    setRsvps((prev) => prev.map((rsvp) => (rsvp.id === id ? updated : rsvp)));
     return updated;
   }, []);
 
-  const remove = useCallback((id: string): boolean => {
-    const result = rsvpsDB.delete(id);
-    setRsvps(rsvpsDB.getAll());
-    return result;
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/rsvps/${id}`);
+    setRsvps((prev) => prev.filter((rsvp) => rsvp.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => rsvps.find(r => r.id === id) ?? null, [rsvps]);

@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Product, CreateProductInput, UpdateProductInput } from "@/lib/models";
-import { productsDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface ProductsContextValue {
   products: Product[];
@@ -12,11 +12,11 @@ interface ProductsContextValue {
   getFeatured: () => Product[];
   getByCategory: (category: Product["category"]) => Product[];
   getInStock: () => Product[];
-  add: (input: CreateProductInput) => Product;
-  update: (id: string, patch: UpdateProductInput) => Product | null;
-  adjustStock: (id: string, delta: number) => Product | null;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateProductInput) => Promise<Product>;
+  update: (id: string, patch: UpdateProductInput) => Promise<Product | null>;
+  adjustStock: (id: string, delta: number) => Promise<Product | null>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextValue | null>(null);
@@ -25,35 +25,75 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setProducts(productsDB.getAll());
-    setIsLoading(false);
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const nextProducts = await apiRequest<Product[]>("/api/products");
+      setProducts(nextProducts);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let isActive = true;
 
-  const add = useCallback((input: CreateProductInput): Product => {
-    const created = productsDB.create(input);
-    setProducts(productsDB.getAll());
+    async function loadInitialProducts() {
+      try {
+        const nextProducts = await apiRequest<Product[]>("/api/products");
+        if (isActive) {
+          setProducts(nextProducts);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialProducts();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateProductInput): Promise<Product> => {
+    const created = await apiRequest<Product>("/api/products", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setProducts((prev) => [created, ...prev.filter((product) => product.id !== created.id)]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateProductInput): Product | null => {
-    const updated = productsDB.update(id, patch);
-    setProducts(productsDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateProductInput): Promise<Product | null> => {
+    const updated = await apiRequest<Product>(`/api/products/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setProducts((prev) => prev.map((product) => (product.id === id ? updated : product)));
     return updated;
   }, []);
 
-  const adjustStock = useCallback((id: string, delta: number): Product | null => {
-    const updated = productsDB.adjustStock(id, delta);
-    setProducts(productsDB.getAll());
-    return updated;
-  }, []);
+  const adjustStock = useCallback(async (id: string, delta: number): Promise<Product | null> => {
+    const product = products.find((item) => item.id === id) ?? null;
+    if (!product) return null;
 
-  const remove = useCallback((id: string): boolean => {
-    const result = productsDB.delete(id);
-    setProducts(productsDB.getAll());
-    return result;
+    const nextStock = Math.max(0, (product.stock ?? 0) + delta);
+    const nextStatus = nextStock === 0 && product.status === "active" ? "out-of-stock" : product.status;
+    const updated = await apiRequest<Product>(`/api/products/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ stock: nextStock, status: nextStatus }),
+    });
+    setProducts((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    return updated;
+  }, [products]);
+
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/products/${id}`);
+    setProducts((prev) => prev.filter((product) => product.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => products.find(p => p.id === id) ?? null, [products]);

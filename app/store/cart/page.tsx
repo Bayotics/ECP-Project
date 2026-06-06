@@ -10,7 +10,15 @@ function formatNaira(n: number) {
 }
 
 export default function CartPage() {
-  const { items, subtotal, shippingFee, total, updateQty, removeItem, clearCart } = useCart();
+  const { items, subtotal, shippingFee, total, isLoading, updateQty, removeItem, clearCart } = useCart();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-(--color-neutral-50) flex items-center justify-center">
+        <span className="text-(--color-neutral-400) text-sm animate-pulse">Loading cart…</span>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

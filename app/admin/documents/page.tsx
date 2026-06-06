@@ -68,29 +68,32 @@ export default function AdminDocumentsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, {
-      label: form.label,
-      name: form.name,
-      category: form.category as OrgDocument["category"],
-      access: form.access as OrgDocument["access"],
-      fileType: form.fileType as OrgDocument["fileType"],
-      simulatedSize: form.simulatedSize,
-      description: form.description || undefined,
-    });
-    setSaving(false);
-    closeModal();
+    try {
+      await update(selected.id, {
+        label: form.label,
+        name: form.name,
+        category: form.category as OrgDocument["category"],
+        access: form.access as OrgDocument["access"],
+        fileType: form.fileType as OrgDocument["fileType"],
+        simulatedSize: form.simulatedSize,
+        description: form.description || undefined,
+      });
+      closeModal();
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.label}"? This cannot be undone.`)) return;
-    remove(selected.id);
+    await remove(selected.id);
     closeModal();
   }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!createForm.label.trim()) return;
-    add({
+    await add({
       label: createForm.label.trim(),
       name: createForm.name.trim() || `${createForm.label.trim().replace(/\s+/g, "_")}.${createForm.fileType}`,
       category: createForm.category as OrgDocument["category"],

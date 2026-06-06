@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { usersDB } from "@/lib/storage";
+import { useUsers } from "@/context/UsersContext";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 
 const LAGOS_LGAS = [
@@ -44,6 +44,7 @@ function savePrivacy(userId: string, settings: PrivacySettings) {
 
 export default function ProfilePage() {
   const { currentUser, refreshCurrentUser } = useAuth();
+  const { update } = useUsers();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -64,17 +65,23 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    setForm({
-      firstName:  currentUser.firstName  ?? "",
-      lastName:   currentUser.lastName   ?? "",
-      phone:      currentUser.phone      ?? "",
-      lga:        currentUser.lga        ?? "",
-      ward:       currentUser.ward       ?? "",
-      occupation: currentUser.occupation ?? "",
-      bio:        currentUser.bio        ?? "",
-      avatarUrl:  currentUser.avatarUrl  ?? "",
+    const frame = window.requestAnimationFrame(() => {
+      setForm({
+        firstName:  currentUser.firstName  ?? "",
+        lastName:   currentUser.lastName   ?? "",
+        phone:      currentUser.phone      ?? "",
+        lga:        currentUser.lga        ?? "",
+        ward:       currentUser.ward       ?? "",
+        occupation: currentUser.occupation ?? "",
+        bio:        currentUser.bio        ?? "",
+        avatarUrl:  currentUser.avatarUrl  ?? "",
+      });
+      setPrivacy(loadPrivacy(currentUser.id));
     });
-    setPrivacy(loadPrivacy(currentUser.id));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [currentUser]);
 
   function set(field: keyof typeof form) {
@@ -86,15 +93,17 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!currentUser) return;
     setSaving(true);
-    usersDB.update(currentUser.id, {
-      ...form,
-      displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
-    });
-    refreshCurrentUser();
-    await new Promise((r) => setTimeout(r, 400));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      await update(currentUser.id, {
+        ...form,
+        displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+      });
+      await refreshCurrentUser();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleSavePrivacy() {

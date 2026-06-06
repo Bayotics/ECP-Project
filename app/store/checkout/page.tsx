@@ -131,7 +131,7 @@ function OrderSummary() {
 /* ─── Page ────────────────────────────────────────── */
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, shippingFee, total, clearCart } = useCart();
+  const { items, subtotal, shippingFee, total, isLoading, clearCart } = useCart();
   const { add: addOrder } = useOrders();
   const { currentUser } = useAuth();
 
@@ -144,7 +144,14 @@ export default function CheckoutPage() {
   });
   const [errors, setErrors] = useState<Partial<ShippingForm>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
-  const [processing, setProcessing] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-(--color-neutral-50)">
+        <span className="text-(--color-neutral-400) text-sm animate-pulse">Loading checkout…</span>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -175,12 +182,11 @@ export default function CheckoutPage() {
 
   async function handlePlaceOrder() {
     setStep("processing");
-    setProcessing(true);
 
     // Simulate payment processing
     await new Promise(r => setTimeout(r, 2000));
 
-    const order = addOrder({
+    const order = await addOrder({
       userId: currentUser?.id,
       customerName: shipping.fullName,
       customerEmail: shipping.email,
@@ -391,7 +397,7 @@ export default function CheckoutPage() {
                 >
                   <div className="w-14 h-14 border-4 border-(--color-green-200) border-t-(--color-green-600) rounded-full animate-spin" />
                   <p className="text-lg font-bold text-(--color-neutral-900)">Processing your order…</p>
-                  <p className="text-sm text-(--color-neutral-500)">Please don't close this page.</p>
+                  <p className="text-sm text-(--color-neutral-500)">Please don&apos;t close this page.</p>
                 </motion.div>
               )}
             </AnimatePresence>

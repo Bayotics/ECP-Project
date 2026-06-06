@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
-  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider, EmptyState,
+  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { Event } from "@/lib/models/event";
 
@@ -64,50 +64,53 @@ export default function AdminEventsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, {
-      title: form.title,
-      type: form.type as Event["type"],
-      date: form.date,
-      time: form.time || undefined,
-      location: form.location || undefined,
-      venue: form.venue || undefined,
-      status: form.status as Event["status"],
-      maxAttendees: form.maxAttendees ? Number(form.maxAttendees) : undefined,
-      isFeatured: form.isFeatured,
-      isPublic: form.isPublic,
-      description: form.description || undefined,
-      organizerName: form.organizerName || undefined,
-    });
-    setSaving(false);
-    closeModal();
+    try {
+      await update(selected.id, {
+        title: form.title,
+        type: form.type as Event["type"],
+        date: form.date,
+        time: form.time || undefined,
+        location: form.location || undefined,
+        venue: form.venue || undefined,
+        status: form.status as Event["status"],
+        maxAttendees: form.maxAttendees ? Number(form.maxAttendees) : undefined,
+        isFeatured: form.isFeatured,
+        isPublic: form.isPublic,
+        description: form.description || undefined,
+        organizerName: form.organizerName || undefined,
+      });
+      closeModal();
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     if (!selected) return;
-    publish(selected.id);
+    await publish(selected.id);
     setSelected(prev => prev ? { ...prev, status: "published" } : prev);
     setForm(prev => ({ ...prev, status: "published" }));
   }
 
-  function handleCancel() {
+  async function handleCancel() {
     if (!selected) return;
-    cancel(selected.id);
+    await cancel(selected.id);
     setSelected(prev => prev ? { ...prev, status: "cancelled" } : prev);
     setForm(prev => ({ ...prev, status: "cancelled" }));
   }
 
-  function handleRemove() {
+  async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.title}"? This cannot be undone.`)) return;
-    remove(selected.id);
+    await remove(selected.id);
     closeModal();
   }
 
   function slugify(str: string) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim(); }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!createForm.title.trim() || !createForm.date) return;
-    add({
+    await add({
       title: createForm.title.trim(),
       slug: slugify(createForm.title),
       description: createForm.description || createForm.title,

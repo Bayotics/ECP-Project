@@ -7,16 +7,9 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-
-/* ─── Types ───────────────────────────────────────── */
-export interface CartItem {
-  productId: string;
-  name: string;
-  price: number;
-  imageUrl?: string;
-  quantity: number;
-  slug: string;
-}
+import type { Cart, CartItem } from "@/lib/models";
+import { apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface CartContextValue {
   items: CartItem[];
@@ -24,100 +17,163 @@ interface CartContextValue {
   subtotal: number;
   shippingFee: number;
   total: number;
-  addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, qty: number) => void;
-  clearCart: () => void;
+  isLoading: boolean;
+  addItem: (item: Omit<CartItem, "quantity">, qty?: number) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQty: (productId: string, qty: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   hasItem: (productId: string) => boolean;
   getQty: (productId: string) => number;
+  refresh: () => Promise<void>;
 }
 
-const STORAGE_KEY = "ecp_cart";
 const CartContext = createContext<CartContextValue | null>(null);
 
-function calcShipping(subtotal: number): number {
-  if (subtotal === 0) return 0;
-  if (subtotal >= 15000) return 0; // free shipping over ₦15k
-  return 1500;
+function emptyCart(): Cart {
+  return {
+    id: "cart-empty",
+    items: [],
+    subtotal: 0,
+    shippingFee: 0,
+    total: 0,
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+  };
 }
 
 /* ─── Provider ────────────────────────────────────── */
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { currentUser } = useAuth();
+  const [cart, setCart] = useState<Cart>(emptyCart());
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Hydrate from localStorage
-  useEffect(() => {
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setItems(JSON.parse(stored) as CartItem[]);
-    } catch {
-      /* ignore corrupt data */
+      const nextCart = await apiRequest<Cart>("/api/cart");
+      setCart(nextCart);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  // Persist on change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    let isActive = true;
+
+    async function loadCart() {
+      try {
+        const nextCart = await apiRequest<Cart>("/api/cart");
+        if (isActive) {
+          setCart(nextCart);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadCart();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser?.id]);
+
+  const persistItems = useCallback(async (nextItems: CartItem[]) => {
+    const nextCart = await apiRequest<Cart>("/api/cart", {
+      method: "PUT",
+      body: JSON.stringify({ items: nextItems }),
+    });
+    setCart(nextCart);
+  }, []);
 
   const addItem = useCallback(
-    (product: Omit<CartItem, "quantity">, qty = 1) => {
-      setItems((prev) => {
-        const idx = prev.findIndex((i) => i.productId === product.productId);
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = { ...next[idx], quantity: next[idx].quantity + qty };
-          return next;
-        }
-        return [...prev, { ...product, quantity: qty }];
-      });
+    async (product: Omit<CartItem, "quantity">, qty = 1) => {
+      const existing = cart.items.find((item) => item.productId === product.productId);
+      const nextItems = existing
+        ? cart.items.map((item) =>
+            item.productId === product.productId
+              ? { ...item, quantity: item.quantity + qty }
+              : item
+          )
+        : [...cart.items, { ...product, quantity: qty }];
+
+      setCart((prev) => ({ ...prev, items: nextItems }));
+      try {
+        await persistItems(nextItems);
+      } catch {
+        await refresh();
+      }
     },
-    []
+    [cart.items, persistItems, refresh]
   );
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
-  }, []);
+  const removeItem = useCallback(async (productId: string) => {
+    const nextItems = cart.items.filter((item) => item.productId !== productId);
+    setCart((prev) => ({ ...prev, items: nextItems }));
+    try {
+      await persistItems(nextItems);
+    } catch {
+      await refresh();
+    }
+  }, [cart.items, persistItems, refresh]);
 
-  const updateQty = useCallback((productId: string, qty: number) => {
+  const updateQty = useCallback(async (productId: string, qty: number) => {
     if (qty < 1) return;
-    setItems((prev) =>
-      prev.map((i) => (i.productId === productId ? { ...i, quantity: qty } : i))
+    const nextItems = cart.items.map((item) =>
+      item.productId === productId ? { ...item, quantity: qty } : item
     );
-  }, []);
+    setCart((prev) => ({ ...prev, items: nextItems }));
+    try {
+      await persistItems(nextItems);
+    } catch {
+      await refresh();
+    }
+  }, [cart.items, persistItems, refresh]);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(async () => {
+    setCart(emptyCart());
+    try {
+      const cleared = await apiRequest<Cart>("/api/cart", { method: "DELETE" });
+      setCart(cleared);
+    } catch {
+      await refresh();
+    }
+  }, [refresh]);
 
   const hasItem = useCallback(
-    (productId: string) => items.some((i) => i.productId === productId),
-    [items]
+    (productId: string) => cart.items.some((i) => i.productId === productId),
+    [cart.items]
   );
 
   const getQty = useCallback(
     (productId: string) =>
-      items.find((i) => i.productId === productId)?.quantity ?? 0,
-    [items]
+      cart.items.find((i) => i.productId === productId)?.quantity ?? 0,
+    [cart.items]
   );
 
-  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const shippingFee = calcShipping(subtotal);
-  const total = subtotal + shippingFee;
+  const itemCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+  const subtotal = cart.subtotal;
+  const shippingFee = cart.shippingFee;
+  const total = cart.total;
 
   return (
     <CartContext.Provider
       value={{
-        items,
+        items: cart.items,
         itemCount,
         subtotal,
         shippingFee,
         total,
+        isLoading,
         addItem,
         removeItem,
         updateQty,
         clearCart,
         hasItem,
         getQty,
+        refresh,
       }}
     >
       {children}

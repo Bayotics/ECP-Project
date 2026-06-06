@@ -141,17 +141,6 @@ export function replaceAll<T extends WithId>(key: string, items: T[]): void {
   storageWrite(key, items);
 }
 
-/**
- * Writes seed data ONLY if the collection is empty.
- * Always-idempotent.
- */
-export function seedIfEmpty<T extends WithId>(key: string, items: T[]): void {
-  const existing = storageRead<T>(key);
-  if (existing.length === 0) {
-    storageWrite(key, items);
-  }
-}
-
 /* ─── Counter helper for human-readable IDs ─────────── */
 
 export function nextSequence(counterKey: string): number {

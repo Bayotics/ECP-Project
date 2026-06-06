@@ -1,7 +1,13 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import type { MembershipApplication, CreateApplicationInput, UpdateApplicationInput } from "@/lib/models";
-import { membershipDB } from "@/lib/storage";
+import type {
+  AdminMessage,
+  ApplicationDocument,
+  MembershipApplication,
+  CreateApplicationInput,
+  UpdateApplicationInput,
+} from "@/lib/models";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface MembershipContextValue {
   applications: MembershipApplication[];
@@ -10,16 +16,16 @@ interface MembershipContextValue {
   getByStatus: (status: MembershipApplication["status"]) => MembershipApplication[];
   getByEmail: (email: string) => MembershipApplication | null;
   getByUserId: (userId: string) => MembershipApplication | null;
-  add: (input: CreateApplicationInput) => MembershipApplication;
-  update: (id: string, patch: UpdateApplicationInput) => MembershipApplication | null;
-  setUnderReview: (id: string, reviewedBy: string, notes?: string) => MembershipApplication | null;
-  setInterview: (id: string, reviewedBy: string, notes?: string) => MembershipApplication | null;
-  approve: (id: string, reviewedBy: string, notes?: string) => MembershipApplication | null;
-  reject: (id: string, reviewedBy: string, notes?: string) => MembershipApplication | null;
-  addAdminMessage: (id: string, fromName: string, content: string) => MembershipApplication | null;
-  addDocument: (id: string, doc: { name: string; label: string; simulatedSize?: string }) => MembershipApplication | null;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateApplicationInput) => Promise<MembershipApplication>;
+  update: (id: string, patch: UpdateApplicationInput) => Promise<MembershipApplication | null>;
+  setUnderReview: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
+  setInterview: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
+  approve: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
+  reject: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
+  addAdminMessage: (id: string, fromName: string, content: string) => Promise<MembershipApplication | null>;
+  addDocument: (id: string, doc: { name: string; label: string; simulatedSize?: string }) => Promise<MembershipApplication | null>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const MembershipContext = createContext<MembershipContextValue | null>(null);
@@ -28,65 +34,143 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setApplications(membershipDB.getAll());
+  const refresh = useCallback(async () => {
+    const data = await apiRequest<MembershipApplication[]>("/api/membership-applications");
+    setApplications(data);
     setIsLoading(false);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let active = true;
 
-  const add = useCallback((input: CreateApplicationInput): MembershipApplication => {
-    const created = membershipDB.create(input);
-    setApplications(membershipDB.getAll());
+    async function load() {
+      try {
+        const data = await apiRequest<MembershipApplication[]>("/api/membership-applications");
+        if (!active) return;
+        setApplications(data);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateApplicationInput): Promise<MembershipApplication> => {
+    const created = await apiRequest<MembershipApplication>("/api/membership-applications", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setApplications((prev) => [created, ...prev]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateApplicationInput): MembershipApplication | null => {
-    const updated = membershipDB.update(id, patch);
-    setApplications(membershipDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateApplicationInput): Promise<MembershipApplication | null> => {
+    const updated = await apiRequest<MembershipApplication>(`/api/membership-applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
     return updated;
   }, []);
 
-  const setUnderReview = useCallback((id: string, reviewedBy: string, notes?: string): MembershipApplication | null => {
-    const updated = membershipDB.setUnderReview(id, reviewedBy, notes);
-    setApplications(membershipDB.getAll());
-    return updated;
-  }, []);
+  const applyStatusPatch = useCallback(async (
+    id: string,
+    status: MembershipApplication["status"],
+    reviewedBy: string,
+    notes: string | undefined,
+    fallbackMessage: string
+  ): Promise<MembershipApplication | null> => {
+    const current = applications.find((application) => application.id === id);
+    if (!current) return null;
 
-  const setInterview = useCallback((id: string, reviewedBy: string, notes?: string): MembershipApplication | null => {
-    const updated = membershipDB.setInterview(id, reviewedBy, notes);
-    setApplications(membershipDB.getAll());
-    return updated;
-  }, []);
+    const patch: UpdateApplicationInput = {
+      status,
+      reviewedAt: new Date().toISOString(),
+      reviewedBy,
+      reviewNotes: notes,
+      statusHistory: [
+        ...(current.statusHistory ?? []),
+        {
+          status,
+          date: new Date().toISOString(),
+          message: notes ?? fallbackMessage,
+        },
+      ],
+    };
 
-  const approve = useCallback((id: string, reviewedBy: string, notes?: string): MembershipApplication | null => {
-    const updated = membershipDB.approve(id, reviewedBy, notes);
-    setApplications(membershipDB.getAll());
+    const updated = await apiRequest<MembershipApplication>(`/api/membership-applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
     return updated;
-  }, []);
+  }, [applications]);
 
-  const reject = useCallback((id: string, reviewedBy: string, notes?: string): MembershipApplication | null => {
-    const updated = membershipDB.reject(id, reviewedBy, notes);
-    setApplications(membershipDB.getAll());
+  const setUnderReview = useCallback((id: string, reviewedBy: string, notes?: string) =>
+    applyStatusPatch(id, "under-review", reviewedBy, notes, "Application is now under review."),
+  [applyStatusPatch]);
+
+  const setInterview = useCallback((id: string, reviewedBy: string, notes?: string) =>
+    applyStatusPatch(id, "interview", reviewedBy, notes, "You have been invited for an interview. Check your email for details."),
+  [applyStatusPatch]);
+
+  const approve = useCallback((id: string, reviewedBy: string, notes?: string) =>
+    applyStatusPatch(id, "approved", reviewedBy, notes, "Congratulations! Your membership application has been approved."),
+  [applyStatusPatch]);
+
+  const reject = useCallback((id: string, reviewedBy: string, notes?: string) =>
+    applyStatusPatch(id, "rejected", reviewedBy, notes, "We regret to inform you that your application was not successful at this time."),
+  [applyStatusPatch]);
+
+  const addAdminMessage = useCallback(async (id: string, fromName: string, content: string): Promise<MembershipApplication | null> => {
+    const current = applications.find((application) => application.id === id);
+    if (!current) return null;
+
+    const message: AdminMessage = {
+      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `msg-${Date.now()}`,
+      fromName,
+      content,
+      sentAt: new Date().toISOString(),
+      isRead: false,
+    };
+
+    const updated = await apiRequest<MembershipApplication>(`/api/membership-applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ adminMessages: [...(current.adminMessages ?? []), message] }),
+    });
+    setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
     return updated;
-  }, []);
+  }, [applications]);
 
-  const addAdminMessage = useCallback((id: string, fromName: string, content: string): MembershipApplication | null => {
-    const updated = membershipDB.addAdminMessage(id, fromName, content);
-    setApplications(membershipDB.getAll());
+  const addDocument = useCallback(async (id: string, doc: { name: string; label: string; simulatedSize?: string }): Promise<MembershipApplication | null> => {
+    const current = applications.find((application) => application.id === id);
+    if (!current) return null;
+
+    const document: ApplicationDocument = {
+      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `doc-${Date.now()}`,
+      uploadedAt: new Date().toISOString(),
+      ...doc,
+    };
+
+    const updated = await apiRequest<MembershipApplication>(`/api/membership-applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ documents: [...(current.documents ?? []), document] }),
+    });
+    setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
     return updated;
-  }, []);
+  }, [applications]);
 
-  const addDocument = useCallback((id: string, doc: { name: string; label: string; simulatedSize?: string }): MembershipApplication | null => {
-    const updated = membershipDB.addDocument(id, doc);
-    setApplications(membershipDB.getAll());
-    return updated;
-  }, []);
-
-  const remove = useCallback((id: string): boolean => {
-    const result = membershipDB.delete(id);
-    setApplications(membershipDB.getAll());
-    return result;
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/membership-applications/${id}`);
+    setApplications((prev) => prev.filter((application) => application.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => applications.find(a => a.id === id) ?? null, [applications]);

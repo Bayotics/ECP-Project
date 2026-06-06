@@ -1,7 +1,9 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, CreateUserInput, UpdateUserInput } from "@/lib/models";
-import { usersDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
+
+type CreateUserPayload = CreateUserInput & { password?: string };
 
 interface UsersContextValue {
   users: User[];
@@ -9,12 +11,12 @@ interface UsersContextValue {
   getById: (id: string) => User | null;
   getByEmail: (email: string) => User | null;
   getByRole: (role: User["role"]) => User[];
-  add: (input: CreateUserInput) => User;
-  update: (id: string, patch: UpdateUserInput) => User | null;
-  remove: (id: string) => boolean;
-  setRole: (id: string, role: User["role"]) => User | null;
-  setStatus: (id: string, status: User["status"]) => User | null;
-  refresh: () => void;
+  add: (input: CreateUserPayload) => Promise<User>;
+  update: (id: string, patch: UpdateUserInput) => Promise<User | null>;
+  remove: (id: string) => Promise<boolean>;
+  setRole: (id: string, role: User["role"]) => Promise<User | null>;
+  setStatus: (id: string, status: User["status"]) => Promise<User | null>;
+  refresh: () => Promise<void>;
 }
 
 const UsersContext = createContext<UsersContextValue | null>(null);
@@ -23,40 +25,78 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setUsers(usersDB.getAll());
-    setIsLoading(false);
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const nextUsers = await apiRequest<User[]>("/api/users");
+      setUsers(nextUsers);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let isActive = true;
 
-  const add = useCallback((input: CreateUserInput): User => {
-    const created = usersDB.create(input);
-    setUsers(usersDB.getAll());
+    async function loadInitialUsers() {
+      try {
+        const nextUsers = await apiRequest<User[]>("/api/users");
+        if (isActive) {
+          setUsers(nextUsers);
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialUsers();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateUserPayload): Promise<User> => {
+    const created = await apiRequest<User>("/api/users", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setUsers((prev) => [created, ...prev.filter((user) => user.id !== created.id)]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateUserInput): User | null => {
-    const updated = usersDB.update(id, patch);
-    setUsers(usersDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateUserInput): Promise<User | null> => {
+    const updated = await apiRequest<User>(`/api/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setUsers((prev) => prev.map((user) => (user.id === id ? updated : user)));
     return updated;
   }, []);
 
-  const remove = useCallback((id: string): boolean => {
-    const result = usersDB.delete(id);
-    setUsers(usersDB.getAll());
-    return result;
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/users/${id}`);
+    setUsers((prev) => prev.filter((user) => user.id !== id));
+    return true;
   }, []);
 
-  const setRole = useCallback((id: string, role: User["role"]): User | null => {
-    const updated = usersDB.setRole(id, role);
-    setUsers(usersDB.getAll());
+  const setRole = useCallback(async (id: string, role: User["role"]): Promise<User | null> => {
+    const updated = await apiRequest<User>(`/api/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    });
+    setUsers((prev) => prev.map((user) => (user.id === id ? updated : user)));
     return updated;
   }, []);
 
-  const setStatus = useCallback((id: string, status: User["status"]): User | null => {
-    const updated = usersDB.setStatus(id, status);
-    setUsers(usersDB.getAll());
+  const setStatus = useCallback(async (id: string, status: User["status"]): Promise<User | null> => {
+    const updated = await apiRequest<User>(`/api/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+    setUsers((prev) => prev.map((user) => (user.id === id ? updated : user)));
     return updated;
   }, []);
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMembership } from "@/context";
 import Button from "@/components/ui/Button";
@@ -16,8 +17,6 @@ const STATUS_STEPS: { status: ApplicationStatus; label: string; description: str
   { status: "interview",    label: "Interview",    description: "You have been invited for an interview." },
   { status: "approved",     label: "Approved",     description: "Welcome to Eko Club Philadelphia! Your membership is active." },
 ];
-
-const STATUS_ORDER: ApplicationStatus[] = ["pending", "under-review", "interview", "approved", "rejected"];
 
 function getStepIndex(status: ApplicationStatus): number {
   if (status === "rejected") return -1;
@@ -259,43 +258,25 @@ function DocumentUpload({ application, onUpload }: {
 
 /* ─── ApplicationStatusClient ─────────────────────────── */
 export default function ApplicationStatusClient({ initialId }: { initialId?: string }) {
-  const { getById, getByEmail, addDocument, refresh, applications } = useMembership();
+  const { getById, getByEmail, addDocument, isLoading } = useMembership();
 
   const [query, setQuery] = useState(initialId ?? "");
+  const [lookupValue, setLookupValue] = useState(initialId?.trim() ?? "");
   const [searched, setSearched] = useState(!!initialId);
-  const [application, setApplication] = useState<MembershipApplication | null>(null);
-  const [notFound, setNotFound] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState("");
 
-  // Lookup on mount if initialId provided
-  useEffect(() => {
-    if (initialId) doLookup(initialId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialId]);
+  const application = useMemo<MembershipApplication | null>(() => {
+    if (!lookupValue) return null;
+    return getById(lookupValue) ?? getByEmail(lookupValue);
+  }, [getByEmail, getById, lookupValue]);
 
-  // Refresh application data when context updates
-  useEffect(() => {
-    if (application) {
-      const updated = getById(application.id);
-      if (updated) setApplication(updated);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applications]);
+  const notFound = searched && !isLoading && !application;
 
   function doLookup(q: string) {
     const trimmed = q.trim();
     if (!trimmed) return;
     setSearched(true);
-    setNotFound(false);
-    setApplication(null);
-
-    // Try by ID first, then by email
-    let found = getById(trimmed) ?? getByEmail(trimmed);
-    if (found) {
-      setApplication(found);
-    } else {
-      setNotFound(true);
-    }
+    setLookupValue(trimmed);
   }
 
   function handleLookup(e: React.FormEvent) {
@@ -303,9 +284,9 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
     doLookup(query);
   }
 
-  function handleUpload(label: string, name: string, size: string) {
+  async function handleUpload(label: string, name: string, size: string) {
     if (!application) return;
-    addDocument(application.id, { name, label, simulatedSize: size });
+    await addDocument(application.id, { name, label, simulatedSize: size });
     setUploadSuccess(`"${name}" uploaded successfully.`);
     setTimeout(() => setUploadSuccess(""), 3000);
   }
@@ -333,31 +314,33 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
           className="flex-1 px-4 py-2.5 text-sm rounded-lg border border-(--color-neutral-300) focus:outline-none focus:ring-2 focus:ring-(--color-green-300) focus:border-(--color-green-500)"
         />
         <Button type="submit" variant="primary" size="md">
-          Check Status
+          {isLoading ? "Loading..." : "Check Status"}
         </Button>
       </form>
 
       <AnimatePresence mode="wait">
         {/* Not found */}
-        {searched && notFound && (
+        {notFound && (
           <motion.div
-            key="notfound"
+            key="not-found"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="rounded-xl border border-(--color-neutral-200) p-8 text-center"
           >
-            <p className="text-3xl mb-3" aria-hidden="true">🔍</p>
-            <p className="font-bold text-(--color-neutral-800) mb-1">No application found</p>
+            <p className="mb-3 text-3xl" aria-hidden="true">🔍</p>
+            <p className="mb-1 font-bold text-(--color-neutral-800)">No application found</p>
             <p className="text-sm text-(--color-neutral-500)">
               We couldn&apos;t find an application matching <strong>{query}</strong>.
               Check your ID or email and try again.
             </p>
             <div className="mt-4">
-              <a href="/membership/apply"
-                className="text-sm text-(--color-green-600) font-semibold hover:underline">
+              <Link
+                href="/membership/apply"
+                className="text-sm font-semibold text-(--color-green-600) hover:underline"
+              >
                 Submit a new application →
-              </a>
+              </Link>
             </div>
           </motion.div>
         )}
@@ -419,10 +402,12 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
                 <p className="text-sm text-(--color-green-700) mb-4">
                   Your membership is active. Welcome to the Eko Club Philadelphia family!
                 </p>
-                <a href="/"
-                  className="inline-flex items-center px-5 py-2.5 rounded-lg bg-(--color-green-600) text-white text-sm font-semibold hover:bg-(--color-green-700) transition-colors">
+                <Link
+                  href="/"
+                  className="inline-flex items-center rounded-lg bg-(--color-green-600) px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-(--color-green-700)"
+                >
                   Explore Eko Club Philadelphia →
-                </a>
+                </Link>
               </div>
             )}
 

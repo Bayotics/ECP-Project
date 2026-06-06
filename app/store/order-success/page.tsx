@@ -19,8 +19,16 @@ function formatDate(iso: string) {
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref") ?? "";
-  const { getByOrderNumber } = useOrders();
+  const { getByOrderNumber, isLoading } = useOrders();
   const order = ref ? getByOrderNumber(ref) : null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-(--color-neutral-400) text-sm animate-pulse">Loading order…</span>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -50,7 +58,7 @@ function OrderSuccessContent() {
           </div>
           <h1 className="text-2xl font-extrabold text-(--color-neutral-900) mb-2">Order Placed!</h1>
           <p className="text-(--color-neutral-600) text-sm mb-4">
-            Thank you, <span className="font-semibold">{order.customerName}</span>! We've received your order and will process it shortly.
+            Thank you, <span className="font-semibold">{order.customerName}</span>! We&apos;ve received your order and will process it shortly.
           </p>
           <div className="bg-(--color-green-50) border border-(--color-green-200) rounded-xl px-4 py-3 inline-block">
             <p className="text-xs text-(--color-green-700) font-semibold uppercase tracking-wide">Order Number</p>

@@ -56,10 +56,20 @@ export async function POST(request: NextRequest) {
     }
 
     const collection = await getCollection("membershipApplications");
+    const normalizedEmail = payload.email!.trim().toLowerCase();
+    const existing = await collection.findOne({ email: normalizedEmail });
+
+    if (existing) {
+      return NextResponse.json(
+        { ok: false, error: "An application with this email already exists" },
+        { status: 409 }
+      );
+    }
+
     const application: MembershipApplication = {
       id: nanoid(),
       fullName: payload.fullName!.trim(),
-      email: payload.email!.trim(),
+      email: normalizedEmail,
       phone: payload.phone!.trim(),
       dateOfBirth: payload.dateOfBirth,
       gender: payload.gender,

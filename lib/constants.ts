@@ -40,7 +40,7 @@ export const ROLES = {
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
-/** Lagos LGAs (seed data helper) */
+/** Lagos LGAs helper list */
 export const LAGOS_LGAS = [
   "Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Badagry",
   "Epe", "Eti-Osa", "Ibeju-Lekki", "Ifako-Ijaiye", "Ikeja",

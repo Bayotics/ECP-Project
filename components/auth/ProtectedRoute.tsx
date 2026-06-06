@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 /**
  * ProtectedRoute — wraps any page that requires the user to be logged in.
  * While auth is loading it renders a spinner; once resolved, if the user is
- * not authenticated they are redirected to /login.
+ * not authenticated they are redirected to /auth/login.
  */
 export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -22,7 +22,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace("/auth/login");
       return;
     }
     if (requireAdmin && !isAdmin) {

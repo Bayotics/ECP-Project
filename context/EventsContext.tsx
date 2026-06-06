@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Event, CreateEventInput, UpdateEventInput } from "@/lib/models";
-import { eventsDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface EventsContextValue {
   events: Event[];
@@ -12,12 +12,12 @@ interface EventsContextValue {
   getFeatured: () => Event[];
   getUpcoming: () => Event[];
   getPast: () => Event[];
-  add: (input: CreateEventInput) => Event;
-  update: (id: string, patch: UpdateEventInput) => Event | null;
-  publish: (id: string) => Event | null;
-  cancel: (id: string) => Event | null;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateEventInput) => Promise<Event>;
+  update: (id: string, patch: UpdateEventInput) => Promise<Event | null>;
+  publish: (id: string) => Promise<Event | null>;
+  cancel: (id: string) => Promise<Event | null>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const EventsContext = createContext<EventsContextValue | null>(null);
@@ -26,41 +26,74 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setEvents(eventsDB.getAll());
+  const refresh = useCallback(async () => {
+    const data = await apiRequest<Event[]>("/api/events");
+    setEvents(data);
     setIsLoading(false);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let active = true;
 
-  const add = useCallback((input: CreateEventInput): Event => {
-    const created = eventsDB.create(input);
-    setEvents(eventsDB.getAll());
+    async function load() {
+      try {
+        const data = await apiRequest<Event[]>("/api/events");
+        if (!active) return;
+        setEvents(data);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateEventInput): Promise<Event> => {
+    const created = await apiRequest<Event>("/api/events", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setEvents((prev) => [...prev, created]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateEventInput): Event | null => {
-    const updated = eventsDB.update(id, patch);
-    setEvents(eventsDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateEventInput): Promise<Event | null> => {
+    const updated = await apiRequest<Event>(`/api/events/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setEvents((prev) => prev.map((event) => (event.id === updated.id ? updated : event)));
     return updated;
   }, []);
 
-  const publish = useCallback((id: string): Event | null => {
-    const updated = eventsDB.publish(id);
-    setEvents(eventsDB.getAll());
+  const publish = useCallback(async (id: string): Promise<Event | null> => {
+    const updated = await apiRequest<Event>(`/api/events/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "published" }),
+    });
+    setEvents((prev) => prev.map((event) => (event.id === updated.id ? updated : event)));
     return updated;
   }, []);
 
-  const cancel = useCallback((id: string): Event | null => {
-    const updated = eventsDB.cancel(id);
-    setEvents(eventsDB.getAll());
+  const cancel = useCallback(async (id: string): Promise<Event | null> => {
+    const updated = await apiRequest<Event>(`/api/events/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "cancelled" }),
+    });
+    setEvents((prev) => prev.map((event) => (event.id === updated.id ? updated : event)));
     return updated;
   }, []);
 
-  const remove = useCallback((id: string): boolean => {
-    const result = eventsDB.delete(id);
-    setEvents(eventsDB.getAll());
-    return result;
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/events/${id}`);
+    setEvents((prev) => prev.filter((event) => event.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => events.find(e => e.id === id) ?? null, [events]);

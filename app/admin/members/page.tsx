@@ -2,11 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useUsers } from "@/context/UsersContext";
-import { usersDB, setUserPassword } from "@/lib/storage/users.db";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
-  FormField, FormInput, FormSelect, Btn, SectionDivider, EmptyState,
+  FormField, FormInput, FormSelect, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { User } from "@/lib/models/user";
 
@@ -14,7 +13,7 @@ const ROLES = ["all", "guest", "applicant", "member", "admin", "super-admin"];
 const STATUSES = ["all", "active", "inactive", "suspended", "pending"];
 
 export default function AdminMembersPage() {
-  const { users, update, setRole, setStatus, refresh } = useUsers();
+  const { users, add, update, setRole, setStatus } = useUsers();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -61,44 +60,50 @@ export default function AdminMembersPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      phone: form.phone || undefined,
-      lga: form.lga || undefined,
-      occupation: form.occupation || undefined,
-    });
-    if (form.role !== selected.role) setRole(selected.id, form.role as User["role"]);
-    if (form.status !== selected.status) setStatus(selected.id, form.status as User["status"]);
-    setSaving(false);
-    closeModal();
+    try {
+      await update(selected.id, {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone || undefined,
+        lga: form.lga || undefined,
+        occupation: form.occupation || undefined,
+      });
+      if (form.role !== selected.role) await setRole(selected.id, form.role as User["role"]);
+      if (form.status !== selected.status) await setStatus(selected.id, form.status as User["status"]);
+      closeModal();
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleCreateMember() {
+  async function handleCreateMember() {
     if (!createForm.firstName.trim() || !createForm.email.trim()) {
       setCreateError("First name and email are required.");
       return;
     }
-    const existing = usersDB.getByEmail(createForm.email.trim().toLowerCase());
+    const existing = users.find((user) => user.email === createForm.email.trim().toLowerCase());
     if (existing) {
       setCreateError("An account with this email already exists.");
       return;
     }
-    const user = usersDB.create({
-      firstName: createForm.firstName.trim(),
-      lastName: createForm.lastName.trim(),
-      displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`,
-      email: createForm.email.trim().toLowerCase(),
-      phone: createForm.phone || undefined,
-      lga: createForm.lga || undefined,
-      role: createForm.role as User["role"],
-      status: "active",
-    });
-    setUserPassword(user.id, createForm.password || "ecp2024");
-    refresh();
-    setCreating(false);
-    setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
-    setCreateError("");
+    try {
+      await add({
+        firstName: createForm.firstName.trim(),
+        lastName: createForm.lastName.trim(),
+        displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`.trim(),
+        email: createForm.email.trim().toLowerCase(),
+        phone: createForm.phone || undefined,
+        lga: createForm.lga || undefined,
+        role: createForm.role as User["role"],
+        status: "active",
+        password: createForm.password || "ecp2024",
+      });
+      setCreating(false);
+      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
+      setCreateError("");
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "Failed to create member.");
+    }
   }
 
   const headers = ["Name", "Email", "Role", "Status", "LGA", "Joined"];

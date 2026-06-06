@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMembership } from "@/context";
 import Button from "@/components/ui/Button";
@@ -114,7 +115,7 @@ function validateStep2(d: WizardDraft): StepErrors {
   return e;
 }
 
-function validateStep3(_d: WizardDraft): StepErrors {
+function validateStep3(): StepErrors {
   return {}; // documents are optional
 }
 
@@ -534,7 +535,7 @@ function Step4({ draft, consentChecked, onConsentChange }: {
           {rows.map(([label, value]) => (
             <div key={label} className="flex px-4 py-2.5 gap-4">
               <span className="text-xs text-(--color-neutral-500) w-36 shrink-0">{label}</span>
-              <span className="text-xs font-medium text-(--color-neutral-800) break-words">{value}</span>
+              <span className="text-xs font-medium text-(--color-neutral-800) wrap-break-word">{value}</span>
             </div>
           ))}
         </div>
@@ -619,18 +620,18 @@ function SuccessScreen({ applicationId, email }: { applicationId: string; email:
         <p className="text-xs text-(--color-neutral-400) mt-1">Save this ID to check your application status.</p>
       </div>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a
+        <Link
           href={`/membership/status?id=${applicationId}`}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--color-green-600) text-white text-sm font-semibold hover:bg-(--color-green-700) transition-colors"
         >
           Track Application Status →
-        </a>
-        <a
+        </Link>
+        <Link
           href="/"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-(--color-neutral-300) text-(--color-neutral-700) text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
         >
           Back to Home
-        </a>
+        </Link>
       </div>
     </motion.div>
   );
@@ -638,7 +639,19 @@ function SuccessScreen({ applicationId, email }: { applicationId: string; email:
 
 /* ─── ApplicationWizard ───────────────────────────────── */
 export default function ApplicationWizard() {
-  const { add, getByEmail } = useMembership();
+  const { add, getByEmail, isLoading } = useMembership();
+
+  const draftAvailable = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (!saved) return false;
+      const parsed: WizardDraft = JSON.parse(saved);
+      return Boolean(parsed.email || parsed.fullName);
+    } catch {
+      return false;
+    }
+  })();
 
   const [draft, setDraft] = useState<WizardDraft>(EMPTY_DRAFT);
   const [currentStep, setCurrentStep] = useState(0);
@@ -648,25 +661,8 @@ export default function ApplicationWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submittedId, setSubmittedId] = useState<string | null>(null);
-  const [hasDraft, setHasDraft] = useState(false);
-  const [showDraftBanner, setShowDraftBanner] = useState(false);
-
-  /* Load draft on mount */
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) {
-        const parsed: WizardDraft = JSON.parse(saved);
-        // Check it has real data
-        if (parsed.email || parsed.fullName) {
-          setHasDraft(true);
-          setShowDraftBanner(true);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+  const [hasDraft, setHasDraft] = useState(draftAvailable);
+  const [showDraftBanner, setShowDraftBanner] = useState(draftAvailable);
 
   /* Auto-save draft on every change */
   const saveDraft = useCallback((d: WizardDraft, step: number) => {
@@ -741,6 +737,11 @@ export default function ApplicationWizard() {
     }
     setConsentError(false);
 
+    if (isLoading) {
+      setSubmitError("Please wait while we load the latest application records.");
+      return;
+    }
+
     // Check if email already has application
     const existing = getByEmail(draft.email.trim());
     if (existing) {
@@ -754,7 +755,7 @@ export default function ApplicationWizard() {
     try {
       await new Promise((r) => setTimeout(r, 900)); // UX delay
 
-      const app = add({
+      const app = await add({
         fullName: draft.fullName.trim(),
         email: draft.email.trim().toLowerCase(),
         phone: draft.phone.trim(),
@@ -784,8 +785,8 @@ export default function ApplicationWizard() {
       // Clear draft
       localStorage.removeItem(DRAFT_KEY);
       setSubmittedId(app.id);
-    } catch {
-      setSubmitError("An unexpected error occurred. Please try again.");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

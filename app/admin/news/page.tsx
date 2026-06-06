@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
-  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider, EmptyState,
+  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { NewsPost } from "@/lib/models/news";
 
@@ -64,39 +64,42 @@ export default function AdminNewsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, {
-      title: form.title,
-      category: form.category as NewsPost["category"],
-      status: form.status as NewsPost["status"],
-      authorName: form.authorName || undefined,
-      excerpt: form.excerpt || undefined,
-      content: form.content || undefined,
-      isFeatured: form.isFeatured,
-      isBreaking: form.isBreaking,
-      isPinned: form.isPinned,
-    });
-    setSaving(false);
-    closeModal();
+    try {
+      await update(selected.id, {
+        title: form.title,
+        category: form.category as NewsPost["category"],
+        status: form.status as NewsPost["status"],
+        authorName: form.authorName || undefined,
+        excerpt: form.excerpt || undefined,
+        content: form.content || undefined,
+        isFeatured: form.isFeatured,
+        isBreaking: form.isBreaking,
+        isPinned: form.isPinned,
+      });
+      closeModal();
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     if (!selected) return;
-    publish(selected.id);
+    await publish(selected.id);
     setForm(p => ({ ...p, status: "published" }));
   }
 
-  function handleRemove() {
+  async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.title}"? This cannot be undone.`)) return;
-    remove(selected.id);
+    await remove(selected.id);
     closeModal();
   }
 
   function slugify(str: string) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim(); }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!createForm.title.trim()) return;
-    add({
+    await add({
       title: createForm.title.trim(),
       slug: slugify(createForm.title),
       category: createForm.category as NewsPost["category"],

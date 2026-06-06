@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDonations } from "@/context/DonationsContext";
 import { useAuth } from "@/context/AuthContext";
@@ -71,7 +72,7 @@ export default function DonatePage() {
     setStep("processing");
     await new Promise(r => setTimeout(r, 2000));
 
-    const donation = addDonation({
+    const donation = await addDonation({
       userId: currentUser?.id,
       donorName: isAnonymous ? "Anonymous" : name,
       donorEmail: isAnonymous ? "" : email,
@@ -89,7 +90,7 @@ export default function DonatePage() {
     });
 
     const ref = `PAY-DON-${Date.now()}`;
-    markSuccessful(donation.id, ref);
+    await markSuccessful(donation.id, ref);
     setReference(donation.referenceNumber);
     setStep("success");
   }
@@ -98,7 +99,7 @@ export default function DonatePage() {
     <div className="min-h-screen bg-(--color-neutral-50)">
       {/* Hero */}
       <section
-        className="relative bg-gradient-to-br from-(--color-green-800) to-(--color-green-600) text-white py-20 px-4 overflow-hidden"
+        className="relative bg-linear-to-br from-(--color-green-800) to-(--color-green-600) text-white py-20 px-4 overflow-hidden"
       >
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1559223607-b4d0555ae227?w=1200')] bg-cover bg-center" />
         <div className="relative max-w-3xl mx-auto text-center">
@@ -142,7 +143,7 @@ export default function DonatePage() {
               </div>
               <h2 className="text-2xl font-extrabold text-(--color-neutral-900) mb-2">Thank You!</h2>
               <p className="text-(--color-neutral-600) mb-5">
-                {isAnonymous ? "Your anonymous donation" : `${name}'s donation`} of{" "}
+                {isAnonymous ? "Your anonymous donation" : `${name}\u2019s donation`} of{" "}
                 <span className="font-bold text-(--color-green-700)">{formatNaira(amount)}</span>{" "}
                 {type !== "one-time" ? `(${type})` : ""} has been received.
               </p>
@@ -166,12 +167,12 @@ export default function DonatePage() {
                 >
                   Donate Again
                 </button>
-                <a
+                <Link
                   href="/"
                   className="px-5 py-2.5 border border-(--color-neutral-300) rounded-xl font-semibold text-sm text-(--color-neutral-700) hover:bg-(--color-neutral-50) transition-colors"
                 >
                   Back to Home
-                </a>
+                </Link>
               </div>
             </motion.div>
           )}
@@ -208,7 +209,7 @@ export default function DonatePage() {
                 </div>
                 {type !== "one-time" && (
                   <p className="text-xs text-(--color-green-700) mt-2 font-medium">
-                    ✓ You'll be charged {formatNaira(amount)} every {type === "monthly" ? "month" : "year"}. Cancel anytime.
+                    ✓ You&apos;ll be charged {formatNaira(amount)} every {type === "monthly" ? "month" : "year"}. Cancel anytime.
                   </p>
                 )}
               </div>
@@ -248,7 +249,7 @@ export default function DonatePage() {
                 {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount}</p>}
                 {amount >= 100 && (
                   <p className="text-xs text-(--color-neutral-500) mt-2">
-                    You're donating <span className="font-bold text-(--color-green-700)">{formatNaira(amount)}</span>
+                    You&apos;re donating <span className="font-bold text-(--color-green-700)">{formatNaira(amount)}</span>
                     {type !== "one-time" ? ` / ${type}` : ""}
                   </p>
                 )}

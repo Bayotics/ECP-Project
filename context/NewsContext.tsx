@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { NewsPost, CreateNewsInput, UpdateNewsInput } from "@/lib/models";
-import { newsDB } from "@/lib/storage";
+import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface NewsContextValue {
   posts: NewsPost[];
@@ -12,12 +12,12 @@ interface NewsContextValue {
   getFeatured: () => NewsPost[];
   getBreaking: () => NewsPost[];
   getByCategory: (category: NewsPost["category"]) => NewsPost[];
-  add: (input: CreateNewsInput) => NewsPost;
-  update: (id: string, patch: UpdateNewsInput) => NewsPost | null;
-  publish: (id: string) => NewsPost | null;
-  incrementViews: (id: string) => void;
-  remove: (id: string) => boolean;
-  refresh: () => void;
+  add: (input: CreateNewsInput) => Promise<NewsPost>;
+  update: (id: string, patch: UpdateNewsInput) => Promise<NewsPost | null>;
+  publish: (id: string) => Promise<NewsPost | null>;
+  incrementViews: (id: string) => Promise<void>;
+  remove: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const NewsContext = createContext<NewsContextValue | null>(null);
@@ -26,40 +26,80 @@ export function NewsProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setPosts(newsDB.getAll());
+  const refresh = useCallback(async () => {
+    const data = await apiRequest<NewsPost[]>("/api/news");
+    setPosts(data);
     setIsLoading(false);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let active = true;
 
-  const add = useCallback((input: CreateNewsInput): NewsPost => {
-    const created = newsDB.create(input);
-    setPosts(newsDB.getAll());
+    async function load() {
+      try {
+        const data = await apiRequest<NewsPost[]>("/api/news");
+        if (!active) return;
+        setPosts(data);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const add = useCallback(async (input: CreateNewsInput): Promise<NewsPost> => {
+    const created = await apiRequest<NewsPost>("/api/news", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    setPosts((prev) => [created, ...prev]);
     return created;
   }, []);
 
-  const update = useCallback((id: string, patch: UpdateNewsInput): NewsPost | null => {
-    const updated = newsDB.update(id, patch);
-    setPosts(newsDB.getAll());
+  const update = useCallback(async (id: string, patch: UpdateNewsInput): Promise<NewsPost | null> => {
+    const updated = await apiRequest<NewsPost>(`/api/news/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+    setPosts((prev) => prev.map((post) => (post.id === updated.id ? updated : post)));
     return updated;
   }, []);
 
-  const publish = useCallback((id: string): NewsPost | null => {
-    const updated = newsDB.publish(id);
-    setPosts(newsDB.getAll());
+  const publish = useCallback(async (id: string): Promise<NewsPost | null> => {
+    const current = posts.find((post) => post.id === id);
+    const updated = await apiRequest<NewsPost>(`/api/news/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "published",
+        publishedAt: current?.publishedAt ?? new Date().toISOString(),
+      }),
+    });
+    setPosts((prev) => prev.map((post) => (post.id === updated.id ? updated : post)));
     return updated;
-  }, []);
+  }, [posts]);
 
-  const incrementViews = useCallback((id: string): void => {
-    newsDB.incrementViews(id);
-    setPosts(newsDB.getAll());
-  }, []);
+  const incrementViews = useCallback(async (id: string): Promise<void> => {
+    const current = posts.find((post) => post.id === id);
+    if (!current) return;
 
-  const remove = useCallback((id: string): boolean => {
-    const result = newsDB.delete(id);
-    setPosts(newsDB.getAll());
-    return result;
+    const updated = await apiRequest<NewsPost>(`/api/news/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ viewCount: current.viewCount + 1 }),
+    });
+    setPosts((prev) => prev.map((post) => (post.id === updated.id ? updated : post)));
+  }, [posts]);
+
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    await apiDelete(`/api/news/${id}`);
+    setPosts((prev) => prev.filter((post) => post.id !== id));
+    return true;
   }, []);
 
   const getById = useCallback((id: string) => posts.find(p => p.id === id) ?? null, [posts]);

@@ -78,8 +78,6 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
   const spotsLeft =
     event.maxAttendees != null ? event.maxAttendees - confirmedCount : null;
   const isFull = spotsLeft != null && spotsLeft <= 0;
-  const isUnavailable = isEventPast || isDeadlinePassed || isFull || event.status === "cancelled";
-
   function handleBlur(field: keyof FormValues) {
     setTouched((prev) => ({ ...prev, [field]: true }));
     const errs = validate(values);
@@ -113,7 +111,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
       // Simulate a short async delay (localStorage is sync, but UX polish)
       await new Promise((r) => setTimeout(r, 800));
 
-      const rsvp = add({
+      const rsvp = await add({
         eventId: event.id,
         name: values.name.trim(),
         email: values.email.trim().toLowerCase(),

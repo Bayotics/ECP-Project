@@ -8,8 +8,8 @@ import type { User, CreateUserInput, UpdateUserInput } from "../models/user";
 const KEY = STORAGE_KEYS.USERS;
 const now = () => new Date().toISOString();
 
-/** Default password used for all seeded demo accounts */
-export const DEFAULT_SEED_PASSWORD = "ecp2024";
+/** Default password fallback for legacy local demo auth. */
+export const DEFAULT_DEMO_PASSWORD = "ecp2024";
 
 function getPasswordMap(): Record<string, string> {
   return storageReadOne<Record<string, string>>(STORAGE_KEYS.USER_PASSWORDS) ?? {};
@@ -27,9 +27,9 @@ export function setUserPassword(userId: string, password: string): void {
 
 export function checkUserPassword(userId: string, password: string): boolean {
   const map = getPasswordMap();
-  // If no password stored (seed user), accept the default seed password
+  // If no password is stored, accept the default demo password.
   const stored = map[userId];
-  if (stored === undefined) return password === DEFAULT_SEED_PASSWORD;
+  if (stored === undefined) return password === DEFAULT_DEMO_PASSWORD;
   return stored === password;
 }
 

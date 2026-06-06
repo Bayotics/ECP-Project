@@ -10,8 +10,6 @@ export const STORAGE_KEYS = {
   ORDERS: "ecp_orders",
   DONATIONS: "ecp_donations",
   DOCUMENTS: "ecp_documents",
-  /** Flag set once seed data has been loaded */
-  SEEDED: "ecp_seeded_v2",
   /** Currently authenticated user id */
   AUTH_USER_ID: "ecp_auth_user_id",
   /** Map of userId → hashed/plain password (simulated auth) */

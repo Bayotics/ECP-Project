@@ -5,7 +5,7 @@ import { useProducts } from "@/context/ProductsContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
-  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider, EmptyState,
+  FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { Product } from "@/lib/models/product";
 
@@ -67,35 +67,40 @@ export default function AdminProductsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    update(selected.id, {
-      name: form.name,
-      category: form.category as Product["category"],
-      status: form.status as Product["status"],
-      price: Number(form.price),
-      compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
-      description: form.description || undefined,
-      shortDescription: form.shortDescription || undefined,
-      isFeatured: form.isFeatured,
-      isMemberOnly: form.isMemberOnly,
-    });
-    setSaving(false);
-    closeModal();
+    try {
+      await update(selected.id, {
+        name: form.name,
+        category: form.category as Product["category"],
+        status: form.status as Product["status"],
+        price: Number(form.price),
+        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
+        description: form.description || undefined,
+        shortDescription: form.shortDescription || undefined,
+        isFeatured: form.isFeatured,
+        isMemberOnly: form.isMemberOnly,
+      });
+      closeModal();
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function applyStockAdjust() {
+  async function applyStockAdjust() {
     if (!selected || !stockDelta.trim()) return;
     const delta = parseInt(stockDelta, 10);
     if (isNaN(delta)) return;
-    adjustStock(selected.id, delta);
-    setSelected(prev => prev ? { ...prev, stock: (prev.stock ?? 0) + delta } : prev);
-    setForm(p => ({ ...p, stock: String(Number(p.stock) + delta) }));
+    const updated = await adjustStock(selected.id, delta);
+    if (updated) {
+      setSelected(updated);
+      setForm(p => ({ ...p, stock: String(updated.stock ?? 0), status: updated.status }));
+    }
     setStockDelta("");
   }
 
-  function handleRemove() {
+  async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.name}"? This cannot be undone.`)) return;
-    remove(selected.id);
+    await remove(selected.id);
     closeModal();
   }
 
@@ -103,9 +108,9 @@ export default function AdminProductsPage() {
     return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim();
   }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!createForm.name.trim()) return;
-    add({
+    await add({
       name: createForm.name.trim(),
       slug: slugify(createForm.name),
       category: createForm.category as Product["category"],
