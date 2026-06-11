@@ -3,9 +3,12 @@ import type {
   Cart,
   Committee,
   Donation,
+  DuesPayment,
   Event,
   MembershipApplication,
   NewsPost,
+  NewsletterSubscriber,
+  NotificationLog,
   Order,
   OrgDocument,
   Product,
@@ -26,6 +29,9 @@ export const COLLECTIONS = {
   donations: "donations",
   documents: "documents",
   carts: "carts",
+  newsletterSubscribers: "newsletterSubscribers",
+  notificationLogs: "notificationLogs",
+  duesPayments: "duesPayments",
 } as const;
 
 export interface AppCollections {
@@ -40,6 +46,9 @@ export interface AppCollections {
   donations: Donation;
   documents: OrgDocument;
   carts: Cart;
+  newsletterSubscribers: NewsletterSubscriber;
+  notificationLogs: NotificationLog;
+  duesPayments: DuesPayment;
 }
 
 type CollectionName = keyof AppCollections;
@@ -106,6 +115,25 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { id: 1 }, unique: true },
     { key: { userId: 1 }, unique: true, sparse: true },
     { key: { sessionId: 1 }, unique: true, sparse: true },
+  ],
+  newsletterSubscribers: [
+    { key: { id: 1 }, unique: true },
+    { key: { email: 1 }, unique: true },
+    { key: { status: 1 } },
+    { key: { source: 1 } },
+  ],
+  notificationLogs: [
+    { key: { id: 1 }, unique: true },
+    { key: { eventId: 1 } },
+    { key: { sentAt: -1 } },
+    { key: { type: 1 } },
+  ],
+  duesPayments: [
+    { key: { id: 1 }, unique: true },
+    { key: { userId: 1 } },
+    { key: { userId: 1, year: 1 }, unique: true },
+    { key: { status: 1 } },
+    { key: { year: 1 } },
   ],
 };
 

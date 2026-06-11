@@ -87,31 +87,32 @@ function NewsletterForm() {
   const [status, setStatus] = useState<"idle" | "success" | "error" | "duplicate">("idle");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setStatus("error");
       return;
     }
     setLoading(true);
-
-    // Check for duplicate in localStorage
-    const existing: string[] = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) ?? "[]"
-    );
-    setTimeout(() => {
-      if (existing.includes(email.toLowerCase())) {
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), source: "footer" }),
+      });
+      if (res.status === 409) {
         setStatus("duplicate");
-      } else {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify([...existing, email.toLowerCase()])
-        );
+      } else if (res.ok) {
         setStatus("success");
         setEmail("");
+      } else {
+        setStatus("error");
       }
+    } catch {
+      setStatus("error");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (

@@ -40,6 +40,7 @@ export interface Event {
   tags: string[];
   isFeatured: boolean;
   isPublic: boolean;
+  membersOnly: boolean;
   // Timestamps
   createdAt: string;
   updatedAt: string;

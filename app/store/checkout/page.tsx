@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrdersContext";
 import { useAuth } from "@/context/AuthContext";
-import type { PaymentMethod } from "@/lib/models/order";
+import PaymentWidget from "@/components/payments/PaymentWidget";
+import type { PaymentResult } from "@/components/payments/PaymentWidget";
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString("en-NG")}`;
@@ -22,13 +23,7 @@ const NIGERIAN_STATES = [
   "Yobe","Zamfara",
 ];
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
-  { value: "card", label: "Debit / Credit Card", icon: "💳", desc: "Visa, Mastercard, Verve" },
-  { value: "bank-transfer", label: "Bank Transfer", icon: "🏦", desc: "Transfer to Eko Club Philadelphia account" },
-  { value: "ussd", label: "USSD", icon: "📱", desc: "Dial *737# or *966#" },
-];
-
-type Step = "shipping" | "payment" | "processing";
+type Step = "shipping" | "payment";
 
 interface ShippingForm {
   fullName: string; email: string; phone: string;
@@ -39,12 +34,11 @@ const EMPTY_SHIPPING: ShippingForm = {
   fullName: "", email: "", phone: "", address: "", city: "", state: "Lagos",
 };
 
-/* ─── Step indicator ──────────────────────────────── */
+/* ─── Step indicator ──────────────────────────────────────────────────────── */
 function StepBar({ step }: { step: Step }) {
   const steps = [
     { key: "shipping", label: "Shipping" },
-    { key: "payment", label: "Payment" },
-    { key: "processing", label: "Confirm" },
+    { key: "payment",  label: "Payment" },
   ];
   const idx = steps.findIndex(s => s.key === step);
   return (
@@ -52,7 +46,7 @@ function StepBar({ step }: { step: Step }) {
       {steps.map((s, i) => (
         <div key={s.key} className="flex items-center gap-2">
           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-            i < idx ? "bg-(--color-green-600) text-white"
+            i < idx  ? "bg-(--color-green-600) text-white"
             : i === idx ? "bg-(--color-green-600) text-white ring-4 ring-(--color-green-100)"
             : "bg-(--color-neutral-200) text-(--color-neutral-500)"
           }`}>
@@ -66,7 +60,6 @@ function StepBar({ step }: { step: Step }) {
   );
 }
 
-/* ─── Field ───────────────────────────────────────── */
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
@@ -89,7 +82,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: bo
   );
 }
 
-/* ─── Order summary sidebar ───────────────────────── */
+/* ─── Order summary sidebar ───────────────────────────────────────────────── */
 function OrderSummary() {
   const { items, subtotal, shippingFee, total } = useCart();
   return (
@@ -128,7 +121,7 @@ function OrderSummary() {
   );
 }
 
-/* ─── Page ────────────────────────────────────────── */
+/* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, shippingFee, total, isLoading, clearCart } = useCart();
@@ -143,7 +136,10 @@ export default function CheckoutPage() {
     phone: currentUser?.phone ?? "",
   });
   const [errors, setErrors] = useState<Partial<ShippingForm>>({});
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [orderId, setOrderId] = useState("");
+  const [orderNumber, setOrderNumber] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
 
   if (isLoading) {
     return (
@@ -163,7 +159,6 @@ export default function CheckoutPage() {
     );
   }
 
-  /* Validation */
   function validateShipping(): boolean {
     const e: Partial<ShippingForm> = {};
     if (!shipping.fullName.trim()) e.fullName = "Full name is required";
@@ -175,46 +170,50 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0;
   }
 
-  function handleShippingSubmit(e: React.FormEvent) {
+  async function handleShippingSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (validateShipping()) setStep("payment");
+    if (!validateShipping()) return;
+
+    // Create a pending order so PaymentWidget has a recordId to attach payment to
+    setCreating(true);
+    try {
+      const order = await addOrder({
+        userId: currentUser?.id,
+        customerName: shipping.fullName.trim(),
+        customerEmail: shipping.email.trim().toLowerCase(),
+        items: items.map(i => ({
+          productId: i.productId,
+          productName: i.name,
+          imageUrl: i.imageUrl,
+          price: i.price,
+          quantity: i.quantity,
+          subtotal: i.price * i.quantity,
+        })),
+        shippingFee,
+        discount: 0,
+        shippingAddress: {
+          fullName: shipping.fullName.trim(),
+          phone: shipping.phone.trim(),
+          address: shipping.address.trim(),
+          city: shipping.city.trim(),
+          state: shipping.state,
+          country: "Nigeria",
+        },
+        paymentMethod: "paystack",
+      });
+      setOrderId(order.id);
+      setOrderNumber(order.orderNumber);
+      setStep("payment");
+    } catch {
+      setErrors(prev => ({ ...prev, fullName: "Failed to create order. Please try again." }));
+    } finally {
+      setCreating(false);
+    }
   }
 
-  async function handlePlaceOrder() {
-    setStep("processing");
-
-    // Simulate payment processing
-    await new Promise(r => setTimeout(r, 2000));
-
-    const order = await addOrder({
-      userId: currentUser?.id,
-      customerName: shipping.fullName,
-      customerEmail: shipping.email,
-      items: items.map(i => ({
-        productId: i.productId,
-        productName: i.name,
-        imageUrl: i.imageUrl,
-        price: i.price,
-        quantity: i.quantity,
-        subtotal: i.price * i.quantity,
-      })),
-      subtotal,
-      shippingFee,
-      discount: 0,
-      shippingAddress: {
-        fullName: shipping.fullName,
-        phone: shipping.phone,
-        address: shipping.address,
-        city: shipping.city,
-        state: shipping.state,
-        country: "Nigeria",
-      },
-      paymentMethod,
-      paymentReference: `PAY-${Date.now()}`,
-    } as Parameters<typeof addOrder>[0]);
-
+  async function handlePaymentSuccess(result: PaymentResult) {
     clearCart();
-    router.push(`/store/order-success?ref=${order.orderNumber}`);
+    router.push(`/store/order-success?ref=${orderNumber}&method=${result.method}`);
   }
 
   return (
@@ -238,6 +237,7 @@ export default function CheckoutPage() {
           {/* Left panel */}
           <div className="flex-1">
             <AnimatePresence mode="wait">
+
               {/* ── Step 1: Shipping ── */}
               {step === "shipping" && (
                 <motion.form
@@ -245,72 +245,40 @@ export default function CheckoutPage() {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 16 }}
-                  transition={{ duration: 0.25, ease: "easeOut" as const }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
                   onSubmit={handleShippingSubmit}
                   className="bg-white border border-(--color-neutral-200) rounded-2xl p-6 space-y-4"
                 >
                   <h2 className="font-bold text-(--color-neutral-900) text-base mb-2">Shipping Information</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Full Name *" error={errors.fullName}>
-                      <Input
-                        value={shipping.fullName}
-                        onChange={e => setShipping(s => ({ ...s, fullName: e.target.value }))}
-                        placeholder="Tunde Adeyemi"
-                        error={!!errors.fullName}
-                      />
+                      <Input value={shipping.fullName} onChange={e => setShipping(s => ({ ...s, fullName: e.target.value }))} placeholder="Tunde Adeyemi" error={!!errors.fullName} />
                     </Field>
                     <Field label="Email Address *" error={errors.email}>
-                      <Input
-                        type="email"
-                        value={shipping.email}
-                        onChange={e => setShipping(s => ({ ...s, email: e.target.value }))}
-                        placeholder="tunde@email.com"
-                        error={!!errors.email}
-                      />
+                      <Input type="email" value={shipping.email} onChange={e => setShipping(s => ({ ...s, email: e.target.value }))} placeholder="tunde@email.com" error={!!errors.email} />
                     </Field>
                     <Field label="Phone Number *" error={errors.phone}>
-                      <Input
-                        type="tel"
-                        value={shipping.phone}
-                        onChange={e => setShipping(s => ({ ...s, phone: e.target.value }))}
-                        placeholder="080xxxxxxxx"
-                        error={!!errors.phone}
-                      />
+                      <Input type="tel" value={shipping.phone} onChange={e => setShipping(s => ({ ...s, phone: e.target.value }))} placeholder="080xxxxxxxx" error={!!errors.phone} />
                     </Field>
                     <Field label="State *">
-                      <select
-                        value={shipping.state}
-                        onChange={e => setShipping(s => ({ ...s, state: e.target.value }))}
-                        className="w-full px-3 text-gray-400 py-2.5 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-white"
-                      >
+                      <select value={shipping.state} onChange={e => setShipping(s => ({ ...s, state: e.target.value }))}
+                        className="w-full px-3 text-gray-400 py-2.5 text-sm border border-(--color-neutral-300) rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) bg-white">
                         {NIGERIAN_STATES.map(st => <option key={st}>{st}</option>)}
                       </select>
                     </Field>
                     <Field label="City *" error={errors.city}>
-                      <Input
-                        value={shipping.city}
-                        onChange={e => setShipping(s => ({ ...s, city: e.target.value }))}
-                        placeholder="Surulere"
-                        error={!!errors.city}
-                      />
+                      <Input value={shipping.city} onChange={e => setShipping(s => ({ ...s, city: e.target.value }))} placeholder="Surulere" error={!!errors.city} />
                     </Field>
                     <div className="sm:col-span-2">
                       <Field label="Street Address *" error={errors.address}>
-                        <Input
-                          value={shipping.address}
-                          onChange={e => setShipping(s => ({ ...s, address: e.target.value }))}
-                          placeholder="45 Bode Thomas Street"
-                          error={!!errors.address}
-                        />
+                        <Input value={shipping.address} onChange={e => setShipping(s => ({ ...s, address: e.target.value }))} placeholder="45 Bode Thomas Street" error={!!errors.address} />
                       </Field>
                     </div>
                   </div>
                   <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      className="px-6 py-2.5 bg-(--color-green-600) hover:bg-(--color-green-700) text-white font-bold rounded-xl text-sm transition-colors"
-                    >
-                      Continue to Payment →
+                    <button type="submit" disabled={creating}
+                      className="px-6 py-2.5 bg-(--color-green-600) hover:bg-(--color-green-700) disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-colors">
+                      {creating ? "Creating order…" : "Continue to Payment →"}
                     </button>
                   </div>
                 </motion.form>
@@ -323,83 +291,38 @@ export default function CheckoutPage() {
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.25, ease: "easeOut" as const }}
-                  className="bg-white border border-(--color-neutral-200) rounded-2xl p-6"
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="bg-white border border-(--color-neutral-200) rounded-2xl p-6 space-y-5"
                 >
-                  <h2 className="font-bold text-(--color-neutral-900) text-base mb-4">Payment Method</h2>
-                  <div className="space-y-3 mb-6">
-                    {PAYMENT_METHODS.map(pm => (
-                      <button
-                        key={pm.value}
-                        onClick={() => setPaymentMethod(pm.value)}
-                        className={`w-full flex items-center gap-4 p-4 border rounded-xl text-left transition-all ${
-                          paymentMethod === pm.value
-                            ? "border-(--color-green-500) bg-(--color-green-50) shadow-sm"
-                            : "border-(--color-neutral-200) hover:border-(--color-neutral-300)"
-                        }`}
-                      >
-                        <span className="text-2xl">{pm.icon}</span>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-(--color-neutral-900)">{pm.label}</p>
-                          <p className="text-xs text-(--color-neutral-500)">{pm.desc}</p>
-                        </div>
-                        <div className={`w-4 h-4 rounded-full border-2 ${
-                          paymentMethod === pm.value
-                            ? "border-(--color-green-600) bg-(--color-green-600)"
-                            : "border-(--color-neutral-300)"
-                        }`} />
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Shipping review */}
-                  <div className="bg-(--color-neutral-50) rounded-xl p-4 mb-6 text-sm">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-(--color-neutral-800)">{shipping.fullName}</p>
-                        <p className="text-(--color-neutral-500)">{shipping.address}, {shipping.city}, {shipping.state}</p>
-                        <p className="text-(--color-neutral-500)">{shipping.phone} · {shipping.email}</p>
-                      </div>
-                      <button
-                        onClick={() => setStep("shipping")}
-                        className="text-xs text-(--color-green-700) font-semibold hover:underline"
-                      >
-                        Edit
-                      </button>
+                  <div>
+                    <button onClick={() => setStep("shipping")} className="text-sm text-(--color-green-600) hover:underline mb-2">← Edit Shipping</button>
+                    <h2 className="font-bold text-(--color-neutral-900) text-base">Payment</h2>
+                    {/* Shipping review */}
+                    <div className="mt-3 bg-(--color-neutral-50) rounded-xl p-3 text-sm text-(--color-neutral-500)">
+                      <p className="font-semibold text-(--color-neutral-800)">{shipping.fullName}</p>
+                      <p>{shipping.address}, {shipping.city}, {shipping.state}</p>
+                      <p>{shipping.phone} · {shipping.email}</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setStep("shipping")}
-                      className="px-4 text-gray-400 py-2.5 border border-(--color-neutral-300) rounded-xl text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      onClick={handlePlaceOrder}
-                      className="flex-1 py-2.5 bg-(--color-green-600) hover:bg-(--color-green-700) text-white font-bold rounded-xl text-sm transition-colors"
-                    >
-                      Place Order · {formatNaira(total)}
-                    </button>
-                  </div>
+                  {paymentError && (
+                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{paymentError}</div>
+                  )}
+
+                  <PaymentWidget
+                    amountNGN={total}
+                    email={shipping.email}
+                    name={shipping.fullName}
+                    phone={shipping.phone}
+                    description={`Eko Club Philadelphia Store Order — ${items.length} item${items.length !== 1 ? "s" : ""}`}
+                    context="order"
+                    recordId={orderId}
+                    onSuccess={handlePaymentSuccess}
+                    onError={setPaymentError}
+                  />
                 </motion.div>
               )}
 
-              {/* ── Step 3: Processing ── */}
-              {step === "processing" && (
-                <motion.div
-                  key="processing"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, ease: "easeOut" as const }}
-                  className="bg-white border border-(--color-neutral-200) rounded-2xl p-12 flex flex-col items-center gap-4 text-center"
-                >
-                  <div className="w-14 h-14 border-4 border-(--color-green-200) border-t-(--color-green-600) rounded-full animate-spin" />
-                  <p className="text-lg font-bold text-(--color-neutral-900)">Processing your order…</p>
-                  <p className="text-sm text-(--color-neutral-500)">Please don&apos;t close this page.</p>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
 

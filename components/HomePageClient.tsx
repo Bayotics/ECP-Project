@@ -1473,28 +1473,39 @@ function DonationCallout() {
    ══════════════════════════════════════════════════════ */
 function NewsletterSignup() {
   const { success, error } = useToast();
-  const [subscribers, setSubscribers] = useLocalStorage<string[]>("ecp_newsletter_subscribers", []);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       error("Please enter a valid email address.");
       return;
     }
-    if (subscribers.includes(trimmed)) {
-      error("This email is already subscribed.");
-      return;
-    }
     setSubmitting(true);
-    setTimeout(() => {
-      setSubscribers([...subscribers, trimmed]);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, source: "website" }),
+      });
+      const json = await res.json();
+      if (!res.ok && res.status !== 409) {
+        error(json.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+      if (res.status === 409) {
+        error("This email is already subscribed.");
+        return;
+      }
       setEmail("");
-      setSubmitting(false);
       success("You're subscribed! Welcome to the Eko Club Philadelphia community. 🎉");
-    }, 600);
+    } catch {
+      error("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -1581,7 +1592,7 @@ function NewsletterSignup() {
           </form>
 
           <p className="text-xs" style={{ color: "var(--color-neutral-500)" }}>
-            Join {subscribers.length > 0 ? `${subscribers.length.toLocaleString()}+` : "hundreds of"} Eko Club Philadelphia members already subscribed.
+            Join hundreds of Eko Club Philadelphia members already subscribed.
           </p>
         </motion.div>
       </div>

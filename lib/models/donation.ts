@@ -9,7 +9,7 @@ export type DonationCause =
   | "education";
 
 export type DonationStatus = "pending" | "successful" | "failed" | "refunded";
-export type DonationPaymentMethod = "card" | "bank-transfer" | "ussd" | "paystack" | "cash";
+export type DonationPaymentMethod = "paystack" | "paypal" | "zelle" | "bank-transfer" | "cash";
 
 export interface Donation {
   id: string;
@@ -28,9 +28,15 @@ export interface Donation {
   // Payment
   paymentMethod?: DonationPaymentMethod;
   paymentReference?: string;
+  paystackRef?: string;
+  paystackSubscriptionCode?: string;
+  paypalOrderId?: string;
+  paypalCaptureId?: string;
+  zelleRef?: string;
   status: DonationStatus;
   isRecurring: boolean;
-  nextChargeDate?: string; // for recurring donations
+  autoRenew: boolean;
+  nextChargeDate?: string;
   // Admin
   acknowledgedAt?: string;
   acknowledgedBy?: string;
@@ -43,5 +49,5 @@ export interface Donation {
 export type CreateDonationInput = Omit<
   Donation,
   "id" | "referenceNumber" | "status" | "createdAt" | "updatedAt"
->;
+> & { autoRenew?: boolean };
 export type UpdateDonationInput = Partial<Omit<Donation, "id" | "referenceNumber" | "createdAt">>;

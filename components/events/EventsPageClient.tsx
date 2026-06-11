@@ -82,6 +82,7 @@ function eventToCardProps(event: Event, confirmedCount: number): EventCardProps 
     registrationUrl: `/events/${event.slug}`,
     isFeatured: event.isFeatured,
     isFull: !!(event.maxAttendees && confirmedCount >= event.maxAttendees),
+    membersOnly: event.membersOnly ?? false,
     tags: event.tags,
   };
 }

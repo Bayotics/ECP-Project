@@ -23,6 +23,7 @@ function validateCreateEvent(input: Partial<CreateEventInput>): string | null {
   if (typeof input.isFeatured !== "boolean") return "isFeatured must be a boolean";
   if (typeof input.isPublic !== "boolean") return "isPublic must be a boolean";
   if (typeof input.isOnline !== "boolean") return "isOnline must be a boolean";
+  if (typeof input.membersOnly !== "boolean") return "membersOnly must be a boolean";
   return null;
 }
 
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get("featured");
     const isPublic = searchParams.get("public");
     const upcoming = searchParams.get("upcoming");
+    const membersOnly = searchParams.get("membersOnly");
     const limit = Number(searchParams.get("limit") ?? "0");
 
     const filter: Filter<Event> = {};
@@ -45,6 +47,8 @@ export async function GET(request: NextRequest) {
     if (type) filter.type = type as Event["type"];
     if (featured === "true") filter.isFeatured = true;
     if (isPublic === "true") filter.isPublic = true;
+    if (membersOnly === "true") filter.membersOnly = true;
+    if (membersOnly === "false") filter.membersOnly = { $ne: true };
     if (upcoming === "true") filter.date = { $gte: new Date().toISOString() };
 
     const cursor = collection.find(filter).sort({ date: 1, createdAt: -1 });
@@ -98,6 +102,7 @@ export async function POST(request: NextRequest) {
       tags: payload.tags!,
       isFeatured: payload.isFeatured!,
       isPublic: payload.isPublic!,
+      membersOnly: payload.membersOnly!,
       createdAt: now,
       updatedAt: now,
     };

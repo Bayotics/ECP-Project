@@ -2,7 +2,9 @@ import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 import type { Filter } from "mongodb";
 import type { CreateRSVPInput, RSVP } from "@/lib/models";
-import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
+import { ensureCoreIndexes, getCollection, serializeDocument, serializeDocuments } from "@/lib/server/collections";
+import { sendRSVPConfirmation } from "@/lib/server/notifications";
+import { getSessionUser } from "@/lib/server/session";
 
 function badRequest(message: string) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
@@ -42,6 +44,22 @@ export async function POST(request: NextRequest) {
     if (!payload.name?.trim()) return badRequest("Name is required");
     if (!payload.email?.trim()) return badRequest("Email is required");
 
+    // Validate members-only restriction
+    const eventsCollection = await getCollection("events");
+    const event = serializeDocument(await eventsCollection.findOne({ id: payload.eventId.trim() }));
+    if (!event) return badRequest("Event not found");
+
+    if (event.membersOnly) {
+      const sessionUser = await getSessionUser(request);
+      const isMember = sessionUser && (sessionUser.role === "member" || sessionUser.role === "admin" || sessionUser.role === "super-admin");
+      if (!isMember) {
+        return NextResponse.json(
+          { ok: false, error: "This event is for members only. Please log in with a member account to register." },
+          { status: 403 }
+        );
+      }
+    }
+
     const collection = await getCollection("rsvps");
     const email = payload.email.trim().toLowerCase();
     const duplicate = await collection.findOne({ eventId: payload.eventId.trim(), email, status: { $ne: "cancelled" } });
@@ -63,6 +81,12 @@ export async function POST(request: NextRequest) {
     };
 
     await collection.insertOne(rsvp);
+
+    // Send confirmation email/SMS (non-blocking)
+    sendRSVPConfirmation(rsvp, event).catch((err) =>
+      console.error("[RSVP] Confirmation notification failed:", err)
+    );
+
     return NextResponse.json({ ok: true, data: rsvp }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create RSVP";

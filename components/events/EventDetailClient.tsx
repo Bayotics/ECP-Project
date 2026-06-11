@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEvents, useRSVP } from "@/context";
+import { useAuth } from "@/context/AuthContext";
 import EventCard from "@/components/cards/EventCard";
 import ShareButtons from "@/components/ui/ShareButtons";
 import Badge from "@/components/ui/Badge";
@@ -244,10 +245,13 @@ export default function EventDetailClient({ slug }: { slug: string }) {
     );
   }
 
+  const { currentUser } = useAuth();
   const confirmedCount = countConfirmed(event.id);
   const spotsLeft = event.maxAttendees != null ? event.maxAttendees - confirmedCount : null;
   const isFull = spotsLeft != null && spotsLeft <= 0;
   const isUpcoming = new Date(event.date) >= now;
+  const isMember = currentUser && (currentUser.role === "member" || currentUser.role === "admin" || currentUser.role === "super-admin");
+  const membersOnlyBlocked = event.membersOnly && !isMember;
   const showRSVP = event.registrationRequired && event.status === "published";
   const pageUrl = typeof window !== "undefined" ? window.location.href : `https://ekoclubphiladelphia.org/events/${event.slug}`;
 
@@ -545,12 +549,26 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               <div id="rsvp-panel" className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Reserve your spot</p>
                 <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-neutral-950">RSVP for this event</h2>
-                <p className="mt-2 text-sm leading-7 text-neutral-600">
-                  Complete your reservation to stay connected to this gathering and help us plan attendance well.
-                </p>
-                <div className="mt-5">
-                  <RSVPForm event={event} confirmedCount={confirmedCount} />
-                </div>
+                {membersOnlyBlocked ? (
+                  <div className="mt-5 rounded-xl bg-purple-50 border border-purple-200 p-5 text-center space-y-3">
+                    <p className="text-2xl">🔒</p>
+                    <p className="font-bold text-purple-800">Members Only</p>
+                    <p className="text-sm text-purple-700">This event is exclusively for Eko Club Philadelphia members. Please log in with a member account to register.</p>
+                    <Link href="/auth/login" className="inline-block mt-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                      Log in to register →
+                    </Link>
+                    <p className="text-xs text-purple-500">Not a member? <Link href="/membership/apply" className="underline hover:no-underline">Apply for membership</Link></p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm leading-7 text-neutral-600">
+                      Complete your reservation to stay connected to this gathering and help us plan attendance well.
+                    </p>
+                    <div className="mt-5">
+                      <RSVPForm event={event} confirmedCount={confirmedCount} />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

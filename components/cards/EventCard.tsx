@@ -28,6 +28,7 @@ export interface EventCardProps {
   registrationUrl?: string;
   isFeatured?: boolean;
   isFull?: boolean;
+  membersOnly?: boolean;
   tags?: string[];
   /** "card" (default) or "list" row layout */
   layout?: "card" | "list";
@@ -64,6 +65,7 @@ export default function EventCard({
   registrationUrl,
   isFeatured = false,
   isFull = false,
+  membersOnly = false,
   tags = [],
   layout = "card",
 }: EventCardProps) {
@@ -159,6 +161,7 @@ export default function EventCard({
         {/* Status chips */}
         <div className="absolute top-3 right-3 flex flex-col gap-1">
           {isFeatured && <Badge color="gold" dot>Featured</Badge>}
+          {membersOnly && <Badge color="info">🔒 Members Only</Badge>}
           {isFull && <Badge color="danger">Full</Badge>}
           {isAlmostFull && !isFull && <Badge color="gold">Only {spotsLeft} left</Badge>}
         </div>

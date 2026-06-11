@@ -9,7 +9,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "unpaid" | "paid" | "failed" | "refunded";
 
-export type PaymentMethod = "card" | "bank-transfer" | "ussd" | "paystack" | "flutterwave";
+export type PaymentMethod = "paystack" | "paypal" | "zelle" | "bank-transfer";
 
 export interface OrderItem {
   productId: string;
@@ -48,6 +48,10 @@ export interface Order {
   paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
   paymentReference?: string;
+  paystackRef?: string;
+  paypalOrderId?: string;
+  paypalCaptureId?: string;
+  zelleRef?: string;
   // Status
   status: OrderStatus;
   notes?: string;
