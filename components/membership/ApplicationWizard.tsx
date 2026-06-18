@@ -705,7 +705,7 @@ export default function ApplicationWizard() {
     let errs: StepErrors = {};
     if (currentStep === 0) errs = validateStep1(draft);
     if (currentStep === 1) errs = validateStep2(draft);
-    if (currentStep === 2) errs = validateStep3(draft);
+    if (currentStep === 2) errs = validateStep3();
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
