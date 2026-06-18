@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/useToast";
 import { useMembership } from "@/context/MembershipContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -15,6 +16,7 @@ const STATUS_OPTIONS = ["all", "pending", "under-review", "interview", "approved
 export default function AdminApplicationsPage() {
   const { applications, update, setUnderReview, setInterview, approve, reject, addAdminMessage } = useMembership();
   const { currentUser } = useAuth();
+  const { success, error } = useToast();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -57,8 +59,13 @@ export default function AdminApplicationsPage() {
   async function sendMessage() {
     if (!selected || !msgContent.trim()) return;
     const name = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin";
-    await addAdminMessage(selected.id, name, msgContent.trim());
-    setMsgContent("");
+    try {
+      await addAdminMessage(selected.id, name, msgContent.trim());
+      closeModal();
+      success("Message sent to applicant successfully.", "Message Sent");
+    } catch {
+      error("Failed to send message. Please try again.", "Send Failed");
+    }
   }
 
   async function updateStatus(status: "under-review" | "interview" | "approved" | "rejected") {

@@ -136,7 +136,7 @@ function Label({ htmlFor, children, optional }: { htmlFor: string; children: Rea
 
 function inputCls(hasError: boolean) {
   return cn(
-    "w-full px-3 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 transition-colors",
+    "w-full px-3 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 transition-colors text-gray-600",
     hasError
       ? "border-red-400 focus:ring-red-200 bg-red-50"
       : "border-(--color-neutral-300) focus:ring-(--color-green-200) focus:border-(--color-green-500)"

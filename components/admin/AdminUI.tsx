@@ -44,6 +44,14 @@ const BADGE_COLORS: Record<string, string> = {
   opinion:           "bg-purple-100 text-purple-800",
   "press-release":   "bg-orange-100 text-orange-800",
   blog:              "bg-pink-100 text-pink-800",
+  // Committee types
+  standing:      "bg-emerald-100 text-emerald-800",
+  "ad-hoc":      "bg-amber-100 text-amber-800",
+  executive:     "bg-rose-100 text-rose-800",
+  advisory:      "bg-sky-100 text-sky-800",
+  technical:     "bg-violet-100 text-violet-800",
+  // Committee statuses (dissolved = extra)
+  dissolved:     "bg-gray-100 text-gray-500",
   // Product categories
   apparel:       "bg-blue-100 text-blue-800",
   accessories:   "bg-teal-100 text-teal-800",

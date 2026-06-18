@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import type { Committee, CommitteeMemberProfile, CreateCommitteeInput, UpdateCommitteeInput } from "@/lib/models";
+import type { Committee, CommitteeMemberProfile, CommitteeJoinRequest, CreateCommitteeInput, UpdateCommitteeInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
 
 interface CommitteesContextValue {
@@ -16,6 +16,9 @@ interface CommitteesContextValue {
   removeMember: (id: string, memberName: string) => Promise<Committee | null>;
   remove: (id: string) => Promise<boolean>;
   refresh: () => Promise<void>;
+  requestToJoin: (committeeId: string, committeeName: string, userId: string, userName: string, userEmail: string, message?: string) => Promise<CommitteeJoinRequest>;
+  getJoinRequests: (committeeId: string) => Promise<CommitteeJoinRequest[]>;
+  reviewJoinRequest: (requestId: string, status: "approved" | "rejected", reviewedBy: string) => Promise<void>;
 }
 
 const CommitteesContext = createContext<CommitteesContextValue | null>(null);
@@ -112,12 +115,34 @@ export function CommitteesProvider({ children }: { children: React.ReactNode }) 
   const getActive = useCallback(() => committees.filter(c => c.status === "active"), [committees]);
   const getByType = useCallback((type: Committee["type"]) => committees.filter(c => c.type === type), [committees]);
 
+  const requestToJoin = useCallback(async (
+    committeeId: string, committeeName: string,
+    userId: string, userName: string, userEmail: string, message?: string
+  ): Promise<CommitteeJoinRequest> => {
+    return await apiRequest<CommitteeJoinRequest>("/api/committees/join-requests", {
+      method: "POST",
+      body: JSON.stringify({ committeeId, committeeName, userId, userName, userEmail, message }),
+    });
+  }, []);
+
+  const getJoinRequests = useCallback(async (committeeId: string): Promise<CommitteeJoinRequest[]> => {
+    return await apiRequest<CommitteeJoinRequest[]>(`/api/committees/join-requests?committeeId=${committeeId}`);
+  }, []);
+
+  const reviewJoinRequest = useCallback(async (requestId: string, status: "approved" | "rejected", reviewedBy: string): Promise<void> => {
+    await apiRequest(`/api/committees/join-requests/${requestId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, reviewedBy }),
+    });
+  }, []);
+
   return (
     <CommitteesContext.Provider
       value={{
         committees, isLoading,
         getById, getBySlug, getActive, getByType,
         add, update, addMember, removeMember, remove, refresh,
+        requestToJoin, getJoinRequests, reviewJoinRequest,
       }}
     >
       {children}

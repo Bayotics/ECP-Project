@@ -6,6 +6,7 @@ import { useEvents } from "@/context/EventsContext";
 import { useNews } from "@/context/NewsContext";
 import { useMembership } from "@/context/MembershipContext";
 import { useUsers } from "@/context/UsersContext";
+import { useCommittees } from "@/context/CommitteesContext";
 
 function getInitials(name: string): string {
   return name
@@ -57,8 +58,11 @@ export default function MemberDashboardPage() {
   const { getPublished } = useNews();
   const { getByEmail, getByUserId } = useMembership();
   const { users } = useUsers();
+  const { getActive: getActiveCommittees } = useCommittees();
 
   const upcomingEvents = getUpcoming().slice(0, 3);
+  const allCommittees = getActiveCommittees();
+  const myCommittees = allCommittees.filter(c => c.members.some(m => m.userId === currentUser?.id));
   const latestNews = getPublished().slice(0, 3);
   const application = currentUser
     ? (getByEmail(currentUser.email) ?? getByUserId(currentUser.id))
@@ -230,7 +234,7 @@ export default function MemberDashboardPage() {
                   )}
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-gray-500 truncate">{m.displayName}</p>
-                    <p className="text-xs text-(--color-neutral-400) capitalize truncate">{m.role}</p>
+                    <p className="text-xs text-gray-500 capitalize truncate">{m.role}</p>
                   </div>
                 </div>
               ))}
@@ -238,6 +242,49 @@ export default function MemberDashboardPage() {
           )}
         </DashboardCard>
       </div>
+
+      {/* Committees */}
+      <DashboardCard
+        title="My Committees"
+        href="/member/committees"
+        linkLabel="View all committees"
+      >
+        {myCommittees.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <p className="text-sm text-(--color-neutral-400) text-center">You are not a member of any committee yet.</p>
+            <Link
+              href="/member/committees"
+              className="inline-block rounded-lg bg-(--color-green-600) px-4 py-2 text-xs font-semibold text-white hover:bg-(--color-green-700) transition"
+            >
+              Browse &amp; Join Committees
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {myCommittees.map(c => {
+              const myRole = c.members.find(m => m.userId === currentUser?.id)?.role ?? "Member";
+              const chair = c.members.find(m => m.isChairperson);
+              return (
+                <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border border-(--color-neutral-200) px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-500 truncate">{c.name}</p>
+                    <p className="text-xs text-(--color-neutral-400)">{myRole}{chair ? ` · Chair: ${chair.name}` : ""}</p>
+                  </div>
+                  <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 bg-(--color-green-50) text-(--color-green-700) capitalize flex-shrink-0">
+                    {c.type.replace(/-/g, " ")}
+                  </span>
+                </div>
+              );
+            })}
+            <Link
+              href="/member/committees"
+              className="block text-center text-xs text-(--color-green-600) font-medium hover:underline pt-1"
+            >
+              Browse all {allCommittees.length} active committees →
+            </Link>
+          </div>
+        )}
+      </DashboardCard>
 
       {/* Documents Preview */}
       <DashboardCard title="My Documents">

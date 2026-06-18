@@ -2,6 +2,7 @@ import type { Collection, IndexDescription } from "mongodb";
 import type {
   Cart,
   Committee,
+  CommitteeJoinRequest,
   Donation,
   DuesPayment,
   Event,
@@ -32,6 +33,7 @@ export const COLLECTIONS = {
   newsletterSubscribers: "newsletterSubscribers",
   notificationLogs: "notificationLogs",
   duesPayments: "duesPayments",
+  committeeJoinRequests: "committeeJoinRequests",
 } as const;
 
 export interface AppCollections {
@@ -49,6 +51,7 @@ export interface AppCollections {
   newsletterSubscribers: NewsletterSubscriber;
   notificationLogs: NotificationLog;
   duesPayments: DuesPayment;
+  committeeJoinRequests: CommitteeJoinRequest;
 }
 
 type CollectionName = keyof AppCollections;
@@ -134,6 +137,12 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { userId: 1, year: 1 }, unique: true },
     { key: { status: 1 } },
     { key: { year: 1 } },
+  ],
+  committeeJoinRequests: [
+    { key: { id: 1 }, unique: true },
+    { key: { committeeId: 1 } },
+    { key: { userId: 1 } },
+    { key: { status: 1 } },
   ],
 };
 

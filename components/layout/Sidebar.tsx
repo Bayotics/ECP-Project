@@ -17,7 +17,8 @@ const memberLinks = [
   { href: "/member/directory",  label: "Member Directory",    icon: "◉" },
   { href: "/member/documents",  label: "Documents",           icon: "◧" },
   { href: "/member/dues",       label: "Dues & Payments",     icon: "₦" },
-  { href: "/member/events",     label: "Events",              icon: "◈" },
+  { href: "/member/events",       label: "Events",              icon: "◈" },
+  { href: "/member/committees",   label: "Committees",          icon: "◑" },
   { href: "/store",             label: "Store",               icon: "🛍️" },
   { href: "/news",              label: "News",                icon: "📰" },
   { href: "/gallery",           label: "Gallery",             icon: "🖼️" },
@@ -32,6 +33,7 @@ const adminLinks = [
   { href: "/admin/newsletter",    label: "Newsletter",    icon: "✉" },
   { href: "/admin/news",          label: "News",          icon: "📰" },
   { href: "/admin/products",      label: "Products",      icon: "🛍️" },
+  { href: "/admin/committees",    label: "Committees",    icon: "◑" },
   { href: "/admin/documents",     label: "Documents",     icon: "◧" },
 ];
 
@@ -123,7 +125,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
             )}
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-500 truncate">{currentUser.displayName}</p>
-              <p className="text-xs text-(--color-neutral-400) capitalize">{currentUser.role}</p>
+              <p className="text-xs text-gray-500 capitalize">{currentUser.role}</p>
             </div>
           </div>
         )}

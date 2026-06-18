@@ -38,3 +38,20 @@ export interface Committee {
 
 export type CreateCommitteeInput = Omit<Committee, "id" | "createdAt" | "updatedAt">;
 export type UpdateCommitteeInput = Partial<Omit<Committee, "id" | "createdAt">>;
+
+/* ─── Join Requests ──────────────────────────────────── */
+export type JoinRequestStatus = "pending" | "approved" | "rejected";
+
+export interface CommitteeJoinRequest {
+  id: string;
+  committeeId: string;
+  committeeName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  message?: string;
+  status: JoinRequestStatus;
+  requestedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}

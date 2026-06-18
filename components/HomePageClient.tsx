@@ -181,21 +181,11 @@ const HERO_WORDS = [
 
 function HeroSection() {
   const [active, setActive] = useState(0);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const bgX = useTransform(mouseX, [-1, 1], ["-2%", "2%"]);
-  const bgY = useTransform(mouseY, [-1, 1], ["-2%", "2%"]);
 
   useEffect(() => {
     const id = setInterval(() => setActive(p => (p + 1) % HERO_SLIDES.length), 5800);
     return () => clearInterval(id);
   }, []);
-
-  function onMouseMove(e: React.MouseEvent<HTMLElement>) {
-    const { width, height, left, top } = e.currentTarget.getBoundingClientRect();
-    mouseX.set((e.clientX - left - width  / 2) / (width  / 2));
-    mouseY.set((e.clientY - top  - height / 2) / (height / 2));
-  }
 
   const containerVariants = {
     hidden: {},
@@ -210,7 +200,6 @@ function HeroSection() {
     <section
       className="relative min-h-svh overflow-hidden"
       aria-labelledby="hero-heading"
-      onMouseMove={onMouseMove}
     >
       {/* ── Slides ── */}
       {HERO_SLIDES.map((slide, i) => (
@@ -219,7 +208,6 @@ function HeroSection() {
           className="absolute inset-0"
           animate={{ opacity: i === active ? 1 : 0, scale: i === active ? 1 : 1.04 }}
           transition={{ duration: 1.1, ease: "easeInOut" }}
-          style={{ x: bgX, y: bgY }}
           aria-hidden={i !== active}
         >
           <Image src={slide.src} alt={slide.alt} fill priority={i === 0} className="object-cover object-center" sizes="100vw" />
