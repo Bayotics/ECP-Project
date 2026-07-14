@@ -716,92 +716,92 @@ type TimelineEventItem = {
 const TIMELINE_FALLBACK_EVENTS: TimelineEventItem[] = [
   {
     id: "ev-001",
-    slug: "lagos-civic-town-hall-2026",
-    title: "Lagos Civic Town Hall 2026",
+    slug: "adopt-a-highway-2026",
+    title: "Adopt-a-Highway Cleanup",
     description:
-      "Our flagship gathering uniting members, stakeholders, and civic voices around infrastructure, education, healthcare, and accountability.",
-    date: "2026-06-14T10:00:00.000Z",
-    location: "Lagos State House of Assembly Complex, Alausa, Ikeja",
-    type: "town-hall",
+      "Each spring our members trade weekends for work gloves and roll out along our adopted stretch of highway, clearing litter and restoring the roadside our neighbors drive past every day. It is our most visible act of pride in the place we now call home.",
+    date: "2026-05-10T08:00:00.000Z",
+    location: "Bucks County, Pennsylvania",
+    type: "volunteer",
     status: "published",
     organizerName: "Eko Club Philadelphia",
-    tags: ["governance", "accountability", "town-hall"],
-    imageUrl: GALLERY_ASSETS.timeline.townHall,
-    isOnline: false,
-  },
-  {
-    id: "ev-006",
-    slug: "community-health-fair-kosofe-2026",
-    title: "Community Health Fair — Kosofe Edition",
-    description:
-      "A full-day outreach programme offering screenings, health education, and resource access for families across the community.",
-    date: "2026-06-21T09:00:00.000Z",
-    location: "Kosofe Local Government Secretariat, Lagos",
-    type: "volunteer",
-    status: "published",
-    organizerName: "Fatima Sule",
-    tags: ["health", "community", "outreach"],
-    imageUrl: GALLERY_ASSETS.timeline.health,
-    isOnline: false,
-  },
-  {
-    id: "ev-005",
-    slug: "know-your-rights-electoral-law-seminar-2026",
-    title: "Know Your Rights: Electoral Law Seminar",
-    description:
-      "A guided virtual session unpacking voting rights, reporting pathways, and how members can advocate with confidence.",
-    date: "2026-06-07T10:00:00.000Z",
-    location: "Online (Zoom)",
-    type: "seminar",
-    status: "published",
-    organizerName: "Kemi Adewale",
-    tags: ["law", "rights", "seminar"],
-    imageUrl: GALLERY_ASSETS.timeline.seminar,
-    isOnline: true,
-  },
-  {
-    id: "ev-004",
-    slug: "environmental-advocacy-volunteer-day",
-    title: "Environmental Advocacy Volunteer Day",
-    description:
-      "Members rolled up their sleeves for community clean-up, tree planting, and environmental awareness activation in Alimosho.",
-    date: "2026-05-30T08:00:00.000Z",
-    location: "Iyana-Ipaja Bus Terminal, Alimosho, Lagos",
-    type: "volunteer",
-    status: "published",
-    organizerName: "Bode Ogunleye",
     tags: ["environment", "volunteer", "community"],
     imageUrl: GALLERY_ASSETS.timeline.volunteer,
     isOnline: false,
   },
   {
     id: "ev-002",
-    slug: "digital-skills-civic-advocacy-workshop",
-    title: "Digital Skills for Civic Advocacy Workshop",
+    slug: "scholarship-awards-night-2026",
+    title: "Scholarship Awards Night",
     description:
-      "An immersive training session helping members use social, data, and digital storytelling tools to drive civic impact.",
-    date: "2026-05-24T09:00:00.000Z",
-    location: "Co-Creation Hub, Yaba, Lagos",
-    type: "workshop",
+      "We close the academic year by celebrating the scholars among us — outstanding students of Nigerian heritage whose drive deserves a runway. The evening turns a scholarship check into a moment of recognition the whole community shows up for.",
+    date: "2026-05-17T18:00:00.000Z",
+    location: "Philadelphia, PA",
+    type: "meetup",
     status: "published",
-    organizerName: "Tunde Adeyemi",
-    tags: ["digital", "workshop", "advocacy"],
+    organizerName: "Eko Club Philadelphia",
+    tags: ["scholarship", "education", "awards"],
+    imageUrl: GALLERY_ASSETS.timeline.meetup,
+    isOnline: false,
+  },
+  {
+    id: "ev-003",
+    slug: "ronald-mcdonald-house-meals-2026",
+    title: "Ronald McDonald House Meals",
+    description:
+      "Members fill the Ronald McDonald House kitchen with the smell of home-cooked meals for families whose children are receiving medical care. Quiet, hands-on service — comfort offered one plate at a time.",
+    date: "2026-06-14T10:00:00.000Z",
+    location: "Philadelphia, PA",
+    type: "volunteer",
+    status: "published",
+    organizerName: "Eko Club Philadelphia",
+    tags: ["health", "community", "service"],
+    imageUrl: GALLERY_ASSETS.timeline.health,
+    isOnline: false,
+  },
+  {
+    id: "ev-004",
+    slug: "back-to-school-drive-2026",
+    title: "Back-to-School Drive",
+    description:
+      "As summer winds down we pack backpacks with the supplies that let a child walk into the first day of school standing a little taller. Hundreds of students across the Philadelphia area start the year ready and confident.",
+    date: "2026-08-15T09:00:00.000Z",
+    location: "Philadelphia, PA",
+    type: "volunteer",
+    status: "published",
+    organizerName: "Eko Club Philadelphia",
+    tags: ["education", "youth", "community"],
     imageUrl: GALLERY_ASSETS.timeline.workshop,
     isOnline: false,
   },
   {
-    id: "ev-007",
-    slug: "ecp-annual-gala-2025",
-    title: "ECP Annual Gala Dinner 2025",
+    id: "ev-005",
+    slug: "nigeria-independence-day-parade-2026",
+    title: "Nigeria Independence Day Parade",
     description:
-      "A signature night of celebration, recognition, and fundraising that spotlighted the people powering the mission forward.",
-    date: "2025-12-07T18:00:00.000Z",
-    location: "Eko Hotels & Suites, Victoria Island, Lagos",
-    type: "meetup",
-    status: "completed",
+      "Green-white-green takes over the street as we march in the Nigeria Independence Day Parade — drums, agbada, gele, and an unmistakable sense of who we are. It is heritage you can hear from a block away.",
+    date: "2026-10-03T11:00:00.000Z",
+    location: "Philadelphia, PA",
+    type: "town-hall",
+    status: "published",
     organizerName: "Eko Club Philadelphia",
-    tags: ["gala", "awards", "annual"],
-    imageUrl: GALLERY_ASSETS.timeline.meetup,
+    tags: ["heritage", "culture", "parade"],
+    imageUrl: GALLERY_ASSETS.timeline.townHall,
+    isOnline: false,
+  },
+  {
+    id: "ev-006",
+    slug: "thanksgiving-turkey-drive-2026",
+    title: "Thanksgiving Turkey Drive",
+    description:
+      "No table should sit empty in November. Members gather and distribute turkeys and trimmings so families across the area enjoy a full Thanksgiving meal — and a reminder that they are not alone.",
+    date: "2026-11-21T09:00:00.000Z",
+    location: "Philadelphia, PA",
+    type: "volunteer",
+    status: "published",
+    organizerName: "Eko Club Philadelphia",
+    tags: ["thanksgiving", "community", "outreach"],
+    imageUrl: GALLERY_ASSETS.timeline.seminar,
     isOnline: false,
   },
 ];
@@ -1113,7 +1113,7 @@ function EventTimelineSection() {
       <motion.div className="relative mx-auto max-w-7xl" style={{ y: heroShift }}>
         <SectionHeader
           eyebrow="Event Timeline"
-          heading="A Living Archive of Our Signature Gatherings"
+          heading="A Living Archive of Our Signature"
           headingAccent="Gatherings"
           subheading="A richer homepage story: scroll the timeline to explore key Eko Club Philadelphia events, with a motion-driven progress beam that deepens as the section unfolds."
           align="center"
@@ -1589,6 +1589,88 @@ function NewsletterSignup() {
 }
 
 /* ══════════════════════════════════════════════════════
+   ECI FLAGSHIP BAND — year-aware
+   ══════════════════════════════════════════════════════ */
+function ECIFlagshipBand() {
+  const year = new Date().getFullYear();
+  const isMissionYear = year % 2 === 0;
+
+  const event = isMissionYear
+    ? {
+        icon: "🩺",
+        label: `ECI Medical Mission ${year}`,
+        tagline: "Biennial flagship · Even years",
+        description:
+          "Every two years Eko Club International deploys a team of medical professionals to deliver free care, screenings, and supplies to communities in need. ECP rallies volunteers, funds, and momentum behind the mission. Sign-ups open six months before departure.",
+        pill: "Medical Mission Year",
+        pillCls: "bg-red-100 text-red-700",
+        accent: "#dc2626",
+        linkLabel: "ECI Medical Mission details →",
+        href: "https://ekoclubinternational.org",
+      }
+    : {
+        icon: "🌍",
+        label: year === 2027 ? "ECI Biennial Convention — London 2027" : `ECI Biennial Convention ${year}`,
+        tagline: "Biennial flagship · Odd years",
+        description:
+          "Every two years the worldwide family of Eko Club International convenes for business, culture, and reunion. ECP delegates join members from chapters across the globe to represent Philadelphia at the highest level of the organisation.",
+        pill: "Convention Year",
+        pillCls: "bg-indigo-100 text-indigo-700",
+        accent: "#4338ca",
+        linkLabel: "ECI Convention details →",
+        href: "https://ekoclubinternational.org",
+      };
+
+  return (
+    <section className="py-10 px-4 bg-neutral-50 border-b border-neutral-200">
+      <div className="max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-2xl border bg-white shadow-sm overflow-hidden flex flex-col sm:flex-row items-stretch"
+          style={{ borderColor: `${event.accent}33` }}
+        >
+          {/* Color stripe */}
+          <div className="w-full sm:w-1.5 h-1.5 sm:h-auto flex-shrink-0" style={{ background: event.accent }} />
+
+          <div className="flex-1 p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-5">
+            {/* Icon */}
+            <div
+              className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-3xl"
+              style={{ background: `${event.accent}14` }}
+            >
+              {event.icon}
+            </div>
+
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${event.pillCls}`}>
+                  {event.pill}
+                </span>
+                <span className="text-xs text-neutral-400 font-medium">{event.tagline}</span>
+              </div>
+              <h3 className="text-lg font-extrabold text-neutral-900 mb-2">{event.label}</h3>
+              <p className="text-sm text-neutral-600 leading-relaxed max-w-2xl">{event.description}</p>
+              <a
+                href={event.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 text-sm font-bold hover:underline transition-colors"
+                style={{ color: event.accent }}
+              >
+                {event.linkLabel}
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
    ROOT EXPORT
    ══════════════════════════════════════════════════════ */
 export default function HomePageClient() {
@@ -1599,6 +1681,9 @@ export default function HomePageClient() {
 
       {/* 2. Full-bleed hero */}
       <HeroSection />
+
+      {/* 2b. ECI flagship event band */}
+      <ECIFlagshipBand />
 
       {/* 3. Highlights / video section */}
       <HighlightsSection />

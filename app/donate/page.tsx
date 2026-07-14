@@ -11,7 +11,7 @@ import type { DonationType, DonationCause } from "@/lib/models/donation";
 import { sendZellePendingNotification } from "@/lib/server/notifications";
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
-const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 25000, 50000];
+const PRESET_AMOUNTS = [25, 50, 100, 250, 500, 1000];
 
 const CAUSES: { value: DonationCause; label: string; icon: string; desc: string }[] = [
   { value: "general",           label: "General Fund",       icon: "🌟", desc: "Support Eko Club Philadelphia's core operations" },
@@ -25,8 +25,8 @@ const CAUSES: { value: DonationCause; label: string; icon: string; desc: string 
 
 type DonationStep = "form" | "payment" | "success";
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
@@ -36,7 +36,7 @@ export default function DonatePage() {
 
   const [donationType, setDonationType] = useState<DonationType>("one-time");
   const [cause, setCause] = useState<DonationCause>("general");
-  const [presetAmount, setPresetAmount] = useState<number | null>(5000);
+  const [presetAmount, setPresetAmount] = useState<number | null>(50);
   const [customAmount, setCustomAmount] = useState("");
   const [name, setName] = useState(currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "");
   const [email, setEmail] = useState(currentUser?.email ?? "");
@@ -54,7 +54,7 @@ export default function DonatePage() {
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (amount < 100) e.amount = "Minimum donation is ₦100";
+    if (amount < 5) e.amount = "Minimum donation is $5";
     if (!isAnonymous) {
       if (!name.trim()) e.name = "Name is required";
       if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = "Valid email required";
@@ -101,7 +101,7 @@ export default function DonatePage() {
 
   function handleReset() {
     setStep("form");
-    setPresetAmount(5000);
+    setPresetAmount(50);
     setCustomAmount("");
     setMessage("");
     setDonationId("");
@@ -118,7 +118,7 @@ export default function DonatePage() {
           <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-3">Support Eko Club Philadelphia</p>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">Make a Difference Today</h1>
           <p className="text-white/80 text-lg max-w-xl mx-auto">
-            Your donation funds civic education, youth empowerment, community advocacy, and accountability programmes across Lagos.
+            Your donation funds civic education, youth empowerment, community advocacy, and service programmes across the United States and Lagos, Nigeria.
           </p>
         </div>
       </section>
@@ -139,7 +139,7 @@ export default function DonatePage() {
               <h2 className="text-2xl font-extrabold text-(--color-neutral-900) mb-2">Thank You!</h2>
               <p className="text-(--color-neutral-600) mb-5">
                 {isAnonymous ? "Your anonymous donation" : `${name}'s donation`} of{" "}
-                <span className="font-bold text-(--color-green-700)">{formatNaira(amount)}</span>{" "}
+                <span className="font-bold text-(--color-green-700)">{formatUSD(amount)}</span>{" "}
                 {isRecurring ? `(${donationType})` : ""} has been received.
               </p>
               <div className="bg-(--color-green-50) border border-(--color-green-200) rounded-xl px-5 py-4 inline-block mb-7">
@@ -180,7 +180,7 @@ export default function DonatePage() {
                     {isAnonymous ? "Anonymous" : name} · {CAUSES.find(c => c.value === cause)?.label}
                     {isRecurring ? ` · ${donationType}` : ""}
                   </span>
-                  <span className="font-bold text-(--color-green-800) text-lg">{formatNaira(amount)}</span>
+                  <span className="font-bold text-(--color-green-800) text-lg">{formatUSD(amount)}</span>
                 </div>
               </div>
 
@@ -240,12 +240,12 @@ export default function DonatePage() {
                   {PRESET_AMOUNTS.map(a => (
                     <button key={a} type="button" onClick={() => { setPresetAmount(a); setCustomAmount(""); }}
                       className={`py-2.5 rounded-xl text-sm font-bold border transition-all ${presetAmount === a ? "border-(--color-green-500) bg-(--color-green-50) text-(--color-green-800)" : "border-(--color-neutral-200) hover:border-(--color-neutral-300) text-(--color-neutral-700)"}`}>
-                      {formatNaira(a)}
+                      {formatUSD(a)}
                     </button>
                   ))}
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-neutral-500) font-semibold text-sm">₦</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-neutral-500) font-semibold text-sm">$</span>
                   <input type="number" min={100} value={customAmount}
                     onChange={e => { setCustomAmount(e.target.value); setPresetAmount(null); }}
                     placeholder="Custom amount"
@@ -258,16 +258,31 @@ export default function DonatePage() {
               <div className="bg-white border border-(--color-neutral-200) rounded-2xl p-6">
                 <h2 className="font-bold text-(--color-neutral-900) mb-4">Choose a Cause</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {CAUSES.map(c => (
-                    <button key={c.value} type="button" onClick={() => setCause(c.value)}
-                      className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${cause === c.value ? "border-(--color-green-500) bg-(--color-green-50)" : "border-(--color-neutral-200) hover:border-(--color-neutral-300)"}`}>
-                      <span className="text-xl mt-0.5 shrink-0">{c.icon}</span>
-                      <div>
-                        <p className="text-sm font-semibold text-(--color-neutral-800)">{c.label}</p>
-                        <p className="text-xs text-(--color-neutral-500) line-clamp-2">{c.desc}</p>
-                      </div>
-                    </button>
-                  ))}
+                  {CAUSES.map(c => {
+                    const selected = cause === c.value;
+                    return (
+                      <button key={c.value} type="button" onClick={() => setCause(c.value)}
+                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all duration-150 ${
+                          selected
+                            ? "border-(--color-green-500) bg-(--color-green-50) shadow-[0_0_0_2px_var(--color-green-200)]"
+                            : "border-(--color-neutral-200) bg-white hover:border-(--color-green-400) hover:bg-(--color-green-50) hover:shadow-md hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <span className="text-xl mt-0.5 shrink-0">{c.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-(--color-neutral-800)">{c.label}</p>
+                            {selected && (
+                              <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full bg-(--color-green-500)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="h-2.5 w-2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-(--color-neutral-500) line-clamp-2 mt-0.5">{c.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -310,7 +325,7 @@ export default function DonatePage() {
 
               <button type="submit"
                 className="w-full py-4 bg-(--color-green-600) hover:bg-(--color-green-700) text-white font-extrabold rounded-2xl text-base transition-colors shadow-md">
-                {amount >= 100 ? `Continue · ${formatNaira(amount)}${isRecurring ? ` / ${donationType}` : ""}` : "Continue to Payment →"}
+                {amount >= 5 ? `Continue · ${formatUSD(amount)}${isRecurring ? ` / ${donationType}` : ""}` : "Continue to Payment →"}
               </button>
               <p className="text-center text-xs text-(--color-neutral-400)">
                 🔒 Secure donation. Eko Club Philadelphia is a registered non-profit organisation.

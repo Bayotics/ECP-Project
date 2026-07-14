@@ -36,10 +36,17 @@ export interface MembershipApplication {
   phone: string;
   dateOfBirth?: string;
   gender?: "male" | "female" | "other" | "prefer-not-to-say";
-  // Location
-  lga: string;
+  // Location (legacy — kept for backward compat)
+  lga?: string;
   ward?: string;
   address?: string;
+  // US/International address
+  country?: string;
+  streetAddress?: string;
+  aptUnit?: string;
+  city?: string;
+  stateProvince?: string;
+  zipPostal?: string;
   // Professional
   occupation: string;
   employer?: string;

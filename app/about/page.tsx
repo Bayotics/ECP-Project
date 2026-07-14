@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useEvents } from "@/context";
 
 const EKO_GREEN = "#059669";
 const EKO_RED = "#dc2626";
@@ -32,12 +33,6 @@ const stagger = {
   },
 };
 
-const IMPACT_STATS = [
-  { value: "5", label: "Service programmes", color: EKO_GREEN },
-  { value: "2", label: "High school awards", color: EKO_RED },
-  { value: "3", label: "College awards", color: EKO_BLUE },
-  { value: "2mi", label: "Adopt-a-highway stretch", color: EKO_YELLOW },
-];
 
 const STORY_PILLARS = [
   {
@@ -319,6 +314,18 @@ function SectionIntro({
 export default function AboutPage() {
   const [activeTab, setActiveTab] = useState<HistoryTab>("origins");
   const activePanel = HISTORY_PANELS[activeTab];
+  const { events } = useEvents();
+  const pastEventsCount = useMemo(() => {
+    const now = new Date();
+    return events.filter(e => (e.status === "published" || e.status === "completed") && new Date(e.date) < now).length;
+  }, [events]);
+
+  const impactStats = [
+    { value: "9", label: "Service programmes", color: EKO_GREEN },
+    { value: "2", label: "High school awards", color: EKO_RED },
+    { value: "3", label: "College awards", color: EKO_BLUE },
+    { value: pastEventsCount > 0 ? pastEventsCount.toString() : "2mi", label: pastEventsCount > 0 ? "Past events on record" : "Adopt-a-highway stretch", color: EKO_YELLOW },
+  ];
 
   return (
     <div className="bg-white text-neutral-950">
@@ -423,7 +430,7 @@ export default function AboutPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {IMPACT_STATS.map((item) => (
+                {impactStats.map((item) => (
                   <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
                     <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
                       {item.value}

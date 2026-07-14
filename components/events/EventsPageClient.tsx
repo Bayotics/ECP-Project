@@ -177,6 +177,126 @@ function SectionIntro({
   );
 }
 
+type AdoptFormState = "idle" | "submitting" | "success" | "error";
+
+function AdoptProjectModal({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [idea, setIdea] = useState("");
+  const [formState, setFormState] = useState<AdoptFormState>("idle");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!name.trim()) e.name = "Name is required.";
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = "Valid email is required.";
+    if (!idea.trim() || idea.trim().length < 20) e.idea = "Please describe your project idea (at least 20 characters).";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+    setFormState("submitting");
+    try {
+      const res = await fetch("https://formspree.io/f/xpwroval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ _subject: "Adopt a Project Proposal", name, email, phone, idea }),
+      });
+      setFormState(res.ok ? "success" : "error");
+    } catch {
+      setFormState("error");
+    }
+  }
+
+  const inp = (err: boolean) =>
+    `w-full px-4 py-2.5 text-sm text-neutral-700 rounded-xl border focus:outline-none focus:ring-2 transition-colors ${
+      err ? "border-red-400 bg-red-50 focus:ring-red-200" : "border-neutral-300 bg-white focus:ring-green-300"
+    }`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex h-1.5 w-full" aria-hidden="true">
+          {[EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW].map((c) => (
+            <div key={c} className="flex-1" style={{ background: c }} />
+          ))}
+        </div>
+        <div className="p-6">
+          {formState === "success" ? (
+            <div className="text-center py-6">
+              <div className="text-4xl mb-3">✅</div>
+              <h2 className="text-xl font-extrabold text-neutral-900 mb-2">Proposal Submitted!</h2>
+              <p className="text-sm text-neutral-600 mb-5">
+                The President will review your idea and get back to you within a few business days.
+              </p>
+              <button onClick={onClose} className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm">
+                Close
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div>
+                  <h2 className="text-lg font-extrabold text-neutral-900">Adopt a Project</h2>
+                  <p className="text-xs text-neutral-500 mt-0.5">Propose a community project directly to the President</p>
+                </div>
+                <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-700 text-xl leading-none mt-0.5">✕</button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">Name *</label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={inp(!!errors.name)} />
+                  {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">Email *</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" className={inp(!!errors.email)} />
+                  {errors.email && <p className="text-xs text-red-500 mt-0.5">{errors.email}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1">Phone <span className="font-normal text-neutral-400">(optional)</span></label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (215) 000-0000" className={inp(false)} />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1">Project Idea *</label>
+                <textarea rows={4} value={idea} onChange={e => setIdea(e.target.value)}
+                  placeholder="Describe the project you'd like to propose — what it is, who it helps, and when you imagine running it."
+                  className={`${inp(!!errors.idea)} resize-none`} />
+                {errors.idea && <p className="text-xs text-red-500 mt-0.5">{errors.idea}</p>}
+              </div>
+
+              {formState === "error" && (
+                <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  Something went wrong. Please try again or email us directly.
+                </div>
+              )}
+
+              <input type="text" name="_gotcha" className="hidden" tabIndex={-1} aria-hidden="true" />
+
+              <button type="submit" disabled={formState === "submitting"}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-xl font-bold text-sm transition-colors">
+                {formState === "submitting" ? "Submitting…" : "Submit Proposal →"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EventsPageClient() {
   const { events, isLoading } = useEvents();
   const { countConfirmed } = useRSVP();
@@ -186,6 +306,7 @@ export default function EventsPageClient() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("upcoming");
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [showAdoptModal, setShowAdoptModal] = useState(false);
 
   const now = new Date();
 
@@ -264,6 +385,7 @@ export default function EventsPageClient() {
 
   return (
     <div className="bg-white text-neutral-950">
+      {showAdoptModal && <AdoptProjectModal onClose={() => setShowAdoptModal(false)} />}
       <section className="relative isolate overflow-hidden bg-neutral-950">
         <div
           className="absolute inset-0"
@@ -333,6 +455,12 @@ export default function EventsPageClient() {
                 >
                   Browse events
                 </a>
+                <button
+                  onClick={() => setShowAdoptModal(true)}
+                  className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                >
+                  Adopt a Project
+                </button>
                 <Link
                   href="/membership/apply"
                   className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"

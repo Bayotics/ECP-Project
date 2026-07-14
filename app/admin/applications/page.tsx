@@ -33,7 +33,7 @@ export default function AdminApplicationsPage() {
       list = list.filter(a =>
         a.fullName.toLowerCase().includes(q) ||
         a.email.toLowerCase().includes(q) ||
-        a.lga.toLowerCase().includes(q)
+        (a.lga ?? a.city ?? "").toLowerCase().includes(q)
       );
     }
     return [...list].sort((a, b) => b.appliedAt.localeCompare(a.appliedAt));

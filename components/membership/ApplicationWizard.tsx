@@ -11,12 +11,26 @@ import { formatDate } from "@/utils/formatters";
 /* ─── Constants ───────────────────────────────────────── */
 const DRAFT_KEY = "ecp_membership_draft";
 
-const LAGOS_LGAS = [
-  "Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Apapa",
-  "Badagry", "Epe", "Eti-Osa", "Ibeju-Lekki", "Ifako-Ijaiye",
-  "Ikeja", "Ikorodu", "Kosofe", "Lagos Island", "Lagos Mainland",
-  "Mushin", "Ojo", "Oshodi-Isolo", "Shomolu", "Surulere",
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY","DC","PR","GU","VI","AS","MP",
 ];
+const US_STATE_NAMES: Record<string, string> = {
+  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",
+  CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
+  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+  KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",
+  MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",
+  NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",
+  NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",
+  OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",
+  SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
+  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",
+  DC:"District of Columbia",PR:"Puerto Rico",GU:"Guam",VI:"U.S. Virgin Islands",
+  AS:"American Samoa",MP:"Northern Mariana Islands",
+};
 
 const EDUCATION_OPTIONS = [
   "WAEC / SSCE", "OND", "HND", "B.Sc / B.A / B.Ed", "PGD",
@@ -65,9 +79,12 @@ interface WizardDraft {
   phone: string;
   dateOfBirth: string;
   gender: string;
-  lga: string;
-  ward: string;
-  address: string;
+  country: string;
+  streetAddress: string;
+  aptUnit: string;
+  city: string;
+  stateProvince: string;
+  zipPostal: string;
   // Step 2
   occupation: string;
   employer: string;
@@ -82,7 +99,8 @@ interface WizardDraft {
 
 const EMPTY_DRAFT: WizardDraft = {
   step: 0,
-  fullName: "", email: "", phone: "", dateOfBirth: "", gender: "", lga: "", ward: "", address: "",
+  fullName: "", email: "", phone: "", dateOfBirth: "", gender: "",
+  country: "US", streetAddress: "", aptUnit: "", city: "", stateProvince: "", zipPostal: "",
   occupation: "", employer: "", highestEducation: "", reasonForJoining: "",
   areasOfInterest: [], hasVolunteered: false, referredBy: "",
   documents: [],
@@ -98,8 +116,10 @@ function validateStep1(d: WizardDraft): StepErrors {
   if (!d.email.trim()) e.email = "Email address is required.";
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) e.email = "Enter a valid email.";
   if (!d.phone.trim()) e.phone = "Phone number is required.";
-  else if (!/^[0-9+\-\s()]{7,15}$/.test(d.phone.trim())) e.phone = "Enter a valid phone number.";
-  if (!d.lga) e.lga = "Local Government Area is required.";
+  else if (!/^[0-9+\-\s()]{7,20}$/.test(d.phone.trim())) e.phone = "Enter a valid phone number.";
+  if (!d.city.trim()) e.city = "City is required.";
+  if (d.country === "US" && !d.stateProvince) e.stateProvince = "State is required.";
+  if (d.country === "US" && d.zipPostal.trim() && !/^\d{5}(-\d{4})?$/.test(d.zipPostal.trim())) e.zipPostal = "Enter a valid ZIP code (e.g. 19103).";
   return e;
 }
 
@@ -258,31 +278,75 @@ function Step1({ draft, onChange, errors }: {
           </select>
         </div>
 
-        <div>
-          <Label htmlFor="lga">Local Government Area (LGA) *</Label>
-          <select id="lga" value={draft.lga}
-            onChange={(e) => onChange("lga", e.target.value)}
-            className={inputCls(!!errors.lga)}>
-            <option value="">Select LGA…</option>
-            {LAGOS_LGAS.map((l) => <option key={l} value={l}>{l}</option>)}
+        <div className="sm:col-span-2">
+          <Label htmlFor="country">Country</Label>
+          <select id="country" value={draft.country}
+            onChange={(e) => onChange("country", e.target.value)}
+            className={inputCls(false)}>
+            <option value="US">United States</option>
+            <option value="NG">Nigeria</option>
+            <option value="GB">United Kingdom</option>
+            <option value="CA">Canada</option>
+            <option value="OTHER">Other</option>
           </select>
-          <FieldError msg={errors.lga} />
-        </div>
-
-        <div>
-          <Label htmlFor="ward" optional>Ward</Label>
-          <input id="ward" type="text" placeholder="e.g. Alausa Ward"
-            value={draft.ward}
-            onChange={(e) => onChange("ward", e.target.value)}
-            className={inputCls(false)} />
         </div>
 
         <div className="sm:col-span-2">
-          <Label htmlFor="address" optional>Residential Address</Label>
-          <textarea id="address" rows={2} placeholder="House number, street, local area…"
-            value={draft.address}
-            onChange={(e) => onChange("address", e.target.value)}
-            className={cn(inputCls(false), "resize-none")} />
+          <Label htmlFor="streetAddress" optional>Street Address</Label>
+          <input id="streetAddress" type="text" placeholder="123 Main Street"
+            value={draft.streetAddress}
+            onChange={(e) => onChange("streetAddress", e.target.value)}
+            className={inputCls(false)} />
+        </div>
+
+        <div>
+          <Label htmlFor="aptUnit" optional>Apt / Unit</Label>
+          <input id="aptUnit" type="text" placeholder="Apt 4B"
+            value={draft.aptUnit}
+            onChange={(e) => onChange("aptUnit", e.target.value)}
+            className={inputCls(false)} />
+        </div>
+
+        <div>
+          <Label htmlFor="city">City *</Label>
+          <input id="city" type="text" placeholder="Philadelphia"
+            value={draft.city}
+            onChange={(e) => onChange("city", e.target.value)}
+            className={inputCls(!!errors.city)} />
+          <FieldError msg={errors.city} />
+        </div>
+
+        <div>
+          {draft.country === "US" ? (
+            <>
+              <Label htmlFor="stateProvince">State *</Label>
+              <select id="stateProvince" value={draft.stateProvince}
+                onChange={(e) => onChange("stateProvince", e.target.value)}
+                className={inputCls(!!errors.stateProvince)}>
+                <option value="">Select state…</option>
+                {US_STATES.map(s => <option key={s} value={s}>{US_STATE_NAMES[s] ?? s}</option>)}
+              </select>
+              <FieldError msg={errors.stateProvince} />
+            </>
+          ) : (
+            <>
+              <Label htmlFor="stateProvince" optional>State / Province / Region</Label>
+              <input id="stateProvince" type="text" placeholder="State or Province"
+                value={draft.stateProvince}
+                onChange={(e) => onChange("stateProvince", e.target.value)}
+                className={inputCls(false)} />
+            </>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="zipPostal" optional>{draft.country === "US" ? "ZIP Code" : "Postal Code"}</Label>
+          <input id="zipPostal" type="text"
+            placeholder={draft.country === "US" ? "19103" : "Postal code"}
+            value={draft.zipPostal}
+            onChange={(e) => onChange("zipPostal", e.target.value)}
+            className={inputCls(!!errors.zipPostal)} />
+          <FieldError msg={errors.zipPostal} />
         </div>
       </div>
     </div>
@@ -511,9 +575,8 @@ function Step4({ draft, consentChecked, onConsentChange }: {
     ["Phone", draft.phone],
     ["Date of Birth", draft.dateOfBirth ? formatDate(draft.dateOfBirth) : "—"],
     ["Gender", draft.gender || "—"],
-    ["LGA", draft.lga],
-    ["Ward", draft.ward || "—"],
-    ["Address", draft.address || "—"],
+    ["Country", draft.country || "—"],
+    ["Address", [draft.streetAddress, draft.aptUnit, draft.city, draft.stateProvince, draft.zipPostal].filter(Boolean).join(", ") || "—"],
     ["Occupation", draft.occupation],
     ["Employer", draft.employer || "—"],
     ["Education", draft.highestEducation],
@@ -761,9 +824,12 @@ export default function ApplicationWizard() {
         phone: draft.phone.trim(),
         dateOfBirth: draft.dateOfBirth || undefined,
         gender: (draft.gender as "male" | "female" | "other" | "prefer-not-to-say") || undefined,
-        lga: draft.lga,
-        ward: draft.ward.trim() || undefined,
-        address: draft.address.trim() || undefined,
+        country: draft.country || "US",
+        streetAddress: draft.streetAddress.trim() || undefined,
+        aptUnit: draft.aptUnit.trim() || undefined,
+        city: draft.city.trim() || undefined,
+        stateProvince: draft.stateProvince.trim() || undefined,
+        zipPostal: draft.zipPostal.trim() || undefined,
         occupation: draft.occupation.trim(),
         employer: draft.employer.trim() || undefined,
         highestEducation: draft.highestEducation || undefined,
