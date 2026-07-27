@@ -15,8 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
  * user routes back to the homepage from another page within the app.
  */
 let introHasPlayed = false;
-const FLICKER_MS = 2600;
-const IRIS_MS = 1100;
+const FLICKER_MS = 3800;
+const IRIS_MS = 2500;
 
 export default function HomeIntro({ children }: { children: React.ReactNode }) {
   const [playing, setPlaying] = useState(!introHasPlayed);
