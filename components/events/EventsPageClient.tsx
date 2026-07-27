@@ -155,14 +155,14 @@ function SectionIntro({
       <motion.span
         variants={riseIn}
         custom={0.08}
-        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-neutral-500"
+        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500"
       >
         {eyebrow}
       </motion.span>
       <motion.h2
         variants={riseIn}
         custom={0.16}
-        className="mt-5 text-3xl font-black tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+        className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
       >
         {title}
       </motion.h2>
@@ -233,7 +233,7 @@ function AdoptProjectModal({ onClose }: { onClose: () => void }) {
           {formState === "success" ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-3">✅</div>
-              <h2 className="text-xl font-extrabold text-neutral-900 mb-2">Proposal Submitted!</h2>
+              <h2 className="text-xl font-bold text-neutral-900 mb-2">Proposal Submitted!</h2>
               <p className="text-sm text-neutral-600 mb-5">
                 The President will review your idea and get back to you within a few business days.
               </p>
@@ -245,7 +245,7 @@ function AdoptProjectModal({ onClose }: { onClose: () => void }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <div>
-                  <h2 className="text-lg font-extrabold text-neutral-900">Adopt a Project</h2>
+                  <h2 className="text-lg font-bold text-neutral-900">Adopt a Project</h2>
                   <p className="text-xs text-neutral-500 mt-0.5">Propose a community project directly to the President</p>
                 </div>
                 <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-700 text-xl leading-none mt-0.5">✕</button>
@@ -387,13 +387,7 @@ export default function EventsPageClient() {
     <div className="bg-white text-neutral-950">
       {showAdoptModal && <AdoptProjectModal onClose={() => setShowAdoptModal(false)} />}
       <section className="relative isolate overflow-hidden bg-neutral-950">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
-          }}
-        />
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
 
         {QUAD.map((color, index) => (
           <motion.div
@@ -423,7 +417,7 @@ export default function EventsPageClient() {
                 {QUAD.map((color) => (
                   <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                 ))}
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">
+                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">
                   Events at Eko Club Philadelphia
                 </span>
               </motion.div>
@@ -431,7 +425,7 @@ export default function EventsPageClient() {
               <motion.h1
                 variants={riseIn}
                 custom={0.08}
-                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+                className="mt-7 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl"
               >
                 Gather, <span style={{ color: EKO_GREEN }}>celebrate</span>,
                 <span style={{ color: EKO_YELLOW }}> and show up</span> together.
@@ -450,7 +444,7 @@ export default function EventsPageClient() {
               <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
                 <a
                   href="#browse-events"
-                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   Browse events
@@ -477,8 +471,8 @@ export default function EventsPageClient() {
               className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
               <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">What this page offers</p>
-                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">What this page offers</p>
+                <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-white">
                   Clear discovery, featured gatherings, and better browsing.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
@@ -490,7 +484,7 @@ export default function EventsPageClient() {
               <div className="grid grid-cols-2 gap-3">
                 {statCards.map((item) => (
                   <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
+                    <div className="text-3xl font-bold tracking-[-0.04em]" style={{ color: item.color }}>
                       {item.value.toLocaleString()}
                     </div>
                     <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
@@ -694,12 +688,7 @@ export default function EventsPageClient() {
       </section>
 
       <section className="relative overflow-hidden bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `linear-gradient(135deg, ${EKO_GREEN} 0%, ${EKO_RED} 33%, ${EKO_BLUE} 66%, ${EKO_YELLOW} 100%)`,
-          }}
-        />
+        <div className="absolute inset-0 opacity-10" style={{ background: EKO_GREEN }} />
         <div className="relative mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -710,7 +699,7 @@ export default function EventsPageClient() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
               Stay close to the <span style={{ color: EKO_YELLOW }}>Eko calendar</span>.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -720,7 +709,7 @@ export default function EventsPageClient() {
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
                 href="/membership/apply"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO_GREEN }}
               >
                 Join the community

@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/server/guards";
 import type { DuesPayment } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
 import { getSessionUser } from "@/lib/server/session";
@@ -8,6 +9,9 @@ import { sendZellePendingNotification } from "@/lib/server/notifications";
 const DUES_AMOUNT = 5000;
 
 export async function GET(request: NextRequest) {
+  const { deny } = requireSession(request);
+  if (deny) return deny;
+
   try {
     await ensureCoreIndexes();
     const sessionUser = await getSessionUser(request);

@@ -92,7 +92,7 @@ export default function EventCard({
           className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl bg-(--color-green-500) text-white w-14 h-14"
           aria-hidden="true"
         >
-          <span className="text-lg font-extrabold leading-none">
+          <span className="text-lg font-bold leading-none">
             {new Date(date).getDate()}
           </span>
           <span className="text-[10px] font-semibold uppercase tracking-wider opacity-80">
@@ -152,7 +152,7 @@ export default function EventCard({
 
         {/* Date chip */}
         <div className="absolute top-3 left-3 flex flex-col items-center justify-center rounded-lg bg-white/95 text-(--color-green-700) px-2.5 py-1.5 shadow-sm min-w-[46px]">
-          <span className="text-lg font-extrabold leading-none">{new Date(date).getDate()}</span>
+          <span className="text-lg font-bold leading-none">{new Date(date).getDate()}</span>
           <span className="text-[10px] font-bold uppercase tracking-wider">
             {new Date(date).toLocaleString("en-NG", { month: "short" })}
           </span>

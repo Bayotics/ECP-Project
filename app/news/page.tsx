@@ -146,7 +146,7 @@ export default function NewsPage() {
       {/* Hero */}
       <section className="bg-white border-b border-(--color-neutral-200) py-12 px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-(--color-neutral-900) mb-3">News &amp; Updates</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-(--color-neutral-900) mb-3">News &amp; Updates</h1>
           <p className="text-lg text-(--color-neutral-600) max-w-xl">
             Stay informed about Eko Club Philadelphia’s events, community initiatives, reports, and member stories.
           </p>

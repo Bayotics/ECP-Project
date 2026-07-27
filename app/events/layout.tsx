@@ -1,5 +1,6 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import PageTransition from "@/components/layout/PageTransition";
 
 export default function EventsLayout({
   children,
@@ -9,7 +10,7 @@ export default function EventsLayout({
   return (
     <>
       <Header />
-      <main id="main-content">{children}</main>
+      <main id="main-content"><PageTransition>{children}</PageTransition></main>
       <Footer />
     </>
   );

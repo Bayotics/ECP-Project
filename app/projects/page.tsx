@@ -179,14 +179,14 @@ function SectionIntro({
       <motion.span
         variants={riseIn}
         custom={0.08}
-        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-neutral-500"
+        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500"
       >
         {eyebrow}
       </motion.span>
       <motion.h2
         variants={riseIn}
         custom={0.16}
-        className="mt-5 text-3xl font-black tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+        className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
       >
         {title}
       </motion.h2>
@@ -205,13 +205,7 @@ export default function ProjectsPage() {
   return (
     <div className="bg-white text-neutral-950">
       <section className="relative isolate overflow-hidden bg-neutral-950">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
-          }}
-        />
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
 
         {QUAD.map((color, index) => (
           <motion.div
@@ -241,7 +235,7 @@ export default function ProjectsPage() {
                 {QUAD.map((color) => (
                   <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                 ))}
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">
+                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">
                   Projects & Initiatives
                 </span>
               </motion.div>
@@ -249,7 +243,7 @@ export default function ProjectsPage() {
               <motion.h1
                 variants={riseIn}
                 custom={0.08}
-                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+                className="mt-7 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl"
               >
                 The <span style={{ color: EKO_GREEN }}>work we do</span>, the
                 <span style={{ color: EKO_YELLOW }}> people we serve</span>.
@@ -268,7 +262,7 @@ export default function ProjectsPage() {
               <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="#service-programs"
-                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   Explore service programmes
@@ -289,8 +283,8 @@ export default function ProjectsPage() {
               className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
               <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">What this page presents</p>
-                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">What this page presents</p>
+                <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-white">
                   Real club initiatives, not placeholder programmes.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
@@ -302,7 +296,7 @@ export default function ProjectsPage() {
               <div className="grid grid-cols-2 gap-3">
                 {PROJECT_STATS.map((item) => (
                   <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
+                    <div className="text-3xl font-bold tracking-[-0.04em]" style={{ color: item.color }}>
                       {item.value}
                     </div>
                     <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
@@ -323,7 +317,7 @@ export default function ProjectsPage() {
       </section>
 
       <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[14rem] font-black leading-none text-neutral-100">
+        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-bold leading-none text-neutral-100">
           EKO
         </div>
 
@@ -349,7 +343,7 @@ export default function ProjectsPage() {
                 className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                  <h3 className="text-2xl font-bold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
                   <span className="h-3 w-3 rounded-full" style={{ background: item.color }} />
                 </div>
                 <p className="mt-4 text-sm leading-7 text-neutral-600 sm:text-base">{item.text}</p>
@@ -385,7 +379,7 @@ export default function ProjectsPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${item.color}12` }}>
                   {item.icon}
                 </div>
-                <h3 className="mt-5 text-xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <h3 className="mt-5 text-xl font-bold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-neutral-600">{item.text}</p>
                 <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: item.color }} />
               </motion.article>
@@ -422,7 +416,7 @@ export default function ProjectsPage() {
                     {item.icon}
                   </div>
                   <span
-                    className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-900"
+                    className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-900"
                     style={{ background: `${item.accent}18` }}
                   >
                     Service
@@ -430,8 +424,8 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="mt-5 h-1.5 w-16 rounded-full" style={{ background: item.accent }} />
-                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
-                <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-neutral-500">{item.subtitle}</p>
+                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">{item.subtitle}</p>
                 <p className="mt-4 text-sm leading-7 text-neutral-600">{item.text}</p>
               </motion.article>
             ))}
@@ -463,7 +457,7 @@ export default function ProjectsPage() {
                 className="rounded-[1.75rem] border border-white/10 bg-white/6 p-6 backdrop-blur-md"
               >
                 <div className="h-2 w-16 rounded-full" style={{ background: item.color }} />
-                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-white">{item.title}</h3>
+                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-white">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-white/68">{item.text}</p>
               </motion.article>
             ))}
@@ -472,12 +466,7 @@ export default function ProjectsPage() {
       </section>
 
       <section className="relative overflow-hidden bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `linear-gradient(135deg, ${EKO_GREEN} 0%, ${EKO_RED} 33%, ${EKO_BLUE} 66%, ${EKO_YELLOW} 100%)`,
-          }}
-        />
+        <div className="absolute inset-0 opacity-10" style={{ background: EKO_GREEN }} />
         <div className="relative mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -488,7 +477,7 @@ export default function ProjectsPage() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
               Help us keep <span style={{ color: EKO_YELLOW }}>these initiatives moving</span>.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -498,7 +487,7 @@ export default function ProjectsPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
                 href="/donate"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO_GREEN }}
               >
                 Donate now

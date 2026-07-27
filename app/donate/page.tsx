@@ -5,10 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDonations } from "@/context/DonationsContext";
 import { useAuth } from "@/context/AuthContext";
-import PaymentWidget from "@/components/payments/PaymentWidget";
-import type { PaymentResult } from "@/components/payments/PaymentWidget";
 import type { DonationType, DonationCause } from "@/lib/models/donation";
-import { sendZellePendingNotification } from "@/lib/server/notifications";
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 const PRESET_AMOUNTS = [25, 50, 100, 250, 500, 1000];
@@ -23,7 +20,7 @@ const CAUSES: { value: DonationCause; label: string; icon: string; desc: string 
   { value: "education",         label: "Education",          icon: "✏️", desc: "School outreach & scholarship support" },
 ];
 
-type DonationStep = "form" | "payment" | "success";
+type DonationStep = "form" | "success";
 
 function formatUSD(n: number) {
   return `$${n.toLocaleString("en-US")}`;
@@ -31,7 +28,7 @@ function formatUSD(n: number) {
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function DonatePage() {
-  const { add: addDonation, markSuccessful } = useDonations();
+  const { add: addDonation } = useDonations();
   const { currentUser } = useAuth();
 
   const [donationType, setDonationType] = useState<DonationType>("one-time");
@@ -44,10 +41,8 @@ export default function DonatePage() {
   const [message, setMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [step, setStep] = useState<DonationStep>("form");
-  const [donationId, setDonationId] = useState("");
   const [donationRef, setDonationRef] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [paymentError, setPaymentError] = useState("");
 
   const amount = presetAmount ?? parseInt(customAmount.replace(/\D/g, "") || "0", 10);
   const isRecurring = donationType !== "one-time";
@@ -63,40 +58,47 @@ export default function DonatePage() {
     return Object.keys(e).length === 0;
   }
 
-  async function handleProceedToPayment(e: React.FormEvent) {
+  function handleDonate(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
 
-    // Create the donation record in pending state
-    const donation = await addDonation({
-      userId: currentUser?.id,
-      donorName: isAnonymous ? "Anonymous" : name.trim(),
-      donorEmail: isAnonymous ? "" : email.trim().toLowerCase(),
-      donorPhone: phone.trim() || undefined,
-      isAnonymous,
-      amount,
-      type: donationType,
-      cause,
-      message: message.trim() || undefined,
-      isRecurring,
-      autoRenew: isRecurring,
-      nextChargeDate: isRecurring
-        ? new Date(Date.now() + (donationType === "monthly" ? 30 : 365) * 86400000).toISOString()
-        : undefined,
-    });
+    // Open PayPal FIRST and synchronously, inside the click gesture, so the
+    // browser's popup blocker doesn't swallow the new tab (any await before
+    // window.open would break it). All amounts are in USD.
+    // TODO: Replace REPLACE_WITH_CLUB_BUTTON_ID with the club's actual PayPal
+    // Donate button ID from their PayPal Business account.
+    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=REPLACE_WITH_CLUB_BUTTON_ID&currency_code=USD&amount=${amount}`;
+    window.open(paypalUrl, "_blank", "noopener,noreferrer");
 
-    setDonationId(donation.id);
-    setDonationRef(donation.referenceNumber);
-    setStep("payment");
-    setPaymentError("");
-  }
-
-  async function handlePaymentSuccess(result: PaymentResult, autoRenew?: boolean) {
-    if (result.method !== "zelle") {
-      // For non-Zelle, mark successful immediately (server already did this via verify/capture)
-      await markSuccessful(donationId, result.reference).catch(() => {});
-    }
+    // Advance the UI first so the confirmation always shows, then record the
+    // pledge as a pending lead for the club's records (fully non-blocking —
+    // the PayPal tab has already opened; completion is reconciled in PayPal).
     setStep("success");
+
+    try {
+      void Promise.resolve(
+        addDonation({
+          userId: currentUser?.id,
+          donorName: isAnonymous ? "Anonymous" : name.trim(),
+          donorEmail: isAnonymous ? "" : email.trim().toLowerCase(),
+          donorPhone: phone.trim() || undefined,
+          isAnonymous,
+          amount,
+          type: donationType,
+          cause,
+          message: message.trim() || undefined,
+          isRecurring,
+          autoRenew: isRecurring,
+          nextChargeDate: isRecurring
+            ? new Date(Date.now() + (donationType === "monthly" ? 30 : 365) * 86400000).toISOString()
+            : undefined,
+        })
+      )
+        .then((donation) => setDonationRef(donation.referenceNumber))
+        .catch(() => {});
+    } catch {
+      /* record write is best-effort; never block the confirmation */
+    }
   }
 
   function handleReset() {
@@ -104,19 +106,17 @@ export default function DonatePage() {
     setPresetAmount(50);
     setCustomAmount("");
     setMessage("");
-    setDonationId("");
     setDonationRef("");
-    setPaymentError("");
   }
 
   return (
     <div className="min-h-screen bg-(--color-neutral-50)">
       {/* Hero */}
-      <section className="relative bg-linear-to-br from-(--color-green-800) to-(--color-green-600) text-white py-20 px-4 overflow-hidden">
+      <section className="relative bg-[#0a0a0a] text-white py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1559223607-b4d0555ae227?w=1200')] bg-cover bg-center" />
         <div className="relative max-w-3xl mx-auto text-center">
           <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-3">Support Eko Club Philadelphia</p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">Make a Difference Today</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">Make a Difference Today</h1>
           <p className="text-white/80 text-lg max-w-xl mx-auto">
             Your donation funds civic education, youth empowerment, community advocacy, and service programmes across the United States and Lagos, Nigeria.
           </p>
@@ -135,72 +135,40 @@ export default function DonatePage() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="bg-white border border-(--color-neutral-200) rounded-2xl p-10 text-center"
             >
-              <div className="w-20 h-20 bg-(--color-green-100) rounded-full flex items-center justify-center text-4xl mx-auto mb-5">🎉</div>
-              <h2 className="text-2xl font-extrabold text-(--color-neutral-900) mb-2">Thank You!</h2>
+              <div className="w-20 h-20 bg-(--color-green-100) rounded-full flex items-center justify-center text-4xl mx-auto mb-5">🙏</div>
+              <h2 className="text-2xl font-bold text-(--color-neutral-900) mb-2">Thank You!</h2>
               <p className="text-(--color-neutral-600) mb-5">
-                {isAnonymous ? "Your anonymous donation" : `${name}'s donation`} of{" "}
+                We&apos;ve opened PayPal in a new tab to complete your{" "}
                 <span className="font-bold text-(--color-green-700)">{formatUSD(amount)}</span>{" "}
-                {isRecurring ? `(${donationType})` : ""} has been received.
+                {isRecurring ? `${donationType} ` : ""}gift to {CAUSES.find(c => c.value === cause)?.label}.
+                If it didn&apos;t open, use the direct link below.
               </p>
-              <div className="bg-(--color-green-50) border border-(--color-green-200) rounded-xl px-5 py-4 inline-block mb-7">
-                <p className="text-xs text-(--color-green-700) font-semibold uppercase tracking-wide">Reference Number</p>
-                <p className="text-xl font-extrabold text-(--color-green-800)">{donationRef}</p>
-              </div>
-              {!isAnonymous && (
-                <p className="text-sm text-(--color-neutral-500) mb-7 max-w-xs mx-auto">
-                  A receipt has been sent to <strong>{email}</strong>. Thank you for supporting Eko Club Philadelphia!
-                </p>
+              {donationRef && (
+                <div className="bg-(--color-green-50) border border-(--color-green-200) rounded-xl px-5 py-4 inline-block mb-7">
+                  <p className="text-xs text-(--color-green-700) font-semibold uppercase tracking-wide">Reference Number</p>
+                  <p className="text-xl font-bold text-(--color-green-800)">{donationRef}</p>
+                </div>
               )}
+              <p className="text-sm text-(--color-neutral-500) mb-7 max-w-sm mx-auto">
+                Once your PayPal payment completes, your support goes straight to work.
+                Thank you for supporting Eko Club Philadelphia!{" "}
+                <a
+                  href="https://paypal.me/ekoclubphiladelphia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#059669] hover:underline font-medium"
+                >
+                  Open PayPal.me
+                </a>
+              </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button onClick={handleReset} className="px-5 py-2.5 bg-(--color-green-600) hover:bg-(--color-green-700) text-white rounded-xl font-semibold text-sm transition-colors">
-                  Donate Again
+                  Make Another Gift
                 </button>
                 <Link href="/" className="px-5 py-2.5 border border-(--color-neutral-300) rounded-xl font-semibold text-sm text-(--color-neutral-700) hover:bg-(--color-neutral-50) transition-colors">
                   Back to Home
                 </Link>
               </div>
-            </motion.div>
-          )}
-
-          {/* ── Payment Step ── */}
-          {step === "payment" && (
-            <motion.div
-              key="payment"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white border border-(--color-neutral-200) rounded-2xl p-6 space-y-5"
-            >
-              <div>
-                <button onClick={() => setStep("form")} className="text-sm text-(--color-green-600) hover:underline mb-3">← Back</button>
-                <h2 className="text-xl font-bold text-(--color-neutral-900)">Complete Your Donation</h2>
-                <div className="mt-2 rounded-xl bg-(--color-green-50) border border-(--color-green-200) px-4 py-3 text-sm flex justify-between items-center">
-                  <span className="text-(--color-green-700)">
-                    {isAnonymous ? "Anonymous" : name} · {CAUSES.find(c => c.value === cause)?.label}
-                    {isRecurring ? ` · ${donationType}` : ""}
-                  </span>
-                  <span className="font-bold text-(--color-green-800) text-lg">{formatUSD(amount)}</span>
-                </div>
-              </div>
-
-              {paymentError && (
-                <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{paymentError}</div>
-              )}
-
-              <PaymentWidget
-                amountNGN={amount}
-                email={isAnonymous ? "anonymous@ecp.org" : email}
-                name={isAnonymous ? "Anonymous" : name}
-                phone={phone || undefined}
-                description={`Donation to Eko Club Philadelphia — ${cause}`}
-                context="donation"
-                recordId={donationId}
-                enableAutoRenew={isRecurring}
-                defaultAutoRenew={isRecurring}
-                onSuccess={handlePaymentSuccess}
-                onError={setPaymentError}
-              />
             </motion.div>
           )}
 
@@ -212,7 +180,7 @@ export default function DonatePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleProceedToPayment}
+              onSubmit={handleDonate}
               className="space-y-6"
             >
               {/* Donation type */}
@@ -246,9 +214,9 @@ export default function DonatePage() {
                 </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-neutral-500) font-semibold text-sm">$</span>
-                  <input type="number" min={100} value={customAmount}
+                  <input type="number" min={5} value={customAmount}
                     onChange={e => { setCustomAmount(e.target.value); setPresetAmount(null); }}
-                    placeholder="Custom amount"
+                    placeholder="Custom amount (USD)"
                     className={`w-full pl-7 pr-4 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) ${errors.amount ? "border-red-400 bg-red-50" : "border-(--color-neutral-300)"}`} />
                 </div>
                 {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount}</p>}
@@ -257,29 +225,35 @@ export default function DonatePage() {
               {/* Cause */}
               <div className="bg-white border border-(--color-neutral-200) rounded-2xl p-6">
                 <h2 className="font-bold text-(--color-neutral-900) mb-4">Choose a Cause</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {CAUSES.map(c => {
                     const selected = cause === c.value;
                     return (
-                      <button key={c.value} type="button" onClick={() => setCause(c.value)}
-                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all duration-150 ${
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setCause(c.value)}
+                        aria-pressed={selected}
+                        className={`relative cursor-pointer rounded-2xl border p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#059669] hover:shadow-md ${
                           selected
-                            ? "border-(--color-green-500) bg-(--color-green-50) shadow-[0_0_0_2px_var(--color-green-200)]"
-                            : "border-(--color-neutral-200) bg-white hover:border-(--color-green-400) hover:bg-(--color-green-50) hover:shadow-md hover:-translate-y-0.5"
+                            ? "border-[#059669] bg-[#f0fdf9] ring-2 ring-[#059669]/20"
+                            : "border-neutral-200 bg-white"
                         }`}
                       >
-                        <span className="text-xl mt-0.5 shrink-0">{c.icon}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-(--color-neutral-800)">{c.label}</p>
-                            {selected && (
-                              <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full bg-(--color-green-500)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="h-2.5 w-2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-(--color-neutral-500) line-clamp-2 mt-0.5">{c.desc}</p>
+                        {/* Checkmark indicator */}
+                        <div
+                          className={`absolute top-4 right-4 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                            selected ? "bg-[#059669] opacity-100" : "opacity-0"
+                          }`}
+                        >
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                          </svg>
                         </div>
+
+                        <span className="text-2xl">{c.icon}</span>
+                        <p className="mt-3 text-sm font-semibold text-neutral-900 pr-6">{c.label}</p>
+                        <p className="mt-1 text-xs text-neutral-500 leading-relaxed">{c.desc}</p>
                       </button>
                     );
                   })}
@@ -324,11 +298,23 @@ export default function DonatePage() {
               </div>
 
               <button type="submit"
-                className="w-full py-4 bg-(--color-green-600) hover:bg-(--color-green-700) text-white font-extrabold rounded-2xl text-base transition-colors shadow-md">
-                {amount >= 5 ? `Continue · ${formatUSD(amount)}${isRecurring ? ` / ${donationType}` : ""}` : "Continue to Payment →"}
+                className="w-full py-4 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-2xl text-base transition-colors shadow-md">
+                {amount >= 5 ? `Continue to PayPal · ${formatUSD(amount)}${isRecurring ? ` / ${donationType}` : ""}` : "Continue to PayPal →"}
               </button>
+
+              {/* Secondary fallback — direct PayPal.me link */}
+              <p className="text-xs text-neutral-400 text-center mt-3">
+                Or donate directly via{" "}
+                <a href="https://paypal.me/ekoclubphiladelphia" target="_blank"
+                   rel="noopener noreferrer"
+                   className="text-[#059669] hover:underline font-medium">
+                  PayPal.me
+                </a>
+                {" "}(replace with club&apos;s actual PayPal.me link)
+              </p>
+
               <p className="text-center text-xs text-(--color-neutral-400)">
-                🔒 Secure donation. Eko Club Philadelphia is a registered non-profit organisation.
+                🔒 Secure donation via PayPal. Eko Club Philadelphia is a registered non-profit organisation.
               </p>
             </motion.form>
           )}

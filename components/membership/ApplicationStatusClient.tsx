@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMembership } from "@/context";
+import { apiRequest } from "@/lib/client/api";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import type { MembershipApplication, ApplicationStatus, StatusTimelineEvent } from "@/lib/models";
@@ -258,35 +258,69 @@ function DocumentUpload({ application, onUpload }: {
 
 /* ─── ApplicationStatusClient ─────────────────────────── */
 export default function ApplicationStatusClient({ initialId }: { initialId?: string }) {
-  const { getById, getByEmail, addDocument, isLoading } = useMembership();
-
   const [query, setQuery] = useState(initialId ?? "");
-  const [lookupValue, setLookupValue] = useState(initialId?.trim() ?? "");
-  const [searched, setSearched] = useState(!!initialId);
+  const [searched, setSearched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [application, setApplication] = useState<MembershipApplication | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState("");
-
-  const application = useMemo<MembershipApplication | null>(() => {
-    if (!lookupValue) return null;
-    return getById(lookupValue) ?? getByEmail(lookupValue);
-  }, [getByEmail, getById, lookupValue]);
 
   const notFound = searched && !isLoading && !application;
 
-  function doLookup(q: string) {
+  /* Fetch the applicant's own record directly — by application ID, or via the
+     exact-email lookup the API permits publicly. (The full applications list
+     is auth-gated; this page must work for signed-out applicants.) */
+  async function doLookup(q: string) {
     const trimmed = q.trim();
     if (!trimmed) return;
     setSearched(true);
-    setLookupValue(trimmed);
+    setIsLoading(true);
+    try {
+      let found: MembershipApplication | null = null;
+      if (trimmed.includes("@")) {
+        const matches = await apiRequest<MembershipApplication[]>(
+          `/api/membership-applications?email=${encodeURIComponent(trimmed.toLowerCase())}`
+        );
+        found = matches[0] ?? null;
+      } else {
+        found = await apiRequest<MembershipApplication>(
+          `/api/membership-applications/${encodeURIComponent(trimmed)}`
+        ).catch(() => null);
+      }
+      setApplication(found);
+    } catch {
+      setApplication(null);
+    } finally {
+      setIsLoading(false);
+    }
   }
+
+  useEffect(() => {
+    if (initialId?.trim()) void doLookup(initialId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId]);
 
   function handleLookup(e: React.FormEvent) {
     e.preventDefault();
-    doLookup(query);
+    void doLookup(query);
   }
 
   async function handleUpload(label: string, name: string, size: string) {
     if (!application) return;
-    await addDocument(application.id, { name, label, simulatedSize: size });
+    const doc = {
+      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `doc-${Date.now()}`,
+      uploadedAt: new Date().toISOString(),
+      name,
+      label,
+      simulatedSize: size,
+    };
+    const updated = await apiRequest<MembershipApplication>(
+      `/api/membership-applications/${application.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ documents: [...(application.documents ?? []), doc] }),
+      }
+    );
+    setApplication(updated);
     setUploadSuccess(`"${name}" uploaded successfully.`);
     setTimeout(() => setUploadSuccess(""), 3000);
   }

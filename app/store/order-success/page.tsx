@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useOrders } from "@/context/OrdersContext";
+import { apiRequest } from "@/lib/client/api";
+import type { Order } from "@/lib/models";
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString("en-NG")}`;
@@ -19,8 +20,20 @@ function formatDate(iso: string) {
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref") ?? "";
-  const { getByOrderNumber, isLoading } = useOrders();
-  const order = ref ? getByOrderNumber(ref) : null;
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(!!ref);
+
+  /* Guest-safe lookup: the API allows an unauthenticated GET only with an
+     exact orderNumber, so the confirmation page works without a session. */
+  useEffect(() => {
+    if (!ref) return;
+    let active = true;
+    apiRequest<Order[]>(`/api/orders?orderNumber=${encodeURIComponent(ref)}`)
+      .then((orders) => { if (active) setOrder(orders[0] ?? null); })
+      .catch(() => { if (active) setOrder(null); })
+      .finally(() => { if (active) setIsLoading(false); });
+    return () => { active = false; };
+  }, [ref]);
 
   if (isLoading) {
     return (
@@ -56,13 +69,13 @@ function OrderSuccessContent() {
           <div className="w-16 h-16 bg-(--color-green-100) rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
             ✅
           </div>
-          <h1 className="text-2xl font-extrabold text-(--color-neutral-900) mb-2">Order Placed!</h1>
+          <h1 className="text-2xl font-bold text-(--color-neutral-900) mb-2">Order Placed!</h1>
           <p className="text-(--color-neutral-600) text-sm mb-4">
             Thank you, <span className="font-semibold">{order.customerName}</span>! We&apos;ve received your order and will process it shortly.
           </p>
           <div className="bg-(--color-green-50) border border-(--color-green-200) rounded-xl px-4 py-3 inline-block">
             <p className="text-xs text-(--color-green-700) font-semibold uppercase tracking-wide">Order Number</p>
-            <p className="text-xl font-extrabold text-(--color-green-800)">{order.orderNumber}</p>
+            <p className="text-xl font-bold text-(--color-green-800)">{order.orderNumber}</p>
           </div>
         </div>
 

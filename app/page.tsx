@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import HomeIntro from "@/components/layout/HomeIntro";
 import HomePageClient from "@/components/HomePageClient";
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export default function HomePage() {
     <>
       <Header />
       <main id="main-content">
-        <HomePageClient />
+        <HomeIntro>
+          <HomePageClient />
+        </HomeIntro>
       </main>
       <Footer />
     </>

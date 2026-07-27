@@ -4,6 +4,7 @@ import type { Filter } from "mongodb";
 import type { CreateOrderInput, Order } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
 import { getNextSequence, padSequence } from "@/lib/server/counters";
+import { getRequestSession, unauthorized } from "@/lib/server/guards";
 
 function badRequest(message: string) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
     const userId = params.get("userId");
     const status = params.get("status");
     const orderNumber = params.get("orderNumber");
+
+    // Unauthenticated access is allowed ONLY for the guest order-confirmation
+    // lookup, which must supply an exact orderNumber. Everything else
+    // requires a session.
+    const session = getRequestSession(request);
+    if (!session && !orderNumber?.trim()) {
+      return unauthorized();
+    }
 
     if (userId) filter.userId = userId;
     if (status) filter.status = status as Order["status"];

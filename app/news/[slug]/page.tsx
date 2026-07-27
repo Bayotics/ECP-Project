@@ -125,7 +125,7 @@ export default function NewsArticlePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" as const }}
-            className="text-2xl md:text-4xl font-extrabold text-(--color-neutral-900) mb-4 leading-tight"
+            className="text-2xl md:text-4xl font-bold text-(--color-neutral-900) mb-4 leading-tight"
           >
             {post.title}
           </motion.h1>

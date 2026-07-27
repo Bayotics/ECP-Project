@@ -97,7 +97,7 @@ function MetaItem({ icon, label, children }: { icon: React.ReactNode; label: str
       <div className="flex items-start gap-3">
         <span className="mt-0.5 shrink-0 text-neutral-950">{icon}</span>
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">{label}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-400">{label}</p>
           <div className="mt-1 text-sm leading-7 text-neutral-700">{children}</div>
         </div>
       </div>
@@ -110,7 +110,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
     <section className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)] sm:p-8">
       <div className="flex items-center gap-4">
         <QuadBar />
-        <h2 className="text-2xl font-black tracking-[-0.03em] text-neutral-950 sm:text-3xl">{title}</h2>
+        <h2 className="text-2xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-3xl">{title}</h2>
       </div>
       <div className="mt-6">{children}</div>
     </section>
@@ -281,13 +281,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   return (
     <div className="bg-white text-neutral-950">
       <section className="relative isolate overflow-hidden bg-neutral-950">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
-          }}
-        />
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
 
         {QUAD.map((color, index) => (
           <motion.div
@@ -328,15 +322,15 @@ export default function EventDetailClient({ slug }: { slug: string }) {
           <div className="grid items-end gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
               <motion.div variants={riseIn} custom={0} className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">Event details</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">Event details</span>
                 <span className="mx-1 h-1 w-1 rounded-full bg-white/40" />
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">{TYPE_LABEL[event.type]}</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">{TYPE_LABEL[event.type]}</span>
               </motion.div>
 
               <motion.h1
                 variants={riseIn}
                 custom={0.08}
-                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+                className="mt-7 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl"
               >
                 {event.title}
               </motion.h1>
@@ -364,7 +358,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               <motion.div variants={riseIn} custom={0.32} className="mt-8 flex flex-wrap gap-3">
                 <a
                   href="#event-content"
-                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   See full details
@@ -387,8 +381,8 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
               <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">At a glance</p>
-                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">At a glance</p>
+                <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-white">
                   Everything a visitor needs before showing up.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
@@ -400,7 +394,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               <div className="grid grid-cols-2 gap-3">
                 {statCards.map((item) => (
                   <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
+                    <div className="text-3xl font-bold tracking-[-0.04em]" style={{ color: item.color }}>
                       {item.value}
                     </div>
                     <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
@@ -547,8 +541,8 @@ export default function EventDetailClient({ slug }: { slug: string }) {
           <aside className="space-y-5 lg:sticky lg:top-24">
             {showRSVP && (
               <div id="rsvp-panel" className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Reserve your spot</p>
-                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-neutral-950">RSVP for this event</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Reserve your spot</p>
+                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-neutral-950">RSVP for this event</h2>
                 {membersOnlyBlocked ? (
                   <div className="mt-5 rounded-xl bg-purple-50 border border-purple-200 p-5 text-center space-y-3">
                     <p className="text-2xl">🔒</p>
@@ -574,15 +568,15 @@ export default function EventDetailClient({ slug }: { slug: string }) {
 
             {!event.registrationRequired && event.status === "published" && (
               <div className="rounded-4xl border border-green-200 bg-green-50 p-6 text-center">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-green-700">Open entry</p>
-                <p className="mt-3 text-lg font-black text-green-900">No registration required</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">Open entry</p>
+                <p className="mt-3 text-lg font-bold text-green-900">No registration required</p>
                 <p className="mt-2 text-sm leading-7 text-green-800">This is a free-entry event. Visitors can simply show up and participate.</p>
               </div>
             )}
 
             {isUpcoming && event.status === "published" && (
               <div className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Save the date</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Save the date</p>
                 <div className="mt-4">
                   <AddToCalendarButton event={event} />
                 </div>
@@ -590,7 +584,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
             )}
 
             <div className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Share this event</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Share this event</p>
               <div className="mt-4">
                 <ShareButtons
                   url={pageUrl}
@@ -602,7 +596,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
             </div>
 
             <div className="rounded-4xl border border-neutral-200 bg-neutral-50 p-6">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">Quick facts</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Quick facts</p>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-neutral-500">Status</span>

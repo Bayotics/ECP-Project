@@ -230,7 +230,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-extrabold text-(--color-neutral-900) mb-2">Checkout</h1>
+        <h1 className="text-3xl font-bold text-(--color-neutral-900) mb-2">Checkout</h1>
         <StepBar step={step} />
 
         <div className="flex flex-col lg:flex-row gap-10">

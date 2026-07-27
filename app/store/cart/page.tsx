@@ -51,7 +51,7 @@ export default function CartPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-extrabold text-(--color-neutral-900)">Your Cart</h1>
+          <h1 className="text-3xl font-bold text-(--color-neutral-900)">Your Cart</h1>
           <button
             onClick={clearCart}
             className="text-xs text-(--color-neutral-400) hover:text-red-500 transition-colors"
@@ -142,7 +142,7 @@ export default function CartPage() {
                 )}
                 <div className="border-t border-(--color-neutral-200) pt-3 flex justify-between">
                   <span className="font-bold text-(--color-neutral-900)">Total</span>
-                  <span className="font-extrabold text-(--color-green-700) text-base">{formatNaira(total)}</span>
+                  <span className="font-bold text-(--color-green-700) text-base">{formatNaira(total)}</span>
                 </div>
               </div>
               <Link

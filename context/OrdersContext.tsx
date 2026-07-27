@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Order, CreateOrderInput, UpdateOrderInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface OrdersContextValue {
   orders: Order[];
@@ -24,6 +25,7 @@ const OrdersContext = createContext<OrdersContextValue | null>(null);
 
 export function OrdersProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -39,12 +41,21 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setOrders([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialOrders() {
       try {
         const nextOrders = await apiRequest<Order[]>("/api/orders");
         if (isActive) {
           setOrders(nextOrders);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -57,7 +68,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateOrderInput): Promise<Order> => {
     const created = await apiRequest<Order>("/api/orders", {

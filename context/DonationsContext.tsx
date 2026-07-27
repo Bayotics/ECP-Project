@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Donation, CreateDonationInput, UpdateDonationInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface DonationsContextValue {
   donations: Donation[];
@@ -25,6 +26,7 @@ const DonationsContext = createContext<DonationsContextValue | null>(null);
 
 export function DonationsProvider({ children }: { children: React.ReactNode }) {
   const [donations, setDonations] = useState<Donation[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -40,12 +42,21 @@ export function DonationsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setDonations([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialDonations() {
       try {
         const nextDonations = await apiRequest<Donation[]>("/api/donations");
         if (isActive) {
           setDonations(nextDonations);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -58,7 +69,7 @@ export function DonationsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateDonationInput): Promise<Donation> => {
     const created = await apiRequest<Donation>("/api/donations", {

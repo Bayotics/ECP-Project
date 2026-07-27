@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Committee, CommitteeMemberProfile, CommitteeJoinRequest, CreateCommitteeInput, UpdateCommitteeInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface CommitteesContextValue {
   committees: Committee[];
@@ -25,6 +26,7 @@ const CommitteesContext = createContext<CommitteesContextValue | null>(null);
 
 export function CommitteesProvider({ children }: { children: React.ReactNode }) {
   const [committees, setCommittees] = useState<Committee[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -40,12 +42,21 @@ export function CommitteesProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setCommittees([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialCommittees() {
       try {
         const nextCommittees = await apiRequest<Committee[]>("/api/committees");
         if (isActive) {
           setCommittees(nextCommittees);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -58,7 +69,7 @@ export function CommitteesProvider({ children }: { children: React.ReactNode }) 
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateCommitteeInput): Promise<Committee> => {
     const created = await apiRequest<Committee>("/api/committees", {

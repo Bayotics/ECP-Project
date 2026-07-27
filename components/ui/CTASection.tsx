@@ -140,7 +140,7 @@ export default function CTASection({
           <motion.h2
             variants={fadeUp}
             className={cn(
-              "text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl",
+              "text-3xl font-bold leading-tight tracking-tight sm:text-4xl",
               isDark ? "text-white" : "text-gray-500"
             )}
           >

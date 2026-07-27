@@ -97,7 +97,7 @@ export default function ProductPage() {
                 priority
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-8xl text-(--color-neutral-300)">🛍️</div>
+              <div className="w-full h-full flex items-center justify-center text-6xl text-(--color-neutral-300)">🛍️</div>
             )}
             {product.compareAtPrice && (
               <span className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase">Sale</span>
@@ -112,11 +112,11 @@ export default function ProductPage() {
             className="flex flex-col"
           >
             <span className="text-xs font-bold text-(--color-green-600) uppercase tracking-widest mb-2">{product.category}</span>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-(--color-neutral-900) mb-3 leading-tight">{product.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-900) mb-3 leading-tight">{product.name}</h1>
 
             {/* Price */}
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl font-extrabold text-(--color-green-700)">{formatNaira(product.price)}</span>
+              <span className="text-3xl font-bold text-(--color-green-700)">{formatNaira(product.price)}</span>
               {product.compareAtPrice && (
                 <span className="text-lg text-(--color-neutral-400) line-through">{formatNaira(product.compareAtPrice)}</span>
               )}

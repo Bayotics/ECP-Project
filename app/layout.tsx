@@ -3,6 +3,8 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppProvider";
 import AIChatWidget from "@/components/ai/AIChatWidget";
+import ScrollSetup from "@/components/gsap/ScrollSetup";
+import { ScrollReset } from "@/components/layout/ScrollReset";
 
 /* ─── Fonts ─────────────────────────────────────────── */
 const poppins = Poppins({
@@ -70,6 +72,8 @@ export default function RootLayout({
           Skip to main content
         </a>
         <AppProvider>
+          <ScrollSetup />
+          <ScrollReset />
           {children}
           <AIChatWidget />
         </AppProvider>

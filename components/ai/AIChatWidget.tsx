@@ -264,7 +264,7 @@ export default function AIChatWidget() {
         )}
         {/* Unread badge */}
         {unread > 0 && !open && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">
             {unread}
           </span>
         )}

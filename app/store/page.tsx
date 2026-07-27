@@ -100,7 +100,7 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
         </Link>
         <div className="flex items-center gap-2 mb-3 mt-auto">
-          <span className="text-base font-extrabold text-(--color-green-700)">{formatNaira(product.price)}</span>
+          <span className="text-base font-bold text-(--color-green-700)">{formatNaira(product.price)}</span>
           {product.compareAtPrice && (
             <span className="text-sm text-(--color-neutral-400) line-through">{formatNaira(product.compareAtPrice)}</span>
           )}
@@ -157,7 +157,7 @@ export default function StorePage() {
       <section className="bg-white border-b border-(--color-neutral-200) py-12 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-(--color-neutral-900) mb-2">ECP Store</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-(--color-neutral-900) mb-2">ECP Store</h1>
             <p className="text-(--color-neutral-600) max-w-md">
               Official merchandise, publications, and digital resources. Purchases support Eko Club Philadelphia's community programmes.
             </p>

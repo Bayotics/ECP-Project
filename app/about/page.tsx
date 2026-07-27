@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEvents } from "@/context";
 
 const EKO_GREEN = "#059669";
@@ -289,14 +291,14 @@ function SectionIntro({
       <motion.span
         variants={riseIn}
         custom={0.08}
-        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-neutral-500"
+        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500"
       >
         {eyebrow}
       </motion.span>
       <motion.h2
         variants={riseIn}
         custom={0.16}
-        className="mt-5 text-3xl font-black tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+        className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
       >
         {title}
       </motion.h2>
@@ -314,6 +316,7 @@ function SectionIntro({
 export default function AboutPage() {
   const [activeTab, setActiveTab] = useState<HistoryTab>("origins");
   const activePanel = HISTORY_PANELS[activeTab];
+  const statsRef = useRef<HTMLDivElement>(null);
   const { events } = useEvents();
   const pastEventsCount = useMemo(() => {
     const now = new Date();
@@ -327,16 +330,32 @@ export default function AboutPage() {
     { value: pastEventsCount > 0 ? pastEventsCount.toString() : "2mi", label: pastEventsCount > 0 ? "Past events on record" : "Adopt-a-highway stretch", color: EKO_YELLOW },
   ];
 
+  /* GSAP count-up on the hero scorecard (numeric values only) */
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      const statEls = statsRef.current?.querySelectorAll(".stat-value");
+      statEls?.forEach((el) => {
+        const target = parseInt(el.getAttribute("data-target") ?? "0", 10);
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: target,
+          duration: 1.6,
+          ease: "power2.out",
+          scrollTrigger: { trigger: statsRef.current, start: "top 80%" },
+          onUpdate: () => {
+            el.textContent = Math.round(obj.val).toString();
+          },
+        });
+      });
+    });
+    return () => ctx.revert();
+  }, [pastEventsCount]);
+
   return (
     <div className="bg-white text-neutral-950">
       <section className="relative isolate overflow-hidden bg-neutral-950">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at top left, rgba(5,150,105,0.28), transparent 28%), radial-gradient(circle at top right, rgba(37,99,235,0.20), transparent 24%), linear-gradient(135deg, rgba(10,10,10,0.98), rgba(18,18,18,0.92))",
-          }}
-        />
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
 
         {QUAD.map((color, index) => (
           <motion.div
@@ -371,7 +390,7 @@ export default function AboutPage() {
                 {QUAD.map((color) => (
                   <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                 ))}
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">
+                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">
                   About Eko Club Philadelphia
                 </span>
               </motion.div>
@@ -379,7 +398,7 @@ export default function AboutPage() {
               <motion.h1
                 variants={riseIn}
                 custom={0.08}
-                className="mt-7 text-5xl font-black leading-none tracking-tighter text-white sm:text-6xl lg:text-7xl"
+                className="mt-7 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl"
               >
                 Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
                 <span style={{ color: EKO_YELLOW }}> service</span>, our story.
@@ -398,7 +417,7 @@ export default function AboutPage() {
               <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/membership/apply"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-black text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   Join the community
@@ -419,8 +438,8 @@ export default function AboutPage() {
               className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
               <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">What drives us</p>
-                <p className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">What drives us</p>
+                <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-white">
                   Presenting our mission, vision, and service with clarity.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
@@ -429,17 +448,30 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {impactStats.map((item) => (
-                  <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                    <div className="text-3xl font-black tracking-[-0.04em]" style={{ color: item.color }}>
-                      {item.value}
+              <div ref={statsRef} className="grid grid-cols-2 gap-3">
+                {impactStats.map((item) => {
+                  const isNumeric = /^\d+$/.test(item.value);
+                  return (
+                    <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+                      {isNumeric ? (
+                        <div
+                          className="stat-value text-3xl font-bold tracking-[-0.04em]"
+                          data-target={item.value}
+                          style={{ color: item.color }}
+                        >
+                          {item.value}
+                        </div>
+                      ) : (
+                        <div className="text-3xl font-bold tracking-[-0.04em]" style={{ color: item.color }}>
+                          {item.value}
+                        </div>
+                      )}
+                      <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                        {item.label}
+                      </div>
                     </div>
-                    <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
-                      {item.label}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           </div>
@@ -453,7 +485,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[14rem] font-black leading-none text-neutral-100">
+        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-bold leading-none text-neutral-100">
           EKO
         </div>
 
@@ -479,7 +511,7 @@ export default function AboutPage() {
                 className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-transform duration-300 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-black tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
+                  <h3 className="text-2xl font-bold tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
                   <span className="h-3 w-3 rounded-full" style={{ background: pillar.color }} />
                 </div>
                 <p className="mt-4 text-sm leading-7 text-neutral-600 sm:text-base">{pillar.text}</p>
@@ -515,7 +547,7 @@ export default function AboutPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${value.color}12` }}>
                   {value.icon}
                 </div>
-                <h3 className="mt-5 text-xl font-black tracking-[-0.03em] text-neutral-950">{value.title}</h3>
+                <h3 className="mt-5 text-xl font-bold tracking-[-0.03em] text-neutral-950">{value.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-neutral-600">{value.desc}</p>
                 <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: value.color }} />
               </motion.article>
@@ -525,7 +557,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-neutral-50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-neutral-50/80" />
 
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.84fr_1.16fr] lg:gap-16">
           <div>
@@ -542,14 +574,14 @@ export default function AboutPage() {
               viewport={{ once: true, margin: "-80px" }}
               className="mt-8 rounded-4xl border border-neutral-200 bg-neutral-50 p-6"
             >
-              <motion.p variants={riseIn} custom={0} className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">
+              <motion.p variants={riseIn} custom={0} className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
                 How the exco leads
               </motion.p>
               <motion.div variants={riseIn} custom={0.08} className="mt-5 grid gap-3 sm:grid-cols-2">
                 {EXCO_PILLARS.map((pillar) => (
                   <div key={pillar.label} className="rounded-3xl border border-white bg-white px-4 py-4">
                     <div className="h-2 w-14 rounded-full" style={{ background: pillar.color }} />
-                    <p className="mt-3 text-sm font-black uppercase tracking-[0.18em] text-neutral-700">
+                    <p className="mt-3 text-sm font-bold uppercase tracking-[0.18em] text-neutral-700">
                       {pillar.label}
                     </p>
                   </div>
@@ -579,19 +611,19 @@ export default function AboutPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-black text-white"
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white"
                     style={{ background: member.color }}
                   >
                     {member.initials}
                   </div>
                   <span
-                    className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-900"
+                    className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-900"
                     style={{ background: `${member.color}18` }}
                   >
                     {member.role}
                   </span>
                 </div>
-                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-neutral-950">{member.name}</h3>
+                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-neutral-950">{member.name}</h3>
                 <p className="mt-3 text-sm leading-7 text-neutral-600">{member.bio}</p>
                 <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: member.color }} />
               </motion.article>
@@ -600,8 +632,40 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <section className="bg-[#0a0a0a] py-24 px-6 sm:px-10 lg:px-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-start gap-12">
+            <div className="lg:w-1/2">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">Our Lagos roots</p>
+              <h2 className="text-4xl font-bold text-white leading-snug mb-5 tracking-tight">
+                The five IBILE divisions — where we come from
+              </h2>
+              <p className="text-base text-white/55 leading-relaxed font-normal mb-6">
+                Ikorodu, Badagry, Ikeja, Lagos Island, Epe — the five historic divisions
+                of Lagos State that our members call home. This section will feature a
+                short looping video montage of each locality. Content arriving soon.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["Ikorodu", "Badagry", "Ikeja", "Lagos Island", "Epe"].map(d => (
+                  <span key={d}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-white/15 text-white/50">
+                    {d}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="lg:w-1/2 rounded-2xl bg-white/5 border border-white/10 aspect-video flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-sm font-medium text-white/30">Video montage</p>
+                <p className="text-xs text-white/20 mt-1">Coming soon</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="lagos-history" className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-neutral-200 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-neutral-200" />
 
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:gap-16">
           <div className="lg:sticky lg:top-24">
@@ -617,7 +681,7 @@ export default function AboutPage() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all"
+                    className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-all"
                     style={{
                       borderColor: activeTab === key ? panel.accent : "#e5e7eb",
                       background: activeTab === key ? `${panel.accent}14` : "#ffffff",
@@ -642,7 +706,7 @@ export default function AboutPage() {
             >
               <div className="flex flex-wrap items-center gap-3">
                 <span
-                  className="rounded-full px-4 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-neutral-950"
+                  className="rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-950"
                   style={{ background: `${activePanel.accent}20` }}
                 >
                   {activePanel.kicker}
@@ -650,7 +714,7 @@ export default function AboutPage() {
                 <QuadBar />
               </div>
 
-              <h3 className="mt-6 text-3xl font-black tracking-[-0.04em] text-neutral-950 sm:text-4xl">
+              <h3 className="mt-6 text-3xl font-bold tracking-[-0.04em] text-neutral-950 sm:text-4xl">
                 {activePanel.title}
               </h3>
               <p className="mt-5 max-w-3xl text-base leading-8 text-neutral-600 sm:text-lg">
@@ -700,8 +764,8 @@ export default function AboutPage() {
                 className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/6 p-6 backdrop-blur-md"
               >
                 <div className="absolute left-0 top-0 h-full w-1.5" style={{ background: item.color }} />
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white/45">{item.era}</p>
-                <h3 className="mt-4 text-2xl font-black tracking-[-0.03em] text-white">{item.title}</h3>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/45">{item.era}</p>
+                <h3 className="mt-4 text-2xl font-bold tracking-[-0.03em] text-white">{item.title}</h3>
                 <p className="mt-4 text-sm leading-7 text-white/68">{item.text}</p>
               </motion.article>
             ))}
@@ -736,7 +800,7 @@ export default function AboutPage() {
                   {item.icon}
                 </div>
                 <div className="mt-5 h-2 w-16 rounded-full" style={{ background: item.accent }} />
-                <h3 className="mt-5 text-2xl font-black tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-neutral-600">{item.text}</p>
               </motion.article>
             ))}
@@ -751,7 +815,7 @@ export default function AboutPage() {
           >
             <Link
               href="/projects"
-              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
               style={{ background: EKO_BLUE }}
             >
               View full projects page
@@ -761,12 +825,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative overflow-hidden bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `linear-gradient(135deg, ${EKO_GREEN} 0%, ${EKO_RED} 33%, ${EKO_BLUE} 66%, ${EKO_YELLOW} 100%)`,
-          }}
-        />
+        <div className="absolute inset-0 opacity-10" style={{ background: EKO_GREEN }} />
         <div className="relative mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -777,7 +836,7 @@ export default function AboutPage() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
               Keep the <span style={{ color: EKO_YELLOW }}>Eko spirit</span> moving.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -787,7 +846,7 @@ export default function AboutPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
                 href="/membership/apply"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-black text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO_GREEN }}
               >
                 Apply for membership

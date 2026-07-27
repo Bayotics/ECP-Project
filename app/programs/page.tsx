@@ -197,10 +197,10 @@ export default function ProgramsPage() {
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-green-800 to-green-700 text-white py-20 px-4">
+      <section className="bg-[#059669] text-white py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-sm font-bold uppercase tracking-widest opacity-75 mb-3">What We Do</p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">Programs &amp; Initiatives</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">Programs &amp; Initiatives</h1>
           <p className="text-white/80 text-lg max-w-2xl mx-auto">
             Nine recurring programs run by our committees every year — from highway cleanups and scholarship nights to medical missions. Browse by year to see what&apos;s coming up.
           </p>

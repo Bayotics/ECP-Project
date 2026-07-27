@@ -74,7 +74,7 @@ export default function RegisterPage() {
   return (
     <div className="w-full bg-white rounded-2xl shadow-lg border border-(--color-neutral-200) p-8 space-y-6">
       <div className="text-center">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-extrabold text-lg mb-4">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-bold text-lg mb-4">
           ECP
         </div>
         <h1 className="text-2xl font-bold text-gray-500">Create your account</h1>

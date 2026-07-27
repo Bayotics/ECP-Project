@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, CreateUserInput, UpdateUserInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 type CreateUserPayload = CreateUserInput & { password?: string };
 
@@ -23,6 +24,7 @@ const UsersContext = createContext<UsersContextValue | null>(null);
 
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -38,12 +40,21 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setUsers([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialUsers() {
       try {
         const nextUsers = await apiRequest<User[]>("/api/users");
         if (isActive) {
           setUsers(nextUsers);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -56,7 +67,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateUserPayload): Promise<User> => {
     const created = await apiRequest<User>("/api/users", {

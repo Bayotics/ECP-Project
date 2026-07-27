@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/server/guards";
 import type { Filter } from "mongodb";
 import type { CreateRSVPInput, RSVP } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocument, serializeDocuments } from "@/lib/server/collections";
@@ -11,6 +12,9 @@ function badRequest(message: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const { deny } = requireSession(request);
+  if (deny) return deny;
+
   try {
     await ensureCoreIndexes();
     const collection = await getCollection("rsvps");

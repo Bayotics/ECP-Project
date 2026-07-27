@@ -143,7 +143,7 @@ export default function CommitteeCard({
           {imageUrl ? (
             <Image src={imageUrl} alt={name} width={96} height={96} className="object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-2xl font-extrabold text-(--color-green-700)">
+            <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-(--color-green-700)">
               {initials}
             </span>
           )}
@@ -156,7 +156,7 @@ export default function CommitteeCard({
       </div>
 
       {/* Name & role */}
-      <h3 className="mt-2 font-extrabold text-gray-500 leading-tight">{name}</h3>
+      <h3 className="mt-2 font-bold text-gray-500 leading-tight">{name}</h3>
       <p className="mt-0.5 text-sm font-semibold text-(--color-green-600)">{role}</p>
       {committee && (
         <p className="text-xs text-(--color-neutral-400) mt-0.5">{committee}</p>

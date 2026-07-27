@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { RSVP, CreateRSVPInput, UpdateRSVPInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface RSVPContextValue {
   rsvps: RSVP[];
@@ -23,6 +24,7 @@ const RSVPContext = createContext<RSVPContextValue | null>(null);
 
 export function RSVPProvider({ children }: { children: React.ReactNode }) {
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -38,12 +40,21 @@ export function RSVPProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setRsvps([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialRsvps() {
       try {
         const nextRsvps = await apiRequest<RSVP[]>("/api/rsvps");
         if (isActive) {
           setRsvps(nextRsvps);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -56,7 +67,7 @@ export function RSVPProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateRSVPInput): Promise<RSVP> => {
     const created = await apiRequest<RSVP>("/api/rsvps", {

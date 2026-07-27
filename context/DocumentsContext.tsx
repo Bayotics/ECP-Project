@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { OrgDocument, CreateDocumentInput, UpdateDocumentInput } from "@/lib/models/document";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface DocumentsContextValue {
   documents: OrgDocument[];
@@ -17,6 +18,7 @@ const DocumentsContext = createContext<DocumentsContextValue | null>(null);
 
 export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   const [documents, setDocuments] = useState<OrgDocument[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -32,12 +34,21 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    if (!currentUser) {
+      setDocuments([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function loadInitialDocuments() {
       try {
         const nextDocuments = await apiRequest<OrgDocument[]>("/api/documents");
         if (isActive) {
           setDocuments(nextDocuments);
         }
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -50,7 +61,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateDocumentInput): Promise<OrgDocument> => {
     const created = await apiRequest<OrgDocument>("/api/documents", {

@@ -57,9 +57,10 @@ const SOCIAL_LINKS = [
 /* ─── Footer link groups ────────────────────────────── */
 const QUICK_LINKS = [
   { href: "/about", label: "About Us" },
+  { href: "/programs", label: "Programs" },
   { href: "/projects", label: "Our Projects" },
   { href: "/events", label: "Events & Programmes" },
-  { href: "/volunteer", label: "Volunteer" },
+  { href: "/donate", label: "Donate" },
   { href: "/apply", label: "Apply Now" },
 ];
 
@@ -274,11 +275,11 @@ export default function Footer() {
               className="group inline-flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-green-400) rounded-lg"
               aria-label="Eko Club Philadelphia homepage"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-(--color-green-700) font-extrabold text-xs ring-2 ring-white/20 group-hover:ring-white/40 transition">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-(--color-green-700) font-bold text-xs ring-2 ring-white/20 group-hover:ring-white/40 transition">
                 ECP
               </span>
               <span className="flex flex-col leading-tight">
-                <span className="font-extrabold text-white text-base">Eko Club Philadelphia</span>
+                <span className="font-bold text-white text-base">Eko Club Philadelphia</span>
                 <span className="text-xs text-(--color-green-400)">Eko Club International</span>
               </span>
             </Link>
@@ -376,6 +377,20 @@ export default function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <NewsletterForm />
           </div>
+        </div>
+
+        {/* ── Secondary donate CTA ──────────────────── */}
+        <div className="border-t border-white/10 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-white/30">
+            © {new Date().getFullYear()} Eko Club Philadelphia ·
+            A chapter of Eko Club International
+          </p>
+          <Link
+            href="/donate"
+            className="text-xs font-semibold text-[#059669] hover:underline"
+          >
+            Support our programs →
+          </Link>
         </div>
       </div>
 

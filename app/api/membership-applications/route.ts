@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 import type { CreateApplicationInput, MembershipApplication } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
+import { getRequestSession, unauthorized } from "@/lib/server/guards";
 
 function badRequest(message: string) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
@@ -28,6 +29,14 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const email = searchParams.get("email");
     const userId = searchParams.get("userId");
+
+    // Unauthenticated access is allowed ONLY for the public "check my
+    // application status" flow, which must supply an exact email filter.
+    // Everything else (full list, status/userId queries) requires a session.
+    const session = getRequestSession(request);
+    if (!session && !email?.trim()) {
+      return unauthorized();
+    }
 
     const filter: Partial<MembershipApplication> = {};
     if (status) filter.status = status as MembershipApplication["status"];

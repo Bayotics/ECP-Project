@@ -67,10 +67,10 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-green-800 to-green-600 text-white py-20 px-4">
+      <section className="bg-[#059669] text-white py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-sm font-bold uppercase tracking-widest opacity-75 mb-3">Get in Touch</p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">Contact Eko Club Philadelphia</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">Contact Eko Club Philadelphia</h1>
           <p className="text-white/80 text-lg max-w-xl mx-auto">
             We&apos;d love to hear from you. Reach out about membership, events, volunteering, or anything else — we respond to every message.
           </p>
@@ -144,7 +144,7 @@ export default function ContactPage() {
               className="bg-white border border-neutral-200 rounded-2xl p-10 text-center"
             >
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✅</div>
-              <h2 className="text-2xl font-extrabold text-neutral-900 mb-2">Message Sent!</h2>
+              <h2 className="text-2xl font-bold text-neutral-900 mb-2">Message Sent!</h2>
               <p className="text-neutral-600 mb-6">
                 Thank you for reaching out. We&apos;ll get back to you within 1–2 business days.
               </p>

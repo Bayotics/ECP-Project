@@ -8,6 +8,7 @@ import type {
   UpdateApplicationInput,
 } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
+import { useAuth } from "./AuthContext";
 
 interface MembershipContextValue {
   applications: MembershipApplication[];
@@ -32,6 +33,7 @@ const MembershipContext = createContext<MembershipContextValue | null>(null);
 
 export function MembershipProvider({ children }: { children: React.ReactNode }) {
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -43,11 +45,21 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     let active = true;
 
+    // Private data — only fetch for signed-in members; clear on sign-out.
+    // (The public application-status page fetches its own record directly.)
+    if (!currentUser) {
+      setApplications([]);
+      setIsLoading(false);
+      return;
+    }
+
     async function load() {
       try {
         const data = await apiRequest<MembershipApplication[]>("/api/membership-applications");
         if (!active) return;
         setApplications(data);
+      } catch {
+        // Silent: endpoint is auth-gated; nothing to surface publicly.
       } finally {
         if (active) {
           setIsLoading(false);
@@ -60,7 +72,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const add = useCallback(async (input: CreateApplicationInput): Promise<MembershipApplication> => {
     const created = await apiRequest<MembershipApplication>("/api/membership-applications", {

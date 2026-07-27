@@ -125,7 +125,7 @@ export default function SpotlightCard({
         )}
 
         <motion.div variants={childVariants} className="flex flex-col gap-1">
-          <h3 className={cn("text-2xl md:text-3xl font-extrabold leading-tight", titleClassName, isDark ? "text-white" : "text-green-600")}>
+          <h3 className={cn("text-2xl md:text-3xl font-bold leading-tight", titleClassName, isDark ? "text-white" : "text-green-600")}>
             {title}
           </h3>
           {subtitle && (
@@ -147,7 +147,7 @@ export default function SpotlightCard({
           <motion.div variants={childVariants} className="flex flex-wrap gap-6 pt-2">
             {stats.map((s) => (
               <div key={s.label} className="flex flex-col gap-0.5">
-                <span className={cn("text-2xl font-extrabold leading-none", isDark ? accentVars.statValueDark : accentVars.statValue)}>
+                <span className={cn("text-2xl font-bold leading-none", isDark ? accentVars.statValueDark : accentVars.statValue)}>
                   {s.value}
                 </span>
                 <span className={cn("text-xs", isDark ? "text-(--color-neutral-400)" : "text-(--color-neutral-500)")}>

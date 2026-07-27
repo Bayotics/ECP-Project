@@ -155,8 +155,8 @@ export default function NewsCard({
             className="object-cover transition-transform duration-700 group-hover:scale-105"
           />
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" aria-hidden="true" />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-[#0a0a0a]/60 z-10" aria-hidden="true" />
         <div className="relative z-20 p-6 flex flex-col gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             {isBreaking && <Badge color="danger" dot>Breaking</Badge>}
@@ -164,7 +164,7 @@ export default function NewsCard({
           </div>
           <Link
             href={href}
-            className="text-xl font-extrabold text-white hover:text-(--color-gold-300) transition-colors line-clamp-3 leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-gold-400)"
+            className="text-xl font-bold text-white hover:text-(--color-gold-300) transition-colors line-clamp-3 leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-gold-400)"
           >
             {title}
           </Link>

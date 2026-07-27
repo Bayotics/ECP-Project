@@ -96,10 +96,7 @@ export default function HeroBanner({
 
   const rootStyle =
     variant === "gradient"
-      ? {
-          background:
-            "linear-gradient(135deg, var(--color-green-700) 0%, var(--color-green-500) 55%, var(--color-gold-500) 100%)",
-        }
+      ? { background: "#059669" }
       : variant === "dark"
       ? { background: "var(--color-green-950)" }
       : variant === "image" && bgImageUrl
@@ -122,7 +119,7 @@ export default function HeroBanner({
         <div className="absolute inset-0 bg-black/55 z-0" aria-hidden="true" />
       )}
 
-      {/* Decorative blobs for gradient / dark */}
+      {/* Decorative blobs for dark variant */}
       {isDark && variant !== "image" && (
         <>
           <div
@@ -162,7 +159,7 @@ export default function HeroBanner({
           <motion.h1
             variants={fadeUp}
             className={cn(
-              "text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl"
+              "text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl"
             )}
           >
             {headline}
@@ -207,7 +204,7 @@ export default function HeroBanner({
                 <div key={label} className="flex flex-col gap-0.5">
                   <span
                     className={cn(
-                      "text-2xl font-extrabold",
+                      "text-2xl font-bold",
                       isDark ? "text-white" : "text-(--color-green-500)"
                     )}
                   >
