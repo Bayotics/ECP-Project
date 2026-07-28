@@ -104,9 +104,9 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* Native scroll-behavior:smooth intentionally omitted — Lenis (mounted via
+   <SmoothScroll/>) now owns scroll easing site-wide; the two fighting over
+   the same scroll position causes visible stutter. */
 
 body {
   min-height: 100vh;

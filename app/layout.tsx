@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/context/AppProvider";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 import ScrollSetup from "@/components/gsap/ScrollSetup";
+import SmoothScroll from "@/components/gsap/SmoothScroll";
 import { ScrollReset } from "@/components/layout/ScrollReset";
 
 /* ─── Fonts ─────────────────────────────────────────── */
@@ -73,6 +74,7 @@ export default function RootLayout({
         </a>
         <AppProvider>
           <ScrollSetup />
+          <SmoothScroll />
           <ScrollReset />
           {children}
           <AIChatWidget />

@@ -159,14 +159,14 @@ function HeroSection() {
       {/* Content — anchored bottom-left */}
       <div
         ref={contentRef}
-        className="relative z-10 w-full max-w-5xl mx-auto px-6 pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
       >
         {/* Eyebrow */}
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55 mb-5"
+          className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/55 mb-4 sm:text-xs sm:tracking-[0.2em] sm:mb-5"
         >
           Eko Club Philadelphia · A Chapter of Eko Club International
         </motion.p>
@@ -176,7 +176,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 28 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
           transition={{ duration: 0.85, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-6xl font-semibold leading-[1.05] tracking-tight text-white max-w-3xl"
+          className="text-4xl leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.05] font-semibold tracking-tight text-white max-w-3xl"
         >
           Heritage, community,{" "}
           <span style={{ color: "#059669" }}>and service</span>{" "}
@@ -188,7 +188,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.75, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-6 text-base sm:text-lg text-white/65 max-w-xl leading-relaxed font-normal"
+          className="mt-4 text-sm sm:mt-6 sm:text-base lg:text-lg text-white/65 max-w-xl leading-relaxed font-normal"
         >
           Bringing the pride of Lagos to the heart of Philadelphia — through programs,
           scholarships, medical missions, and community service since our founding.
@@ -199,11 +199,11 @@ function HeroSection() {
           initial={{ opacity: 0, y: 16 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           transition={{ duration: 0.7, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10 flex flex-wrap gap-3"
+          className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap"
         >
           <Link
             href="/events"
-            className="inline-flex items-center gap-2 bg-white text-[#0a0a0a] text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-white/90 transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 bg-white text-[#0a0a0a] text-sm font-semibold px-6 py-3 sm:w-auto sm:px-7 sm:py-3.5 rounded-full hover:bg-white/90 transition-colors"
           >
             Upcoming events
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -212,7 +212,7 @@ function HeroSection() {
           </Link>
           <Link
             href="/donate"
-            className="inline-flex items-center gap-2 bg-[#059669] text-white text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-[#047857] transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 bg-[#059669] text-white text-sm font-semibold px-6 py-3 sm:w-auto sm:px-7 sm:py-3.5 rounded-full hover:bg-[#047857] transition-colors"
           >
             Donate
           </Link>
