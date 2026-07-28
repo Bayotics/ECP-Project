@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
@@ -34,24 +35,20 @@ function Logo({
       href="/"
       onClick={onClick}
       className="group flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]/50"
-      aria-label="ECP — Go to homepage"
+      aria-label="Eko Club Philadelphia — Go to homepage"
     >
-      <span
-        className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#059669] text-white font-bold text-xs tracking-tight ring-2 ring-transparent transition-all group-hover:ring-[#059669]/40"
-        aria-hidden="true"
-      >
-        ECP
-      </span>
-      <span
+      <Image
+        src="/new-logo.png"
+        alt="Eko Club Philadelphia"
+        width={128}
+        height={128}
+        quality={100}
+        priority
         className={cn(
-          "font-bold text-sm leading-tight transition-colors duration-300",
-          solid
-            ? "text-[#059669] group-hover:text-[#047857]"
-            : "text-white group-hover:text-white/80"
+          "h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14",
+          !solid && "drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
         )}
-      >
-        Eko Club Philadelphia
-      </span>
+      />
     </Link>
   );
 }

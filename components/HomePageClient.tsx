@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useIntroDone } from "@/components/layout/HomeIntro";
 import type { Event as AppEvent } from "@/lib/models/event";
 
 import { useEvents } from "@/context/EventsContext";
@@ -99,6 +100,7 @@ function HeroSection() {
   const heroRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const introDone = useIntroDone();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -132,7 +134,7 @@ function HeroSection() {
   return (
     <section
       ref={heroRef}
-      className="relative h-[90vh] min-h-[580px] overflow-hidden bg-[#0a0a0a] flex items-center"
+      className="relative h-[calc(90vh_+_20px)] min-h-[600px] overflow-hidden bg-[#0a0a0a] flex items-end"
       aria-label="Eko Club Philadelphia hero"
     >
       {/* Background image with Ken Burns */}
@@ -154,27 +156,27 @@ function HeroSection() {
       {/* Solid overlay — no gradient */}
       <div className="absolute inset-0 bg-[#0a0a0a]/62" />
 
-      {/* Content */}
+      {/* Content — anchored bottom-left */}
       <div
         ref={contentRef}
-        className="relative z-10 max-w-5xl mx-auto px-6 sm:px-10 lg:px-16"
+        className="relative z-10 w-full max-w-5xl mx-auto px-6 pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
       >
         {/* Eyebrow */}
         <motion.p
           initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55 mb-5"
         >
           Eko Club Philadelphia · A Chapter of Eko Club International
         </motion.p>
 
-        {/* Main headline — max font-bold */}
+        {/* Main headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-6xl font-bold leading-[1.05] tracking-tight text-white max-w-3xl"
+          initial={{ opacity: 0, y: 28 }}
+          animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
+          transition={{ duration: 0.85, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="text-5xl sm:text-6xl font-semibold leading-[1.05] tracking-tight text-white max-w-3xl"
         >
           Heritage, community,{" "}
           <span style={{ color: "#059669" }}>and service</span>{" "}
@@ -184,8 +186,8 @@ function HeroSection() {
         {/* Subline */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.75, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 text-base sm:text-lg text-white/65 max-w-xl leading-relaxed font-normal"
         >
           Bringing the pride of Lagos to the heart of Philadelphia — through programs,
@@ -195,8 +197,8 @@ function HeroSection() {
         {/* CTAs */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+          transition={{ duration: 0.7, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
           className="mt-10 flex flex-wrap gap-3"
         >
           <Link
@@ -220,8 +222,8 @@ function HeroSection() {
       {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
+        animate={introDone ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ delay: 1.1, duration: 0.5 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
         aria-hidden="true"
       >

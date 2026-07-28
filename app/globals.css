@@ -118,10 +118,16 @@ body {
 }
 
 /* ─── Typography helpers ────────────────────────────── */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  font-weight: 700;
-  line-height: 1.2;
+/* Wrapped in @layer base so Tailwind utility classes (e.g. font-semibold,
+   font-bold on a specific <h1>) can override the default weight below —
+   unlayered rules always win over layered ones regardless of specificity,
+   so leaving this unlayered was silently pinning every heading to 700. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+  }
 }
 
 /* ─── Layout utilities ──────────────────────────────── */

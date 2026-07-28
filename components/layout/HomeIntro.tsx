@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
@@ -17,21 +17,52 @@ import { motion, AnimatePresence } from "framer-motion";
 let introHasPlayed = false;
 const FLICKER_MS = 3800;
 const IRIS_MS = 2500;
+// The explicit total: flicker, THEN the iris fully closes, THEN reveal.
+const TOTAL_INTRO_MS = FLICKER_MS + IRIS_MS;
+
+/**
+ * Lets descendants (e.g. the hero's own text) know once the splash has
+ * finished, so they can play their own entrance animation timed to that
+ * moment instead of animating in immediately on mount (while still hidden
+ * behind the splash). Defaults to `true` so any component using this hook
+ * outside of HomeIntro just renders in its "settled" state.
+ */
+const IntroDoneContext = createContext(true);
+export function useIntroDone() {
+  return useContext(IntroDoneContext);
+}
 
 export default function HomeIntro({ children }: { children: React.ReactNode }) {
   const [playing, setPlaying] = useState(!introHasPlayed);
+  // `revealed` only flips once the iris has actually finished closing on
+  // screen — NOT the moment `playing` becomes false (that only STARTS the
+  // exit animation; the visual close still takes IRIS_MS more). Gating hero
+  // text on `playing` alone made it animate in *while the overlay was still
+  // shrinking on top of it*, so by the time the green circle vanished the
+  // text had already finished moving — nothing left to see.
+  //
+  // Gated on an explicit calculated total (FLICKER_MS + IRIS_MS = the exact
+  // moment the iris reaches 0%) via a plain timer, rather than an
+  // animation-completion callback — a callback tied to animation-frame
+  // progress can stall indefinitely if the tab loses focus mid-splash
+  // (browsers pause rAF for hidden tabs), whereas a plain timer keeps firing.
+  const [revealed, setRevealed] = useState(introHasPlayed);
 
   useEffect(() => {
     if (introHasPlayed) return; // client-side nav back to home — no splash
     introHasPlayed = true;
 
     document.body.style.overflow = "hidden";
-    const t = setTimeout(() => {
+    const closeTimer = setTimeout(() => {
       setPlaying(false);
-      document.body.style.overflow = "";
     }, FLICKER_MS);
+    const revealTimer = setTimeout(() => {
+      setRevealed(true);
+      document.body.style.overflow = "";
+    }, TOTAL_INTRO_MS);
     return () => {
-      clearTimeout(t);
+      clearTimeout(closeTimer);
+      clearTimeout(revealTimer);
       document.body.style.overflow = "";
     };
   }, []);
@@ -93,7 +124,9 @@ export default function HomeIntro({ children }: { children: React.ReactNode }) {
         animate={playing ? { opacity: 0, scale: 1.04 } : { opacity: 1, scale: 1 }}
         transition={{ duration: IRIS_MS / 1000, ease: [0.16, 1, 0.3, 1] }}
       >
-        {children}
+        <IntroDoneContext.Provider value={revealed}>
+          {children}
+        </IntroDoneContext.Provider>
       </motion.div>
     </>
   );
