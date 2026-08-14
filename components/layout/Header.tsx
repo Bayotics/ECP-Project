@@ -58,16 +58,18 @@ function Logo({ dark, onClick }: { dark: boolean; onClick?: () => void }) {
   );
 }
 
-/* ─── NavLink — sits inside the glass pill, always dark text ────────── */
+/* ─── NavLink — text flips white/dark with the pill's own glass state ── */
 function NavLink({
   href,
   label,
   isActive,
+  showGlass,
   onClick,
 }: {
   href: string;
   label: string;
   isActive: boolean;
+  showGlass: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -78,7 +80,11 @@ function NavLink({
       className={cn(
         "relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]",
-        isActive ? "text-[#059669]" : "text-neutral-800 hover:text-[#059669]"
+        isActive
+          ? "text-[#059669]"
+          : showGlass
+          ? "text-neutral-800 hover:text-[#059669]"
+          : "text-white hover:text-white/80"
       )}
     >
       {label}
@@ -87,7 +93,7 @@ function NavLink({
 }
 
 /* ─── "Get Involved" dropdown — Programs / Projects / Events ────────── */
-function GetInvolvedMenu({ pathname }: { pathname: string }) {
+function GetInvolvedMenu({ pathname, showGlass }: { pathname: string; showGlass: boolean }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isActive = GET_INVOLVED_LINKS.some((l) => pathname.startsWith(l.href));
@@ -112,7 +118,11 @@ function GetInvolvedMenu({ pathname }: { pathname: string }) {
         className={cn(
           "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]",
-          isActive ? "text-[#059669]" : "text-neutral-800 hover:text-[#059669]"
+          isActive
+            ? "text-[#059669]"
+            : showGlass
+            ? "text-neutral-800 hover:text-[#059669]"
+            : "text-white hover:text-white/80"
         )}
       >
         Get Involved
@@ -263,14 +273,12 @@ export default function Header() {
 
   return (
     <>
-      {/* ── Fixed masthead ─────────────────────────── */}
+      {/* ── Fixed masthead — the bar itself is ALWAYS transparent; only the
+             nav pill inside it (and the buttons) carry their own backgrounds */}
       <header
         className={cn(
-          "fixed top-0 inset-x-0 z-50 transition-[height,background-color,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          showExtras ? "h-24 sm:h-28 lg:h-[168px]" : "h-16 sm:h-[68px] lg:h-[76px]",
-          showGlass
-            ? "border-b border-black/5 bg-white/75 shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-xl"
-            : "border-b border-transparent bg-transparent"
+          "fixed top-0 inset-x-0 z-50 bg-transparent transition-[height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          showExtras ? "h-24 sm:h-28 lg:h-[168px]" : "h-16 sm:h-[68px] lg:h-[76px]"
         )}
       >
         <div className="container-app relative flex h-full items-center justify-between gap-4">
@@ -284,17 +292,23 @@ export default function Header() {
             <Logo dark={!showGlass} />
           </div>
 
-          {/* Desktop nav — always visible, always its own glass pill */}
+          {/* Desktop nav pill — transparent at the top of the homepage hero,
+              glassmorphism everywhere else (scrolled, or any interior page) */}
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-1 rounded-full border border-black/5 bg-white/80 px-2 py-1.5 shadow-sm backdrop-blur-xl lg:flex"
+            className={cn(
+              "hidden items-center gap-1 rounded-full px-2 py-1.5 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
+              showGlass
+                ? "border border-black/5 bg-white/75 shadow-sm backdrop-blur-xl"
+                : "border border-transparent bg-transparent"
+            )}
           >
             {PRIMARY_LINKS.map(({ href, label }) => (
-              <NavLink key={href} href={href} label={label} isActive={isLinkActive(pathname, href)} />
+              <NavLink key={href} href={href} label={label} isActive={isLinkActive(pathname, href)} showGlass={showGlass} />
             ))}
-            <GetInvolvedMenu pathname={pathname} />
+            <GetInvolvedMenu pathname={pathname} showGlass={showGlass} />
             {TRAILING_LINKS.map(({ href, label }) => (
-              <NavLink key={href} href={href} label={label} isActive={isLinkActive(pathname, href)} />
+              <NavLink key={href} href={href} label={label} isActive={isLinkActive(pathname, href)} showGlass={showGlass} />
             ))}
           </nav>
 

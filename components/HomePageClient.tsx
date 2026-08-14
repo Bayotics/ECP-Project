@@ -15,6 +15,7 @@ import { useIntroDone } from "@/components/layout/HomeIntro";
 import type { Event as AppEvent } from "@/lib/models/event";
 
 import { useEvents } from "@/context/EventsContext";
+import { cn } from "@/utils/cn";
 
 /* ══════════════════════════════════════════════════════
    BRAND
@@ -24,9 +25,15 @@ const EKO_RED    = "#dc2626";
 const EKO_BLUE   = "#2563eb";
 const EKO_YELLOW = "#d97706";
 const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
+/* Deep green used to blend the hero's bottom edge into the section below it
+   (same "photo fades into a flat brand colour" technique as the reference,
+   just in green instead of navy). */
+const DEEP_GREEN = "#0c3b28";
 
 const GALLERY = {
-  hero:     "/gallery/hero-bgs/eyo-2025.jpg",
+  hero:     "/gallery/hero-bgs/national-theatre_standard.jpg",
+  eciLeft:  "/gallery/hero-bgs/lagos-island.jpg",
+  eciRight: "/gallery/hero-bgs/eyo-2025.jpg",
   timeline: {
     volunteer:       "/gallery/event8.JPG",
     meetup:          "/gallery/event3.JPG",
@@ -153,13 +160,21 @@ function HeroSection() {
         />
       </div>
 
-      {/* Solid overlay — no gradient */}
+      {/* Solid overlay */}
       <div className="absolute inset-0 bg-[#0a0a0a]/62" />
+
+      {/* Bottom blend — fades the photo into the deep green of the section
+          below so the two sections read as one continuous surface, no seam. */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-1/2"
+        style={{ background: `linear-gradient(to bottom, transparent 0%, ${DEEP_GREEN} 100%)` }}
+        aria-hidden="true"
+      />
 
       {/* Content — anchored bottom-left */}
       <div
         ref={contentRef}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6  pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
       >
         {/* Eyebrow */}
         <motion.p
@@ -176,7 +191,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 28 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
           transition={{ duration: 0.85, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-4xl leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.05] font-semibold tracking-tight text-white max-w-3xl"
+          className="text-5xl leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.05] font-medium tracking-tight text-white max-w-3xl"
         >
           Heritage, community,{" "}
           <span style={{ color: "#059669" }}>and service</span>{" "}
@@ -190,8 +205,7 @@ function HeroSection() {
           transition={{ duration: 0.75, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-4 text-sm sm:mt-6 sm:text-base lg:text-lg text-white/65 max-w-xl leading-relaxed font-normal"
         >
-          Bringing the pride of Lagos to the heart of Philadelphia — through programs,
-          scholarships, medical missions, and community service since our founding.
+          Bringing the pride of Lagos to the heart of Philadelphia
         </motion.p>
 
         {/* CTAs */}
@@ -239,29 +253,58 @@ function HeroSection() {
 }
 
 /* ══════════════════════════════════════════════════════
-   3. ECI FLAGSHIP BAND — full-width editorial
+   3. ECI INTRO + MEDICAL MISSION — blends out of the hero,
+      deep-green section: centred org intro, then a two-image
+      editorial block for the flagship mission/convention,
+      with the impact stats folded into it.
    ══════════════════════════════════════════════════════ */
-function ECIFlagshipBand() {
+function EciIntroSection() {
   const year = new Date().getFullYear();
   const isMissionYear = year % 2 === 0;
-  const bandRef = useRef<HTMLElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
+  const missionRef = useRef<HTMLDivElement>(null);
+  const { events } = useEvents();
+
+  const pastCount = useMemo(() => {
+    const now = new Date();
+    return events.filter(e =>
+      (e.status === "published" || e.status === "completed") &&
+      new Date(e.date) < now
+    ).length;
+  }, [events]);
+
+  const totalEvents = 40 + pastCount;
+  const stats = [
+    { value: totalEvents, suffix: "+",  label: "Events delivered" },
+    { value: 9,           suffix: "",   label: "Annual programs" },
+    { value: 2,           suffix: "mi", label: "Highway adopted" },
+    { value: 5,           suffix: "",   label: "College scholarships" },
+  ];
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.fromTo(bandRef.current,
+      gsap.fromTo(introRef.current,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: introRef.current, start: "top 85%" } }
+      );
+      gsap.fromTo(missionRef.current,
         { opacity: 0, y: 32 },
-        {
-          opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: bandRef.current, start: "top 88%" },
-        }
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: missionRef.current, start: "top 85%" } }
+      );
+      gsap.fromTo(
+        missionRef.current?.querySelectorAll(".stat-item") ?? [],
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: "power3.out",
+          scrollTrigger: { trigger: missionRef.current, start: "top 70%" } }
       );
     });
     return () => ctx.revert();
   }, []);
 
-  const bg      = isMissionYear ? "#059669" : "#1c1917";
-  const accent  = isMissionYear ? "#ffffff" : "#059669";
+  const accent  = isMissionYear ? EKO_RED : EKO_BLUE;
   const label   = isMissionYear
     ? `ECI Medical Mission ${year}`
     : year === 2027 ? "ECI Biennial Convention — London 2027"
@@ -272,32 +315,89 @@ function ECIFlagshipBand() {
     : "The worldwide family of Eko Club gathers for the biennial convention — business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.";
 
   return (
-    <section ref={bandRef} style={{ backgroundColor: bg }} className="w-full py-8 px-6 sm:px-10 lg:px-16"
-      aria-label="ECI Flagship Event">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-        <div className="flex items-start gap-5">
-          {/* Pill */}
-          <span className="mt-0.5 shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] px-3 py-1 rounded-full border"
-                style={{ borderColor: `${accent}40`, color: accent }}>
-            {pill}
+    <section style={{ backgroundColor: DEEP_GREEN }} className="w-full pt-4 pb-24 px-6 sm:px-10 sm:pb-28 lg:px-16 lg:pb-32">
+      {/* ── Part A: Eko Club International intro ── */}
+      <div ref={introRef} className="max-w-3xl mx-auto text-center mb-20 sm:mb-24 lg:mb-28">
+        <div className="inline-flex items-center gap-3 mb-5">
+          <span className="h-px w-8 bg-white/30" aria-hidden="true" />
+          <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/60">
+            A Global Network, Rooted in Lagos
           </span>
-          {/* Label + copy */}
-          <div>
-            <p className="text-lg font-bold leading-snug text-white">{label}</p>
-            <p className="mt-1 text-sm leading-relaxed max-w-xl"
-               style={{ color: "rgba(255,255,255,0.6)" }}>
-              {copy}
-            </p>
+          <span className="h-px w-8 bg-white/30" aria-hidden="true" />
+        </div>
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-white leading-[1.1]">
+          Eko Club Philadelphia
+        </h2>
+        <p className="mt-6 text-base sm:text-lg text-white/60 leading-relaxed max-w-xl mx-auto">
+          Eko Club Philadelphia is one chapter within a worldwide family of Eko
+          Clubs,uniting Lagosians across the diaspora in service, culture,
+          and lasting community.
+        </p>
+      </div>
+
+      {/* ── Part B: Medical Mission / Convention — two-image editorial ── */}
+      <div ref={missionRef} className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* Left: two overlapping images */}
+        <div className="relative h-[340px] sm:h-[420px] lg:h-[480px]">
+          <div className="absolute left-0 top-0 h-[78%] w-[80%] overflow-hidden rounded-2xl shadow-2xl">
+            <Image
+              src={GALLERY.eciLeft}
+              alt="Lagos Island skyline, Nigeria"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 80vw, 40vw"
+            />
+          </div>
+          <div className="absolute bottom-0 right-0 h-[46%] w-[52%] overflow-hidden rounded-2xl shadow-2xl">
+            <Image
+              src={GALLERY.eciRight}
+              alt="Eyo festival, Lagos"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 52vw, 26vw"
+            />
           </div>
         </div>
-        <a href="https://ekoclubinternational.org" target="_blank" rel="noopener noreferrer"
-           className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold border rounded-full px-5 py-2.5 transition-colors hover:bg-white/10"
-           style={{ color: accent, borderColor: `${accent}50` }}>
-          Learn more
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
+
+        {/* Right: mission text + stats */}
+        <div>
+          <div className="inline-flex items-center gap-3 mb-5">
+            <span className="h-px w-8" style={{ background: accent }} aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
+              {pill}
+            </span>
+          </div>
+          <h3 className="text-3xl sm:text-4xl font-semibold text-white leading-tight mb-5">
+            {label}
+          </h3>
+          <p className="text-white/60 leading-relaxed max-w-lg mb-8">
+            {copy}
+          </p>
+          <a
+            href="https://ekoclubinternational.org" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold border rounded-full px-5 py-2.5 transition-colors hover:bg-white/10"
+            style={{ color: accent, borderColor: `${accent}50` }}
+          >
+            Learn more
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+
+          {/* Impact stats */}
+          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-8 pt-8 border-t border-white/10">
+            {stats.map((s) => (
+              <div key={s.label} className="stat-item">
+                <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight tabular-nums">
+                  <CountUp to={s.value} suffix={s.suffix} />
+                </div>
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-white/40">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -313,6 +413,7 @@ const WHAT_WE_DO = [
     description: "Nine recurring community programs every year — highway cleanups, scholarship nights, medical missions, and more.",
     href: "/programs",
     label: "View programs",
+    image: "/gallery/event4.JPG",
   },
   {
     color: "#dc2626",
@@ -320,6 +421,7 @@ const WHAT_WE_DO = [
     description: "Join the people behind the programs. Our committees are how the work gets done and how members find their place.",
     href: "/member/committees",
     label: "Browse committees",
+    image: "/gallery/event1.JPG",
   },
   {
     color: "#2563eb",
@@ -327,6 +429,7 @@ const WHAT_WE_DO = [
     description: "Cultural galas, volunteer drives, town halls, and community gatherings — one authoritative calendar.",
     href: "/events",
     label: "See all events",
+    image: "/gallery/event5.JPG",
   },
   {
     color: "#d97706",
@@ -334,139 +437,193 @@ const WHAT_WE_DO = [
     description: "Every dollar funds programs, scholarships, and outreach. Give once or set up monthly support.",
     href: "/donate",
     label: "Make a gift",
+    image: "/gallery/event6.JPG",
   },
 ] as const;
 
-function WhatWeDoSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
+/* Auto-advance dwell time per tab, in ms. The underline's fill animation
+   duration is derived from this same constant so the two stay in sync. */
+const TAB_DURATION_MS = 5000;
 
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      const cards = containerRef.current?.querySelectorAll(".what-card");
-      if (!cards) return;
-      gsap.fromTo(cards,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1, y: 0,
-          duration: 0.7,
-          ease: "power3.out",
-          stagger: 0.1,
-          scrollTrigger: { trigger: containerRef.current, start: "top 80%" },
-        }
-      );
-    });
-    return () => ctx.revert();
-  }, []);
+/* How long the "push" cover-transition itself takes. Deliberately separate
+   from TAB_DURATION_MS (the auto-advance dwell time) — this only governs how
+   slowly the new card slides down over the old one. */
+const PUSH_DURATION_S = 0.85;
 
+/* One carousel card's visual content (image + legibility overlay + text).
+   Shared by both the static outgoing layer and the animated incoming layer
+   so the two stay pixel-identical. */
+function CarouselCardFace({ item }: { item: (typeof WHAT_WE_DO)[number] }) {
   return (
-    <section className="bg-[#f7f7f5] py-20 px-6 sm:px-10 lg:px-16" aria-labelledby="what-we-do-heading">
-      <div className="max-w-6xl mx-auto">
-        {/* Section intro */}
-        <div className="max-w-md mb-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-3">What we do</p>
-          <h2 id="what-we-do-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0a0a0a] leading-snug">
-            Four pillars. One community.
-          </h2>
-        </div>
+    <>
+      <Image
+        src={item.image}
+        alt={item.title}
+        fill
+        className="object-cover"
+        sizes="(max-width: 1024px) 100vw, 60vw"
+      />
+      {/* Legibility overlay — solid, no gradient */}
+      <div className="absolute inset-0 bg-[#0a0a0a]/55" />
 
-        {/* Cards grid */}
-        <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {WHAT_WE_DO.map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="what-card group bg-white rounded-2xl p-7 flex flex-col gap-5 border border-neutral-200 hover:border-neutral-300 transition-all duration-300 hover:-translate-y-1"
-            >
-              {/* Top accent line */}
-              <div className="h-0.5 w-10 rounded-full" style={{ backgroundColor: item.color }} />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#0a0a0a] mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-neutral-500 leading-relaxed font-normal">
-                  {item.description}
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
-                    style={{ color: item.color }}>
-                {item.label}
-                <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </span>
-            </Link>
-          ))}
-        </div>
+      {/* Text overlay */}
+      <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+        <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">
+          {item.title}
+        </h3>
+        <p className="text-sm sm:text-base text-white/70 leading-relaxed max-w-md mb-5">
+          {item.description}
+        </p>
+        <Link
+          href={item.href}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#059669] transition-colors"
+        >
+          {item.label}
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
-    </section>
+    </>
   );
 }
 
-/* ══════════════════════════════════════════════════════
-   5. IMPACT STRIP — tight single-row stats band · dark bg
-   ══════════════════════════════════════════════════════ */
-function ImpactStrip() {
-  const { events } = useEvents();
-  const stripRef = useRef<HTMLElement>(null);
+function WhatWeDoSection() {
+  const [active, setActive] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true);
 
-  const pastCount = useMemo(() => {
-    const now = new Date();
-    return events.filter(e =>
-      (e.status === "published" || e.status === "completed") &&
-      new Date(e.date) < now
-    ).length;
-  }, [events]);
-
-  // Historical baseline + live count
-  const totalEvents = 40 + pastCount;
-
-  const stats = [
-    { value: totalEvents, suffix: "+",  label: "Events delivered" },
-    { value: 9,           suffix: "",   label: "Annual programs" },
-    { value: 2,           suffix: "mi", label: "Highway adopted" },
-    { value: 5,           suffix: "",   label: "College scholarships" },
-  ];
+  /* PowerPoint-style "Push from top": the incoming card slides straight down
+     over the outgoing one. The outgoing card does NOT animate or fade at
+     all — it just sits there, fully visible, until the incoming card has
+     slid all the way down and physically covers it. `prevIndex` is that
+     static, un-animated bottom layer; it's cleared once the push finishes. */
+  const prevActiveRef = useRef(active);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        stripRef.current?.querySelectorAll(".stat-item") ?? [],
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1, y: 0,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: stripRef.current, start: "top 85%" },
-        }
-      );
-    });
-    return () => ctx.revert();
-  }, []);
+    if (prevActiveRef.current !== active) {
+      setPrevIndex(prevActiveRef.current);
+      prevActiveRef.current = active;
+    }
+  }, [active]);
+
+  /* Auto-advance — stops permanently once the user manually picks a tab. */
+  useEffect(() => {
+    if (!autoPlay) return;
+    const t = setTimeout(() => {
+      setActive((a) => (a + 1) % WHAT_WE_DO.length);
+    }, TAB_DURATION_MS);
+    return () => clearTimeout(t);
+  }, [active, autoPlay]);
+
+  function selectTab(i: number) {
+    setAutoPlay(false);
+    setActive(i);
+  }
+
+  const current = WHAT_WE_DO[active];
+  const previous = prevIndex !== null ? WHAT_WE_DO[prevIndex] : null;
 
   return (
-    <section ref={stripRef} className="bg-[#0a0a0a] py-14 px-6 sm:px-10 lg:px-16" aria-label="Impact statistics">
-      <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-white/10">
-        {stats.map((s) => (
-          <div key={s.label} className="stat-item text-center lg:px-8 first:pl-0 last:pr-0">
-            <div className="text-4xl sm:text-5xl font-bold text-white tracking-tight tabular-nums">
-              <CountUp to={s.value} suffix={s.suffix} />
+    <section
+      className="pt-24 pb-24 px-6 sm:px-10 sm:pt-28 sm:pb-28 lg:px-16 lg:pt-32 lg:pb-32"
+      style={{ background: `linear-gradient(to bottom, ${DEEP_GREEN} 0%, #000000 38%)` }}
+      aria-labelledby="what-we-do-heading"
+    >
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16 lg:items-center">
+          {/* ── Left: intro ── */}
+          <div>
+            <div className="inline-flex items-center gap-3 mb-6">
+              <span className="h-px w-8 bg-white/30" aria-hidden="true" />
+              <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/60">What We Do</span>
+              <span className="h-px w-8 bg-white/30" aria-hidden="true" />
             </div>
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
-              {s.label}
+            <h2 id="what-we-do-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05] tracking-tight">
+              Four pillars.<br />One community.
+            </h2>
+            <p className="mt-6 text-base text-white/50 leading-relaxed max-w-md">
+              Every step, done right. From programs to donations —
+              structured, transparent, and built to serve.
             </p>
           </div>
-        ))}
+
+          {/* ── Right: tab menu + carousel card ── */}
+          <div>
+            {/* Tab menu */}
+            <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-8">
+              {WHAT_WE_DO.map((item, i) => {
+                const isActive = i === active;
+                return (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => selectTab(i)}
+                    className="group flex flex-col gap-3 pb-3 focus-visible:outline-none"
+                  >
+                    <span
+                      className={cn(
+                        "text-sm sm:text-base font-medium transition-colors duration-300",
+                        isActive ? "text-white" : "text-white/40 group-hover:text-white/70"
+                      )}
+                    >
+                      {item.title}
+                    </span>
+                    {/* Underline track + animated fill */}
+                    <span className="relative block h-0.5 w-full min-w-16 rounded-full bg-white/15 overflow-hidden">
+                      {isActive && (
+                        <motion.span
+                          key={autoPlay ? `auto-${active}` : `manual-${active}`}
+                          className="absolute inset-y-0 left-0 rounded-full bg-[#059669]"
+                          initial={{ width: autoPlay ? "0%" : "100%" }}
+                          animate={{ width: "100%" }}
+                          transition={
+                            autoPlay
+                              ? { duration: TAB_DURATION_MS / 1000, ease: "linear" }
+                              : { duration: 0 }
+                          }
+                        />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Carousel card — PowerPoint-style "Push from top": the new
+                card slides straight down and covers the old one, which sits
+                completely still underneath until fully covered. */}
+            <div className="relative mt-8 rounded-[2rem] bg-black/40 p-2 sm:mt-10">
+              <div className="relative aspect-[4/3] sm:aspect-[16/11] overflow-hidden rounded-[1.5rem]">
+                {/* Static bottom layer — the outgoing card, no animation at all */}
+                {previous && (
+                  <div className="absolute inset-0 z-0">
+                    <CarouselCardFace item={previous} />
+                  </div>
+                )}
+
+                {/* Incoming card — pushes down from above, covering the old one */}
+                <motion.div
+                  key={current.title}
+                  initial={{ y: "-100%" }}
+                  animate={{ y: "0%" }}
+                  transition={{ duration: PUSH_DURATION_S, ease: [0.65, 0, 0.35, 1] }}
+                  onAnimationComplete={() => setPrevIndex(null)}
+                  className="absolute inset-0 z-10"
+                >
+                  <CarouselCardFace item={current} />
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   6. EVENT TIMELINE — capped at 4
+   4. EVENT TIMELINE — capped at 4
    ══════════════════════════════════════════════════════ */
 type TItem = {
   id: string; slug: string; title: string; description: string;
@@ -788,14 +945,11 @@ export default function HomePageClient() {
       {/* Hero */}
       <HeroSection />
 
-      {/* ECI Flagship band */}
-      <ECIFlagshipBand />
+      {/* Eko Club International intro + Medical Mission (impact stats folded in) */}
+      <EciIntroSection />
 
       {/* "What We Do" snapshot */}
       <WhatWeDoSection />
-
-      {/* Impact numbers strip */}
-      <ImpactStrip />
 
       {/* Event timeline — condensed to 4 items */}
       <EventTimelineSection />
