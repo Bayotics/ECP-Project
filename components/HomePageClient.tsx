@@ -5,9 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   motion,
+  AnimatePresence,
   useSpring,
   useMotionValue,
   useInView,
+  useReducedMotion,
 } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -35,14 +37,14 @@ const GALLERY = {
   eciLeft:  "/gallery/hero-bgs/lagos-island.jpg",
   eciRight: "/gallery/hero-bgs/eyo-2025.jpg",
   timeline: {
-    volunteer:       "/gallery/event8.JPG",
-    meetup:          "/gallery/event3.JPG",
-    health:          "/gallery/event6.JPG",
-    workshop:        "/gallery/event9.JPG",
-    townHall:        "/gallery/event5.JPG",
-    seminar:         "/gallery/event7.JPG",
-    pressConference: "/gallery/event2.JPG",
-    other:           "/gallery/event1.JPG",
+    volunteer:       "/gallery/eko/eko-1.jpeg",
+    meetup:          "/gallery/eko/eko-2.jpeg",
+    health:          "/gallery/eko/eko-3.jpeg",
+    workshop:        "/gallery/eko/eko-4.jpeg",
+    townHall:        "/gallery/eko/eko-5.jpeg",
+    seminar:         "/gallery/eko/eko-6.jpeg",
+    pressConference: "/gallery/eko/eko-1.jpeg",
+    other:           "/gallery/eko/eko-2.jpeg",
   },
 } as const;
 
@@ -413,7 +415,7 @@ const WHAT_WE_DO = [
     description: "Nine recurring community programs every year — highway cleanups, scholarship nights, medical missions, and more.",
     href: "/programs",
     label: "View programs",
-    image: "/gallery/event4.JPG",
+    image: "/gallery/eko/eko-1.jpeg",
   },
   {
     color: "#dc2626",
@@ -421,7 +423,7 @@ const WHAT_WE_DO = [
     description: "Join the people behind the programs. Our committees are how the work gets done and how members find their place.",
     href: "/member/committees",
     label: "Browse committees",
-    image: "/gallery/event1.JPG",
+    image: "/gallery/eko/eko-2.jpeg",
   },
   {
     color: "#2563eb",
@@ -429,7 +431,7 @@ const WHAT_WE_DO = [
     description: "Cultural galas, volunteer drives, town halls, and community gatherings — one authoritative calendar.",
     href: "/events",
     label: "See all events",
-    image: "/gallery/event5.JPG",
+    image: "/gallery/eko/eko-3.jpeg",
   },
   {
     color: "#d97706",
@@ -437,7 +439,7 @@ const WHAT_WE_DO = [
     description: "Every dollar funds programs, scholarships, and outreach. Give once or set up monthly support.",
     href: "/donate",
     label: "Make a gift",
-    image: "/gallery/event6.JPG",
+    image: "/gallery/eko/eko-4.jpeg",
   },
 ] as const;
 
@@ -463,8 +465,14 @@ function CarouselCardFace({ item }: { item: (typeof WHAT_WE_DO)[number] }) {
         className="object-cover"
         sizes="(max-width: 1024px) 100vw, 60vw"
       />
-      {/* Legibility overlay — solid, no gradient */}
-      <div className="absolute inset-0 bg-[#0a0a0a]/55" />
+
+      {/* Overlay: transparent at the vertical midpoint, pitch black by the
+          bottom edge — the text and CTA below sit inside it. */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, transparent 50%, #000000 100%)" }}
+        aria-hidden="true"
+      />
 
       {/* Text overlay */}
       <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
@@ -496,16 +504,22 @@ function WhatWeDoSection() {
      over the outgoing one. The outgoing card does NOT animate or fade at
      all — it just sits there, fully visible, until the incoming card has
      slid all the way down and physically covers it. `prevIndex` is that
-     static, un-animated bottom layer; it's cleared once the push finishes. */
-  const prevActiveRef = useRef(active);
-  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+     static, un-animated bottom layer; it's cleared once the push finishes.
 
-  useEffect(() => {
-    if (prevActiveRef.current !== active) {
-      setPrevIndex(prevActiveRef.current);
-      prevActiveRef.current = active;
-    }
-  }, [active]);
+     This is deliberately set during render (React's sanctioned pattern for
+     "adjusting state when a value changes"), NOT inside a useEffect. An
+     effect only runs after the browser has already painted the new `active`
+     value, and the incoming card's `key` changes the instant `active` does
+     — so for one painted frame the outgoing card would already be unmounted
+     while `prevIndex` was still unset behind it, showing a blink of empty
+     background. Setting it synchronously during render lets React redo the
+     render before anything paints, so that frame never happens. */
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [lastActive, setLastActive] = useState(active);
+  if (active !== lastActive) {
+    setPrevIndex(lastActive);
+    setLastActive(active);
+  }
 
   /* Auto-advance — stops permanently once the user manually picks a tab. */
   useEffect(() => {
@@ -593,7 +607,7 @@ function WhatWeDoSection() {
             {/* Carousel card — PowerPoint-style "Push from top": the new
                 card slides straight down and covers the old one, which sits
                 completely still underneath until fully covered. */}
-            <div className="relative mt-8 rounded-[2rem] bg-black/40 p-2 sm:mt-10">
+            <div className="relative mt-8 rounded-[2rem] border-2 border-green-200 bg-black/40 p-2 sm:mt-10">
               <div className="relative aspect-[4/3] sm:aspect-[16/11] overflow-hidden rounded-[1.5rem]">
                 {/* Static bottom layer — the outgoing card, no animation at all */}
                 {previous && (
@@ -631,6 +645,13 @@ type TItem = {
   organizerName: string; tags: string[]; imageUrl?: string; isOnline: boolean;
 };
 
+/* Module-level (not component-instance-level) cache of the first non-empty
+   `events` list this page load ever sees. See the long comment inside
+   EventTimelineSection for why this exists and why a component-scoped ref
+   wasn't enough. Module scope survives even a full remount of the
+   component, unlike a ref or state living inside it. */
+let cachedTimelineEvents: AppEvent[] | null = null;
+
 const FALLBACK_EVENTS: TItem[] = [
   { id: "ev-001", slug: "adopt-a-highway-2026", title: "Adopt-a-Highway Cleanup",
     description: "Members trade weekends for work gloves and clear litter along our adopted stretch of highway — the most visible act of pride in the place we call home.",
@@ -666,66 +687,377 @@ const T_STYLES: Record<AppEvent["type"], { label: string; color: string; img: st
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" });
 
-function TimelineCard({ item, now }: { item: TItem; now: number }) {
-  const meta = T_STYLES[item.type] ?? T_STYLES.other;
-  const d = new Date(item.date);
-  const upcoming = d.getTime() >= now && item.status !== "completed";
+/* Event-timeline accordion auto-advance interval. */
+const AUTO_ADVANCE_MS = 10000;
 
+function ArrowIcon({ className }: { className?: string }) {
   return (
-    <Link
-      href={`/events/${item.slug}`}
-      className="timeline-card group h-full bg-white border border-l-2 border-neutral-200 rounded-2xl p-7 flex flex-col gap-4 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]"
-      style={{ borderLeftColor: meta.color }}
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function StarIcon({ className, color }: { className?: string; color: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill={color} aria-hidden="true">
+      <path d="M10 1.5l2.59 5.25 5.79.84-4.19 4.08.99 5.77L10 14.7l-5.18 2.74.99-5.77-4.19-4.08 5.79-.84z" />
+    </svg>
+  );
+}
+
+/* Ring geometry for PlusMinusIndicator's countdown sweep — box is 32px
+   (h-8 w-8), 1px stroke centered on the edge to match the plain border used
+   on inactive items. Keep RING_CIRCUMFERENCE's literal copy in
+   app/globals.css (`clockwipe-dash` keyframes) in sync if this changes. */
+const RING_SIZE = 32;
+const RING_STROKE = 1;
+const RING_RADIUS = RING_SIZE / 2 - RING_STROKE / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+/* Plus that morphs into a minus: the vertical stroke scales away on activation,
+   leaving just the horizontal one. Small, thin-bordered circle — no giant icon.
+   While active, the border starts gray and sweeps to solid black clockwise
+   over AUTO_ADVANCE_MS (must match that constant), drawn via an SVG ring
+   animating stroke-dashoffset — the standard, broadly-supported technique
+   for a circular countdown (a conic-gradient + @property custom-property
+   version was tried first and turned out not to animate reliably across
+   browsers). Inactive items keep the plain solid-black border. */
+function PlusMinusIndicator({ active }: { active: boolean }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <span
+      className={cn(
+        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+        active ? "" : "border border-[#0a0a0a]"
+      )}
+      aria-hidden="true"
     >
-      {/* Type + status row */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: meta.color }}>
-          {meta.label}
+      {active && (
+        <svg className="absolute inset-0 -rotate-90" viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
+          <circle
+            cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
+            fill="none" stroke="#d4d4d4" strokeWidth={RING_STROKE}
+          />
+          <circle
+            cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS}
+            fill="none" stroke="#0a0a0a" strokeWidth={RING_STROKE}
+            strokeDasharray={RING_CIRCUMFERENCE}
+            strokeDashoffset={reduceMotion ? 0 : RING_CIRCUMFERENCE}
+            className={reduceMotion ? "" : "[animation:clockwipe-dash_10s_linear_forwards]"}
+          />
+        </svg>
+      )}
+      <span className="absolute h-px w-3 bg-[#0a0a0a]" />
+      <motion.span
+        className="absolute h-3 w-px bg-[#0a0a0a]"
+        animate={{ scaleY: active ? 0 : 1 }}
+        transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.65, 0, 0.35, 1] }}
+      />
+    </span>
+  );
+}
+
+/* One row of the left accordion. The expand region (description, date,
+   location, CTA) is shared by mobile + desktop; the event photo inside it
+   is mobile-only, since desktop shows the photo in the visual panel instead. */
+function EventAccordionItem({
+  item, isActive, onSelect, buttonId, panelId,
+}: {
+  item: TItem;
+  isActive: boolean;
+  onSelect: () => void;
+  buttonId: string;
+  panelId: string;
+}) {
+  const meta = T_STYLES[item.type] ?? T_STYLES.other;
+  const reduceMotion = useReducedMotion();
+
+  /* max-height transition to a generous fixed cap, derived directly from
+     `isActive` at render time — deliberately NOT the grid-template-rows
+     0fr/1fr trick (this environment's browser engine doesn't animate `fr`
+     interpolation on an intrinsic-sized track — it jumps straight to full
+     content size), NOT Framer Motion's AnimatePresence exit (its exit
+     animations on this page reliably started but never resolved, leaving
+     every previously active item stuck open), and NOT a ref-measured
+     scrollHeight held in its own `useState` (that extra state layer could
+     itself fall a render behind `isActive` and briefly show the wrong
+     item expanded). A value computed fresh from a prop every render can't
+     desync from that prop. The one tradeoff: the transition timing is
+     calibrated for the cap, not the actual content height, so shorter
+     panels finish growing a little before the full transition duration
+     elapses — an acceptable easing quirk for guaranteed correctness. */
+  return (
+    <div
+      className={cn(
+        "rounded-2xl bg-white px-6 transition-shadow duration-300 sm:px-7",
+        isActive ? "shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : ""
+      )}
+    >
+      <button
+        id={buttonId}
+        type="button"
+        onClick={onSelect}
+        aria-expanded={isActive}
+        aria-controls={panelId}
+        className="group flex w-full items-center justify-between gap-6 py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669] focus-visible:ring-inset sm:py-7"
+      >
+        <span className="min-w-0">
+          <span className="block text-lg sm:text-xl font-semibold leading-snug text-[#0a0a0a]">
+            {item.title}
+          </span>
         </span>
-        <span
-          className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+        <PlusMinusIndicator active={isActive} />
+      </button>
+
+      <div
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
+        className="overflow-hidden transition-[max-height] ease-[cubic-bezier(0.65,0,0.35,1)]"
+        style={{ maxHeight: isActive ? 480 : 0, transitionDuration: reduceMotion ? "0s" : "0.4s" }}
+      >
+        <div
+          className="pb-7 transition-opacity ease-[cubic-bezier(0.65,0,0.35,1)]"
           style={{
-            backgroundColor: upcoming ? "rgba(5,150,105,0.1)" : "#f5f5f5",
-            color: upcoming ? "#047857" : "#737373",
+            opacity: isActive ? 1 : 0,
+            transitionDuration: reduceMotion ? "0s" : "0.3s",
           }}
         >
-          {upcoming ? "Upcoming" : "Past"}
-        </span>
+          <div className="flex flex-wrap items-start gap-x-5 gap-y-4">
+            {/* Thumbnail — also the mobile route to the full event page,
+                since the desktop visual panel (which carries the "View
+                details" CTA) is hidden on mobile. */}
+            <Link
+              href={`/events/${item.slug}`}
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg"
+            >
+              <Image
+                src={item.imageUrl ?? meta.img}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
+            </Link>
+            <div className="min-w-[10rem]">
+              <p className="text-sm font-semibold text-[#0a0a0a]">{meta.label}</p>
+              <div className="mt-1.5 flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <StarIcon key={i} className="h-3.5 w-3.5" color={meta.color} />
+                ))}
+              </div>
+            </div>
+            <p className="max-w-sm flex-1 text-sm leading-relaxed text-neutral-600">
+              {item.description}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Title that reveals one character at a time — each letter its own span,
+   staggered via transition-delay off the shared `visible` flag (the same
+   flag driving the rest of the panel's crossfade), so it replays cleanly on
+   every item change, manual or auto-advance, without needing a library.
+   Words are grouped in their own inline-block wrapper so line-wrapping
+   still breaks between words, not mid-word. Screen readers get the plain
+   text via aria-label; the animated spans are hidden from them since
+   splitting a string into single-character nodes reads badly aloud. */
+function AnimatedTitle({
+  text, visible, reduceMotion, className,
+}: {
+  text: string; visible: boolean; reduceMotion: boolean; className: string;
+}) {
+  const words = text.split(" ");
+  let charIndex = -1;
+  return (
+    <h3 className={className} aria-label={text}>
+      <span aria-hidden="true">
+        {words.map((word, wi) => (
+          <span key={wi} className="inline-block">
+            {word.split("").map((char, ci) => {
+              charIndex++;
+              const delay = charIndex * 18;
+              return (
+                <span
+                  key={ci}
+                  className="inline-block transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? "translateY(0)" : "translateY(14px)",
+                    transitionDuration: reduceMotion ? "0ms" : "420ms",
+                    transitionDelay: reduceMotion ? "0ms" : `${delay}ms`,
+                  }}
+                >
+                  {char}
+                </span>
+              );
+            })}
+            {wi < words.length - 1 ? " " : ""}
+          </span>
+        ))}
+      </span>
+    </h3>
+  );
+}
+
+/* Right-hand visual panel — desktop only. Background stays a constant brand
+   green regardless of which event is active (per-event colour lives only in
+   the small accent details, not the whole panel); the photo underneath is
+   tinted with a solid overlay, no gradients. */
+function EventVisualPanel({ item }: { item: TItem }) {
+  const reduceMotion = useReducedMotion();
+
+  /* Plain CSS opacity cross-fade, driven by React state rather than Framer
+     Motion's AnimatePresence exit/enter lifecycle. On this page, Framer
+     Motion exit animations were observed (via computed-style inspection in
+     a clean production build) to reliably start but never resolve, leaving
+     content permanently stuck at its initial/exit values — invisible text,
+     accordion panels that never collapsed. A CSS transition has no
+     "did it complete" callback to get stuck waiting on: the browser drives
+     it directly, so the new item is guaranteed to reach full opacity. */
+  const [displayItem, setDisplayItem] = useState(item);
+  const [visible, setVisible] = useState(true);
+  const fadeMs = reduceMotion ? 0 : 700;
+
+  useEffect(() => {
+    if (item.id === displayItem.id) return;
+    setVisible(false);
+    const t = setTimeout(() => {
+      setDisplayItem(item);
+      setVisible(true);
+    }, fadeMs);
+    return () => clearTimeout(t);
+  }, [item, displayItem.id, fadeMs]);
+
+  const meta = T_STYLES[displayItem.type] ?? T_STYLES.other;
+
+  return (
+    <div
+      className="relative hidden overflow-hidden rounded-[28px] lg:block"
+      style={{ backgroundColor: EKO_GREEN, minHeight: 560 }}
+    >
+      <div
+        className="absolute inset-0 transition-opacity ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{ opacity: visible ? 1 : 0, transitionDuration: `${fadeMs}ms` }}
+      >
+        <Image
+          src={displayItem.imageUrl ?? meta.img}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="50vw"
+        />
       </div>
 
-      {/* Title */}
-      <h3 className="text-lg font-semibold text-[#0a0a0a] leading-snug transition-colors group-hover:text-[#059669]">
-        {item.title}
-      </h3>
+      {/* Overlay: transparent at the vertical midpoint, pitch black by the
+          bottom edge — every text element and button sits inside it. */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, transparent 50%, #000000 100%)" }}
+        aria-hidden="true"
+      />
 
-      {/* Date / location */}
-      <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">
-        {dateFmt.format(d)} · {item.isOnline ? "Online" : item.location}
-      </p>
+      <div
+        className="relative z-10 flex h-full flex-col justify-end gap-4 p-8 sm:p-10 lg:p-12"
+        style={{ minHeight: 560 }}
+      >
+        {/* Title block. The heading animates itself, letter by letter (see
+            AnimatedTitle) — it deliberately has no transform of its own
+            here, since layering a block-level slide on top of a
+            per-character reveal would fight the same motion twice. The
+            label and description get a simple fade, timed so the sequence
+            reads label → title (revealing) → description. */}
+        <div>
+          <span
+            className="inline-flex items-center gap-2 transition-opacity ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ opacity: visible ? 1 : 0, transitionDuration: `${fadeMs}ms` }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">{meta.label}</span>
+          </span>
+          <AnimatedTitle
+            text={displayItem.title}
+            visible={visible}
+            reduceMotion={!!reduceMotion}
+            className="mt-4 max-w-md text-2xl font-bold leading-tight text-white sm:text-3xl"
+          />
+          <p
+            className="mt-4 max-w-sm text-sm leading-relaxed text-white/80 sm:text-base transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateY(0)" : "translateY(10px)",
+              transitionDuration: `${fadeMs}ms`,
+              transitionDelay: visible && !reduceMotion ? "550ms" : "0ms",
+            }}
+          >
+            {displayItem.description}
+          </p>
+        </div>
 
-      {/* Body */}
-      <p className="text-sm text-neutral-600 leading-relaxed font-normal">
-        {item.description}
-      </p>
-
-      {/* Footer link */}
-      <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-[#059669]">
-        View details
-        <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </span>
-    </Link>
+        {/* Metadata + CTA block — enters sliding up from the bottom,
+            slightly after the title so the two feel sequenced rather than
+            simultaneous. */}
+        <div
+          className="flex flex-wrap items-center gap-2 transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)]"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(32px)",
+            transitionDuration: `${fadeMs}ms`,
+            transitionDelay: visible && !reduceMotion ? "150ms" : "0ms",
+          }}
+        >
+          <span className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-medium text-white/90">
+            {dateFmt.format(new Date(displayItem.date))}
+          </span>
+          <span className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-medium text-white/90">
+            {displayItem.isOnline ? "Online" : displayItem.location}
+          </span>
+          <Link
+            href={`/events/${displayItem.slug}`}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[11px] font-semibold transition-transform hover:scale-[1.03]"
+            style={{ color: EKO_GREEN }}
+          >
+            View details
+            <ArrowIcon className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function EventTimelineSection() {
   const { events } = useEvents();
-  const [now] = useState(() => Date.now());
+
+  /* `events` from the context genuinely oscillates between two DIFFERENT
+     non-empty datasets across renders on a single, static page load with no
+     user interaction (confirmed with console diagnostics printed inside
+     both this component and the child consuming its output — parent and
+     child always agreed with each other on every render, so this is not a
+     prop-passing or rendering bug; the raw context value itself is
+     unstable). Re-adopting "the latest non-empty value" doesn't help, since
+     both alternating datasets are non-empty — it just mirrors the
+     oscillation one render late. Instead we lock onto the FIRST non-empty
+     dataset we ever see and never update again, which is the right
+     trade-off for a homepage showcase section that doesn't need to react
+     live to further changes. This is a defensive stabilization in this
+     component only — the upstream oscillation itself lives in
+     EventsContext, which is out of scope here and worth its own
+     investigation. */
+  if (cachedTimelineEvents === null && events.length > 0) {
+    cachedTimelineEvents = events;
+  }
+  const effectiveEvents = cachedTimelineEvents ?? events;
+
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const items = useMemo(() => {
-    const src = events.length > 0
-      ? events.filter(e => e.status !== "draft" && e.isPublic).map(e => ({
+    const src = effectiveEvents.length > 0
+      ? effectiveEvents.filter(e => e.status !== "draft" && e.isPublic).map(e => ({
           id: e.id, slug: e.slug, title: e.title,
           description: e.shortDescription ?? e.description,
           date: e.date, location: e.location, type: e.type, status: e.status,
@@ -733,43 +1065,61 @@ function EventTimelineSection() {
         }))
       : FALLBACK_EVENTS;
     return [...src].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
-  }, [events]);
+  }, [effectiveEvents]);
+
+  const safeIndex = Math.min(activeIndex, Math.max(items.length - 1, 0));
+  const activeItem = items[safeIndex];
+
+  /* Auto-advance, infinitely — restarts on every change of safeIndex,
+     whether that change came from this timer or from a manual click, so
+     the countdown always tracks "time left on whichever item is active
+     right now." Runs forever; unlike the What-We-Do carousel, manual
+     interaction does not disable it. */
+  const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    if (reduceMotion || items.length <= 1) return;
+    const t = setTimeout(() => {
+      setActiveIndex(safeIndex + 1 >= items.length ? 0 : safeIndex + 1);
+    }, AUTO_ADVANCE_MS);
+    return () => clearTimeout(t);
+  }, [safeIndex, items.length, reduceMotion]);
 
   return (
-    <section className="bg-[#f7f7f5] py-24 px-6 sm:px-10 lg:px-16" aria-labelledby="timeline-heading">
-      <div className="max-w-6xl mx-auto">
+    <section className="bg-[#f7f7f5] py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="timeline-heading">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="max-w-2xl mb-14">
+        <div className="max-w-2xl mb-16">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-3">Event timeline</p>
-          <h2 id="timeline-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0a0a0a] leading-snug">
+          <h2 id="timeline-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#0a0a0a] leading-[1.08]">
             A Living Archive of Our Signature{" "}
-            <span style={{ color: "#059669" }}>Gatherings</span>
+            <span style={{ color: EKO_GREEN }}>Gatherings</span>
           </h2>
         </div>
 
-        {/* Responsive grid — all four events visible, no page overflow */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {items.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <TimelineCard item={item} now={now} />
-            </motion.div>
-          ))}
+        {/* Split accordion + visual panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:items-stretch lg:gap-5">
+          <div className="flex flex-col gap-3">
+            {items.map((item, i) => (
+              <EventAccordionItem
+                key={item.id}
+                item={item}
+                isActive={i === safeIndex}
+                buttonId={`timeline-tab-${item.id}`}
+                panelId={`timeline-panel-${item.id}`}
+                onSelect={() => setActiveIndex(i)}
+              />
+            ))}
+          </div>
+
+          {activeItem && <EventVisualPanel item={activeItem} />}
         </div>
 
         <Link
           href="/events"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:underline mt-8"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:underline mt-10"
         >
           View full calendar
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <ArrowIcon className="w-3.5 h-3.5" />
         </Link>
       </div>
     </section>

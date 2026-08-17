@@ -201,3 +201,15 @@ body {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+
+/* Clockwise "clock wipe" ring — used by the event-timeline accordion's
+   active +/- indicator to show time remaining until auto-advance. Driven
+   by SVG stroke-dashoffset rather than a conic-gradient + @property custom
+   property (that approach turned out to be unreliable across browsers —
+   this is the standard, broadly-supported technique for a circular
+   countdown). 97.39 = circumference of the r=15.5 circle used in
+   PlusMinusIndicator (2 * PI * 15.5); keep in sync if that radius changes. */
+@keyframes clockwipe-dash {
+  from { stroke-dashoffset: 97.39; }
+  to   { stroke-dashoffset: 0; }
+}
