@@ -116,94 +116,79 @@ function NewsletterForm() {
     }
   };
 
+  if (status === "success") {
+    return (
+      <div role="status" className="flex items-center gap-2 text-sm font-medium text-white">
+        <span className="text-(--color-green-400)" aria-hidden="true">✓</span>
+        You&apos;re subscribed — thank you!
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h3 className="text-sm font-semibold uppercase tracking-widest text-(--color-neutral-300) mb-3">
-        Newsletter
-      </h3>
-      <p className="text-sm text-(--color-neutral-400) leading-relaxed mb-3">
-        Cultural events, news, and Lagos development updates — straight to
-        your inbox.
-      </p>
-
-      {status === "success" ? (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl bg-(--color-green-900) border border-(--color-green-700) px-4 py-3"
-        >
-          <span className="text-(--color-green-400)" aria-hidden="true">✓</span>
-          <span className="text-sm text-(--color-green-300) font-medium">
-            You&apos;re subscribed — thank you!
-          </span>
+    <form onSubmit={handleSubmit} noValidate aria-label="Newsletter signup form" className="w-full max-w-md">
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label htmlFor={inputId} className="sr-only">
+            Email address
+          </label>
+          <input
+            id={inputId}
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (status === "error" || status === "duplicate") setStatus("idle");
+            }}
+            placeholder="Your email address"
+            autoComplete="email"
+            required
+            aria-describedby={
+              status === "error"
+                ? `${inputId}-error`
+                : status === "duplicate"
+                ? `${inputId}-dup`
+                : undefined
+            }
+            aria-invalid={status === "error" || status === "duplicate"}
+            className={cn(
+              "w-full rounded-full bg-white/10 border px-5 py-3 text-sm text-white placeholder-white/40 outline-none transition-colors",
+              "focus:ring-2 focus:ring-white/30 focus:border-white/30",
+              status === "error" || status === "duplicate" ? "border-red-500" : "border-white/15"
+            )}
+          />
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} noValidate aria-label="Newsletter signup form">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label htmlFor={inputId} className="sr-only">
-                Email address
-              </label>
-              <input
-                id={inputId}
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (status === "error" || status === "duplicate") setStatus("idle");
-                }}
-                placeholder="your@email.com"
-                autoComplete="email"
-                required
-                aria-describedby={
-                  status === "error"
-                    ? `${inputId}-error`
-                    : status === "duplicate"
-                    ? `${inputId}-dup`
-                    : undefined
-                }
-                aria-invalid={status === "error" || status === "duplicate"}
-                className={cn(
-                  "w-full rounded-lg bg-(--color-neutral-800) border px-3 py-2.5 text-sm text-white placeholder-(--color-neutral-500) outline-none transition",
-                  "focus:ring-2 focus:ring-(--color-green-500) focus:border-(--color-green-500)",
-                  status === "error" || status === "duplicate"
-                    ? "border-red-500"
-                    : "border-(--color-neutral-700)"
-                )}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={cn(
-                "flex-shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all",
-                "bg-(--color-green-500) hover:bg-(--color-green-600) disabled:opacity-60 disabled:cursor-not-allowed",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-green-400)"
-              )}
-            >
-              {loading ? (
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-label="Loading">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-              ) : (
-                "Subscribe"
-              )}
-            </button>
-          </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className={cn(
+            "flex-shrink-0 rounded-full px-6 py-3 text-sm font-semibold text-[#0a0a0a] transition-colors",
+            "bg-white hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          )}
+        >
+          {loading ? (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-label="Loading">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            "Subscribe"
+          )}
+        </button>
+      </div>
 
-          {status === "error" && (
-            <p id={`${inputId}-error`} role="alert" className="mt-1.5 text-xs text-red-400">
-              Please enter a valid email address.
-            </p>
-          )}
-          {status === "duplicate" && (
-            <p id={`${inputId}-dup`} role="alert" className="mt-1.5 text-xs text-(--color-gold-400)">
-              This email is already subscribed.
-            </p>
-          )}
-        </form>
+      {status === "error" && (
+        <p id={`${inputId}-error`} role="alert" className="mt-2 text-xs text-red-400">
+          Please enter a valid email address.
+        </p>
       )}
-    </div>
+      {status === "duplicate" && (
+        <p id={`${inputId}-dup`} role="alert" className="mt-2 text-xs text-(--color-gold-400)">
+          This email is already subscribed.
+        </p>
+      )}
+    </form>
   );
 }
 
@@ -218,10 +203,10 @@ function FooterLink({ href, label }: { href: string; label: string }) {
         aria-current={isActive ? "page" : undefined}
         className={cn(
           "text-sm leading-relaxed transition-colors",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-green-500) rounded",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded",
           isActive
             ? "text-(--color-green-400) font-medium"
-            : "text-(--color-neutral-400) hover:text-white"
+            : "text-white/50 hover:text-white"
         )}
       >
         {label}
@@ -232,129 +217,71 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
 /* ─── Footer ────────────────────────────────────────── */
 export default function Footer() {
-  return (
-    <footer
-      style={{ background: "var(--color-green-950, #021503)" }}
-      className="text-white"
-    >
-      {/* ── Donate banner ─────────────────────────── */}
-      <div
-        className="border-b border-white/10"
-        style={{ background: "var(--color-green-900)" }}
-      >
-        <div className="container-app py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-(--color-green-100) text-center sm:text-left">
-            <span className="font-bold text-white">Support our community.</span>{" "}
-            Your donation helps us serve our members and advance Lagos State.
-          </p>
-          <Link
-            href="/donate"
-            className={cn(
-              "flex-shrink-0 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold",
-              "bg-(--color-gold-500) hover:bg-(--color-gold-400) text-white transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-gold-300) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-green-900)"
-            )}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            Donate Now
-          </Link>
-        </div>
-      </div>
+  const year = new Date().getFullYear();
 
-      {/* ── Main footer grid ──────────────────────── */}
-      <div className="container-app py-14">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+  return (
+    <footer className="bg-[#0a0a0a] text-white">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
+
+        {/* ── Newsletter invite ─────────────────────── */}
+        <div className="flex flex-col gap-8 border-b border-white/10 py-16 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-lg">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Stay connected</p>
+            <h2 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+              Event updates and chapter news, straight to your inbox.
+            </h2>
+          </div>
+          <NewsletterForm />
+        </div>
+
+        {/* ── Brand + link columns ──────────────────── */}
+        <div className="grid grid-cols-1 gap-12 py-16 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Brand column */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Logo */}
+          <div className="space-y-6">
             <Link
               href="/"
-              className="group inline-flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-green-400) rounded-lg"
+              className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Eko Club Philadelphia homepage"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-(--color-green-700) font-bold text-xs ring-2 ring-white/20 group-hover:ring-white/40 transition">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0a0a0a] font-bold text-xs">
                 ECP
               </span>
               <span className="flex flex-col leading-tight">
                 <span className="font-bold text-white text-base">Eko Club Philadelphia</span>
-                <span className="text-xs text-(--color-green-400)">Eko Club International</span>
+                <span className="text-xs text-white/40">Eko Club International</span>
               </span>
             </Link>
 
-            {/* Mission */}
-            <p className="text-sm text-(--color-neutral-400) leading-relaxed max-w-xs">
-              We bring together Lagosians in the Philadelphia diaspora through
+            <p className="text-sm text-white/50 leading-relaxed max-w-xs">
+              Bringing together Lagosians in the Philadelphia diaspora through
               cultural celebrations, social welfare projects, and community
               activities that keep the Eko spirit alive.
             </p>
 
-            {/* Contact info */}
-            <address className="not-italic space-y-2">
-              <a
-                href="tel:+2348001234567"
-                className="flex items-center gap-2 text-sm text-(--color-neutral-400) hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-green-500) rounded"
-                aria-label="Call us at +1 (215) 000 1234"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 text-(--color-green-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                +1 (215) 000 1234
-              </a>
-              <a
-                href="mailto:info@ekoclubphiladelphia.org"
-                className="flex items-center gap-2 text-sm text-(--color-neutral-400) hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-green-500) rounded"
-                aria-label="Email us at info@ekoclubphiladelphia.org"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 text-(--color-green-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                info@ekoclubphiladelphia.org
-              </a>
-              <p className="flex items-start gap-2 text-sm text-(--color-neutral-400)">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 mt-0.5 text-(--color-green-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Philadelphia, PA,<br />United States</span>
-              </p>
-            </address>
-
-            {/* Social links */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-(--color-neutral-500) mb-3">
-                Follow us
-              </p>
-              <div className="flex items-center gap-2" role="list" aria-label="Social media links">
-                {SOCIAL_LINKS.map(({ label, href, icon }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    role="listitem"
-                    aria-label={label}
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-lg",
-                      "text-(--color-neutral-400) bg-(--color-neutral-800) hover:text-white hover:bg-(--color-green-700)",
-                      "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-green-400)"
-                    )}
-                  >
-                    {icon}
-                  </a>
-                ))}
-              </div>
+            <div className="flex items-center gap-5" role="list" aria-label="Social media links">
+              {SOCIAL_LINKS.map(({ label, href, icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  role="listitem"
+                  aria-label={label}
+                  className="text-white/40 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded"
+                >
+                  {icon}
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-(--color-neutral-300) mb-4">
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
               Quick Links
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {QUICK_LINKS.map((link) => (
                 <FooterLink key={link.href} {...link} />
               ))}
@@ -363,62 +290,65 @@ export default function Footer() {
 
           {/* Community */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-(--color-neutral-300) mb-4">
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
               Community
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {COMMUNITY_LINKS.map((link) => (
                 <FooterLink key={link.href} {...link} />
               ))}
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <NewsletterForm />
+          {/* Contact */}
+          <div>
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
+              Contact
+            </h3>
+            <address className="not-italic space-y-3 text-sm text-white/50">
+              <a
+                href="tel:+2348001234567"
+                className="block hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded"
+                aria-label="Call us at +1 (215) 000 1234"
+              >
+                +1 (215) 000 1234
+              </a>
+              <a
+                href="mailto:info@ekoclubphiladelphia.org"
+                className="block hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded"
+                aria-label="Email us at info@ekoclubphiladelphia.org"
+              >
+                info@ekoclubphiladelphia.org
+              </a>
+              <p>Philadelphia, PA,<br />United States</p>
+            </address>
           </div>
         </div>
 
-        {/* ── Secondary donate CTA ──────────────────── */}
-        <div className="border-t border-white/10 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/30">
-            © {new Date().getFullYear()} Eko Club Philadelphia ·
-            A chapter of Eko Club International
+        {/* ── Bottom bar ─────────────────────────────── */}
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-8 sm:flex-row">
+          <p className="text-xs text-white/30 text-center sm:text-left">
+            &copy; {year} Eko Club Philadelphia. All rights reserved. A chapter of Eko Club International.
           </p>
-          <Link
-            href="/donate"
-            className="text-xs font-semibold text-[#059669] hover:underline"
-          >
-            Support our programs →
-          </Link>
-        </div>
-      </div>
-
-      {/* ── Bottom bar ────────────────────────────── */}
-      <div className="border-t border-white/10">
-        <div className="container-app py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Copyright */}
-          <p className="text-xs text-(--color-neutral-500) text-center sm:text-left">
-            &copy; {new Date().getFullYear()} Eko Club Philadelphia. All rights reserved.{" "}
-            <span aria-hidden="true">·</span> Made with{" "}
-            <span className="text-(--color-green-500)" aria-label="love">♥</span>{" "}
-            in Philadelphia, PA.
-          </p>
-
-          {/* Legal links */}
-          <nav aria-label="Legal links" className="flex items-center gap-4 flex-wrap justify-center">
+          <nav aria-label="Legal links" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             {LEGAL_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  "text-xs text-(--color-neutral-500) hover:text-white transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-green-500) rounded"
+                  "text-xs text-white/40 hover:text-white transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded"
                 )}
               >
                 {label}
               </Link>
             ))}
+            <Link
+              href="/donate"
+              className="text-xs font-semibold text-(--color-green-400) hover:underline"
+            >
+              Donate →
+            </Link>
           </nav>
         </div>
       </div>

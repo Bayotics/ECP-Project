@@ -1127,159 +1127,61 @@ function EventTimelineSection() {
 }
 
 /* ══════════════════════════════════════════════════════
-   7. NEWSLETTER / COMMUNITY JOIN — two-column: newsletter + membership
+   7. MEMBERSHIP CTA — single full-bleed banner. Previously this section
+   duplicated the footer: an email-capture form on the left (the footer
+   already has one) and a membership pitch on the right. Collapsed to one
+   clear ask, matching the reference banner — photo background, headline,
+   one pill CTA.
    ══════════════════════════════════════════════════════ */
-function NewsletterSignup() {
-  const [firstName, setFirstName] = useState("");
-  const [email, setEmail]         = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError]         = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const leftRef  = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
+function MembershipCtaSection() {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.fromTo(leftRef.current,
-        { opacity: 0, x: -32 },
-        { opacity: 1, x: 0, duration: 0.75, ease: "power3.out",
-          scrollTrigger: { trigger: leftRef.current, start: "top 82%" } });
-      gsap.fromTo(rightRef.current,
-        { opacity: 0, x: 32 },
-        { opacity: 1, x: 0, duration: 0.75, ease: "power3.out", delay: 0.1,
-          scrollTrigger: { trigger: rightRef.current, start: "top 82%" } });
+      gsap.fromTo(ref.current,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: ref.current, start: "top 85%" } });
     });
     return () => ctx.revert();
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!firstName.trim() || !trimmedEmail) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError(true); return; }
-    setSubmitting(true);
-    setError(false);
-    try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, name: firstName.trim(), source: "website" }),
-      });
-      // 409 = already subscribed; treat as success from the visitor's point of view.
-      if (res.ok || res.status === 409) {
-        setSubmitted(true);
-      } else {
-        setError(true);
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <section className="bg-white border-t border-neutral-150 py-24 px-6 sm:px-10 lg:px-16"
-      aria-label="Join the community or become a member">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x lg:divide-neutral-150">
+    <section className="bg-white py-24 px-6 sm:px-10 lg:px-16" aria-label="Become a member">
+      <div
+        ref={ref}
+        className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px]"
+        style={{
+          backgroundImage: `url(${GALLERY.eciRight})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          /* Explicitly "scroll" (not "fixed") — the photo moves with the
+             page like normal content, no parallax pin. */
+          backgroundAttachment: "scroll",
+          minHeight: 340,
+        }}
+      >
+        {/* Legibility overlay: solid on the left where the text sits,
+            fading to transparent on the right so the photo still reads. */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to right, rgba(10,10,10,0.75) 0%, rgba(10,10,10,0.45) 42%, transparent 75%)" }}
+          aria-hidden="true"
+        />
 
-        {/* LEFT — Join the community (email list) */}
-        <div ref={leftRef} className="pr-0 lg:pr-16 pb-16 lg:pb-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-4">Free · Instant</p>
-          <h2 className="text-3xl font-bold tracking-tight text-[#0a0a0a] leading-snug mb-3">
-            Join the community
+        <div className="relative z-10 flex min-h-[340px] flex-col justify-center gap-6 p-8 sm:p-12 lg:p-16">
+          <h2 className="max-w-md text-3xl font-bold leading-tight text-white sm:text-4xl">
+            Ready to be part of the mission?
           </h2>
-          <p className="text-sm text-neutral-500 leading-relaxed mb-8 max-w-sm">
-            Get our newsletter with event announcements, program updates, and
-            chapter news. Unsubscribe anytime.
-          </p>
-
-          {submitted ? (
-            <div className="bg-[#f0fdf4] border border-[#059669]/20 rounded-xl px-5 py-4">
-              <p className="text-sm font-medium text-[#059669]">
-                You're in — check your inbox for a confirmation.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-sm" noValidate>
-              <input
-                type="text"
-                value={firstName}
-                onChange={e => setFirstName(e.target.value)}
-                placeholder="First name"
-                required
-                disabled={submitting}
-                className="w-full px-4 py-3 text-sm text-neutral-800 bg-[#f7f7f5] border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#059669]/30 focus:border-[#059669] transition-colors disabled:opacity-60"
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Email address"
-                required
-                disabled={submitting}
-                className="w-full px-4 py-3 text-sm text-neutral-800 bg-[#f7f7f5] border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#059669]/30 focus:border-[#059669] transition-colors disabled:opacity-60"
-              />
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3 bg-[#059669] text-white text-sm font-semibold rounded-xl hover:bg-[#047857] transition-colors disabled:opacity-60"
-              >
-                {submitting ? "Subscribing…" : "Subscribe to updates"}
-              </button>
-              {error ? (
-                <p className="text-xs text-[#dc2626] mt-1">
-                  Something went wrong. Please check your email and try again.
-                </p>
-              ) : (
-                <p className="text-xs text-neutral-400 mt-1">
-                  We'll email you events and news. Unsubscribe anytime.
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-
-        {/* RIGHT — Become a member */}
-        <div ref={rightRef} className="pl-0 lg:pl-16 pt-16 lg:pt-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-4">Full membership</p>
-          <h2 className="text-3xl font-bold tracking-tight text-[#0a0a0a] leading-snug mb-3">
-            Become a member
-          </h2>
-          <p className="text-sm text-neutral-500 leading-relaxed mb-8 max-w-sm">
-            Formal membership means voting rights, committee seats, directory
-            listing, and the full Eko Club Philadelphia experience. Apply in
-            minutes — our team reviews every application personally.
-          </p>
-
-          <ul className="space-y-3 mb-10">
-            {[
-              "Join a committee and help run programs",
-              "Vote at chapter meetings",
-              "Access the full member directory",
-              "Attend members-only events",
-            ].map(item => (
-              <li key={item} className="flex items-start gap-3">
-                <span className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-[#059669]/10 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-[#059669]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
-                  </svg>
-                </span>
-                <span className="text-sm text-neutral-600 font-normal">{item}</span>
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            href="/membership/apply"
-            className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-neutral-800 transition-colors"
-          >
-            Apply for membership
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <div>
+            <Link
+              href="/membership/apply"
+              className="inline-flex items-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0a0a0a] transition-transform hover:scale-[1.03]"
+            >
+              Become a member
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -1304,8 +1206,8 @@ export default function HomePageClient() {
       {/* Event timeline — condensed to 4 items */}
       <EventTimelineSection />
 
-      {/* Join the community / newsletter */}
-      <NewsletterSignup />
+      {/* Become a member */}
+      <MembershipCtaSection />
     </>
   );
 }
