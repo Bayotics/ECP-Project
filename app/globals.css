@@ -108,8 +108,19 @@
    <SmoothScroll/>) now owns scroll easing site-wide; the two fighting over
    the same scroll position causes visible stutter. */
 
+html {
+  /* Several sections animate elements in from off-screen on the right
+     (translateX from a positive value down to 0) as they scroll into
+     view. Without this, that off-screen starting position temporarily
+     widens the document and shows a horizontal scrollbar / lets the page
+     jump sideways while the animation plays. overflow-x only — vertical
+     scrolling and position:sticky/fixed are unaffected. */
+  overflow-x: hidden;
+}
+
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;

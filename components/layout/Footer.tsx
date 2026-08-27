@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/utils/cn";
 
 /* ─── Social icons ──────────────────────────────────── */
@@ -218,6 +221,23 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 /* ─── Footer ────────────────────────────────────────── */
 export default function Footer() {
   const year = new Date().getFullYear();
+  const textRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      gsap.fromTo(textRef.current,
+        { opacity: 0, x: -48 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: textRef.current, start: "top 90%", once: true } });
+      gsap.fromTo(formRef.current,
+        { opacity: 0, x: 48 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: formRef.current, start: "top 90%", once: true } });
+    });
+    return () => ctx.revert();
+  }, []);
 
   return (
     <footer className="bg-[#0a0a0a] text-white">
@@ -225,13 +245,15 @@ export default function Footer() {
 
         {/* ── Newsletter invite ─────────────────────── */}
         <div className="flex flex-col gap-8 border-b border-white/10 py-16 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-lg">
+          <div ref={textRef} className="max-w-lg">
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Stay connected</p>
             <h2 className="text-3xl font-medium leading-tight tracking-tight sm:text-4xl">
               Event updates and chapter news, straight to your inbox.
             </h2>
           </div>
-          <NewsletterForm />
+          <div ref={formRef}>
+            <NewsletterForm />
+          </div>
         </div>
 
         {/* ── Brand + link columns ──────────────────── */}
@@ -244,9 +266,13 @@ export default function Footer() {
               className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Eko Club Philadelphia homepage"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0a0a0a] font-bold text-xs">
-                ECP
-              </span>
+              <Image
+                src="/new-logo.png"
+                alt="Eko Club Philadelphia"
+                width={80}
+                height={80}
+                className="h-10 w-10 shrink-0"
+              />
               <span className="flex flex-col leading-tight">
                 <span className="font-bold text-white text-base">Eko Club Philadelphia</span>
                 <span className="text-xs text-white/40">Eko Club International</span>

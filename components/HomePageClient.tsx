@@ -264,7 +264,8 @@ function EciIntroSection() {
   const year = new Date().getFullYear();
   const isMissionYear = year % 2 === 0;
   const introRef = useRef<HTMLDivElement>(null);
-  const missionRef = useRef<HTMLDivElement>(null);
+  const missionImagesRef = useRef<HTMLDivElement>(null);
+  const missionTextRef = useRef<HTMLDivElement>(null);
   const { events } = useEvents();
 
   const pastCount = useMemo(() => {
@@ -289,18 +290,27 @@ function EciIntroSection() {
       gsap.fromTo(introRef.current,
         { opacity: 0, y: 28 },
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: introRef.current, start: "top 85%" } }
+          scrollTrigger: { trigger: introRef.current, start: "top 85%", once: true } }
       );
-      gsap.fromTo(missionRef.current,
-        { opacity: 0, y: 32 },
+      /* The two-image block and the mission text beside it were one shared
+         reveal; split so each declares its own direction — images from the
+         left, text from the bottom — but both still trigger at the same
+         scroll position since neither depends on the other finishing. */
+      gsap.fromTo(missionImagesRef.current,
+        { opacity: 0, x: -48 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: missionImagesRef.current, start: "top 85%", once: true } }
+      );
+      gsap.fromTo(missionTextRef.current,
+        { opacity: 0, y: 40 },
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: missionRef.current, start: "top 85%" } }
+          scrollTrigger: { trigger: missionTextRef.current, start: "top 85%", once: true } }
       );
       gsap.fromTo(
-        missionRef.current?.querySelectorAll(".stat-item") ?? [],
+        missionTextRef.current?.querySelectorAll(".stat-item") ?? [],
         { opacity: 0, y: 16 },
         { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: "power3.out",
-          scrollTrigger: { trigger: missionRef.current, start: "top 70%" } }
+          scrollTrigger: { trigger: missionTextRef.current, start: "top 70%", once: true } }
       );
     });
     return () => ctx.revert();
@@ -338,9 +348,9 @@ function EciIntroSection() {
       </div>
 
       {/* ── Part B: Medical Mission / Convention — two-image editorial ── */}
-      <div ref={missionRef} className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left: two overlapping images */}
-        <div className="relative h-[340px] sm:h-[420px] lg:h-[480px]">
+        <div ref={missionImagesRef} className="relative h-[340px] sm:h-[420px] lg:h-[480px]">
           <div className="absolute left-0 top-0 h-[78%] w-[80%] overflow-hidden rounded-2xl shadow-2xl">
             <Image
               src={GALLERY.eciLeft}
@@ -362,7 +372,7 @@ function EciIntroSection() {
         </div>
 
         {/* Right: mission text + stats */}
-        <div>
+        <div ref={missionTextRef}>
           <div className="inline-flex items-center gap-3 mb-5">
             <span className="h-px w-8" style={{ background: accent }} aria-hidden="true" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
@@ -499,6 +509,23 @@ function CarouselCardFace({ item }: { item: (typeof WHAT_WE_DO)[number] }) {
 function WhatWeDoSection() {
   const [active, setActive] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
+  const introColRef = useRef<HTMLDivElement>(null);
+  const carouselColRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      gsap.fromTo(introColRef.current,
+        { opacity: 0, x: -48 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: introColRef.current, start: "top 85%", once: true } });
+      gsap.fromTo(carouselColRef.current,
+        { opacity: 0, y: 48 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: carouselColRef.current, start: "top 85%", once: true } });
+    });
+    return () => ctx.revert();
+  }, []);
 
   /* PowerPoint-style "Push from top": the incoming card slides straight down
      over the outgoing one. The outgoing card does NOT animate or fade at
@@ -547,7 +574,7 @@ function WhatWeDoSection() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16 lg:items-center">
           {/* ── Left: intro ── */}
-          <div>
+          <div ref={introColRef}>
             <div className="inline-flex items-center gap-3 mb-6">
               <span className="h-px w-8 bg-white/30" aria-hidden="true" />
               <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/90">What We Do</span>
@@ -557,13 +584,13 @@ function WhatWeDoSection() {
               Four pillars.<br />One community.
             </h2>
             <p className="mt-6 text-base text-white/90 leading-relaxed max-w-md">
-              Every step, done right. From programs to donations, 
+              Every step, done right. From programs to donations,
               structured, transparent, and built to serve.
             </p>
           </div>
 
           {/* ── Right: tab menu + carousel card ── */}
-          <div>
+          <div ref={carouselColRef}>
             {/* Tab menu */}
             <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-8">
               {WHAT_WE_DO.map((item, i) => {
@@ -1084,13 +1111,52 @@ function EventTimelineSection() {
     return () => clearTimeout(t);
   }, [safeIndex, items.length, reduceMotion]);
 
+  /* Scroll-reveal sequence, one master timeline off a single trigger: the
+     eyebrow slides in from the left, then the heading from the right, then
+     the accordion and visual panel columns slide in from the left and right
+     at the same time ("<" starts a tween alongside the one before it
+     instead of after it). */
+  const headerRef = useRef<HTMLDivElement>(null);
+  const eyebrowRef = useRef<HTMLParagraphElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const accordionColRef = useRef<HTMLDivElement>(null);
+  const panelColRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      /* Pre-set every stage's hidden starting look before the timeline
+         plays — see the matching note in MembershipCtaSection for why this
+         (rather than leaning on each .fromTo()'s own "from" value) is what
+         keeps later stages from flashing at full opacity for a frame while
+         earlier stages are still animating. */
+      gsap.set(eyebrowRef.current, { opacity: 0, x: -40 });
+      gsap.set(headingRef.current, { opacity: 0, x: 40 });
+      gsap.set(accordionColRef.current, { opacity: 0, x: -48 });
+      gsap.set(panelColRef.current, { opacity: 0, x: 48 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: headerRef.current, start: "top 85%", once: true },
+      });
+      tl.to(eyebrowRef.current, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" })
+        .to(headingRef.current, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" })
+        .to(accordionColRef.current, { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" })
+        .to(panelColRef.current, { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" }, "<");
+    });
+    return () => ctx.revert();
+  }, []);
+
   return (
     <section className="bg-[#f7f7f5] py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="timeline-heading">
       <div className="max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="max-w-2xl mb-16">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-800 mb-3">Event timeline</p>
-          <h2 id="timeline-heading" className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#0a0a0a] leading-[1.08]">
+        <div ref={headerRef} className="max-w-2xl mb-16">
+          <div className="inline-flex items-center gap-3 mb-3">
+            <span className="h-px w-8 bg-neutral-300" aria-hidden="true" />
+            <p ref={eyebrowRef} className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-800">Event timeline</p>
+            <span className="h-px w-8 bg-neutral-300" aria-hidden="true" />
+          </div>
+          <h2 ref={headingRef} id="timeline-heading" className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#0a0a0a] leading-[1.08]">
             A Living Archive of Our Signature{" "}
             <span style={{ color: EKO_GREEN }}>Gatherings</span>
           </h2>
@@ -1098,7 +1164,7 @@ function EventTimelineSection() {
 
         {/* Split accordion + visual panel */}
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:items-stretch lg:gap-5">
-          <div className="flex flex-col gap-3">
+          <div ref={accordionColRef} className="flex flex-col gap-3">
             {items.map((item, i) => (
               <EventAccordionItem
                 key={item.id}
@@ -1111,7 +1177,9 @@ function EventTimelineSection() {
             ))}
           </div>
 
-          {activeItem && <EventVisualPanel item={activeItem} />}
+          <div ref={panelColRef}>
+            {activeItem && <EventVisualPanel item={activeItem} />}
+          </div>
         </div>
 
         <Link
@@ -1132,15 +1200,30 @@ function EventTimelineSection() {
 function MembershipCtaSection() {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.fromTo(cardRef.current,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: cardRef.current, start: "top 85%" } });
+      /* Initial hidden states are set up front with gsap.set() rather than
+         relying on each .fromTo()'s own "from" value — for tweens chained
+         later in a timeline, GSAP only commits to that starting look right
+         as the playhead reaches them, which can flash the heading/button at
+         full opacity for a frame while stage 1 (the background) is still
+         fading in. Setting everything hidden immediately removes that gap
+         entirely, then the timeline only ever animates forward to "visible". */
+      gsap.set(cardRef.current, { opacity: 0 });
+      gsap.set(headingRef.current, { opacity: 0, x: -48 });
+      gsap.set(buttonRef.current, { opacity: 0, x: -48 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: cardRef.current, start: "top 85%", once: true },
+      });
+      tl.to(cardRef.current, { opacity: 1, duration: 0.7, ease: "power2.out" })
+        .to(headingRef.current, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" })
+        .to(buttonRef.current, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" });
 
       /* A static, cover-fit background inside a normally-flowing box moves
          in lockstep with the rest of the page, which reads as motionless —
@@ -1187,10 +1270,10 @@ function MembershipCtaSection() {
         />
 
         <div className="relative z-10 flex min-h-[340px] flex-col justify-center gap-6 p-8 sm:p-12 lg:p-16">
-          <h2 className="max-w-md text-3xl font-semibold leading-tight text-white sm:text-4xl">
+          <h2 ref={headingRef} className="max-w-md text-3xl font-semibold leading-tight text-white sm:text-4xl">
             Ready to be part of the mission?
           </h2>
-          <div>
+          <div ref={buttonRef}>
             <Link
               href="/membership/apply"
               className="inline-flex items-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0a0a0a] transition-transform hover:scale-[1.03]"
