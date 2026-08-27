@@ -369,10 +369,10 @@ function EciIntroSection() {
               {pill}
             </span>
           </div>
-          <h3 className="text-3xl sm:text-4xl font-semibold text-white leading-tight mb-5">
+          <h3 className="text-3xl sm:text-4xl font-normal text-white leading-tight mb-5">
             {label}
           </h3>
-          <p className="text-white/60 leading-relaxed max-w-lg mb-8">
+          <p className="text-white/80 leading-relaxed max-w-lg mb-8">
             {copy}
           </p>
           <a
@@ -390,7 +390,7 @@ function EciIntroSection() {
           <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-8 pt-8 border-t border-white/10">
             {stats.map((s) => (
               <div key={s.label} className="stat-item">
-                <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight tabular-nums">
+                <div className="text-3xl sm:text-4xl font-normal text-white tracking-tight tabular-nums">
                   <CountUp to={s.value} suffix={s.suffix} />
                 </div>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-white/40">
@@ -550,14 +550,14 @@ function WhatWeDoSection() {
           <div>
             <div className="inline-flex items-center gap-3 mb-6">
               <span className="h-px w-8 bg-white/30" aria-hidden="true" />
-              <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/60">What We Do</span>
+              <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/90">What We Do</span>
               <span className="h-px w-8 bg-white/30" aria-hidden="true" />
             </div>
-            <h2 id="what-we-do-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05] tracking-tight">
+            <h2 id="what-we-do-heading" className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.05] tracking-tight">
               Four pillars.<br />One community.
             </h2>
-            <p className="mt-6 text-base text-white/50 leading-relaxed max-w-md">
-              Every step, done right. From programs to donations —
+            <p className="mt-6 text-base text-white/90 leading-relaxed max-w-md">
+              Every step, done right. From programs to donations, 
               structured, transparent, and built to serve.
             </p>
           </div>
@@ -983,10 +983,10 @@ function EventVisualPanel({ item }: { item: TItem }) {
             text={displayItem.title}
             visible={visible}
             reduceMotion={!!reduceMotion}
-            className="mt-4 max-w-md text-2xl font-bold leading-tight text-white sm:text-3xl"
+            className="mt-4 max-w-md text-2xl font-semibold leading-tight text-white sm:text-3xl"
           />
           <p
-            className="mt-4 max-w-sm text-sm leading-relaxed text-white/80 sm:text-base transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)]"
+            className="mt-4 max-w-sm text-sm leading-relaxed text-white sm:text-base transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)]"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(10px)",
@@ -1089,8 +1089,8 @@ function EventTimelineSection() {
       <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="max-w-2xl mb-16">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-3">Event timeline</p>
-          <h2 id="timeline-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#0a0a0a] leading-[1.08]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-800 mb-3">Event timeline</p>
+          <h2 id="timeline-heading" className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#0a0a0a] leading-[1.08]">
             A Living Archive of Our Signature{" "}
             <span style={{ color: EKO_GREEN }}>Gatherings</span>
           </h2>
@@ -1127,41 +1127,57 @@ function EventTimelineSection() {
 }
 
 /* ══════════════════════════════════════════════════════
-   7. MEMBERSHIP CTA — single full-bleed banner. Previously this section
-   duplicated the footer: an email-capture form on the left (the footer
-   already has one) and a membership pitch on the right. Collapsed to one
-   clear ask, matching the reference banner — photo background, headline,
-   one pill CTA.
-   ══════════════════════════════════════════════════════ */
+   7. MEMBERSHIP CTA 
+ ═══════════════════════════════════ */
 function MembershipCtaSection() {
-  const ref = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.fromTo(ref.current,
+      gsap.fromTo(cardRef.current,
         { opacity: 0, y: 24 },
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: ref.current, start: "top 85%" } });
+          scrollTrigger: { trigger: cardRef.current, start: "top 85%" } });
+
+      /* A static, cover-fit background inside a normally-flowing box moves
+         in lockstep with the rest of the page, which reads as motionless —
+         the box and the photo travel together as one rigid unit, so there's
+         nothing visibly "scrolling" about it even though it technically is.
+         This scrubs the photo (sized taller than its frame, so there's room
+         to pan without exposing empty edges) against scroll progress through
+         the section, so it visibly moves independently as the page scrolls —
+         the standard GSAP ScrollTrigger parallax recipe, matching how scroll
+         effects are already built elsewhere on this page. */
+      if (!reduceMotion) {
+        gsap.fromTo(imgRef.current,
+          { yPercent: -12 },
+          { yPercent: 12, ease: "none",
+            scrollTrigger: { trigger: cardRef.current, start: "top bottom", end: "bottom top", scrub: true } });
+      }
     });
     return () => ctx.revert();
-  }, []);
+  }, [reduceMotion]);
 
   return (
     <section className="bg-white py-24 px-6 sm:px-10 lg:px-16" aria-label="Become a member">
       <div
-        ref={ref}
+        ref={cardRef}
         className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px]"
-        style={{
-          backgroundImage: `url(${GALLERY.eciRight})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          /* Explicitly "scroll" (not "fixed") — the photo moves with the
-             page like normal content, no parallax pin. */
-          backgroundAttachment: "scroll",
-          minHeight: 340,
-        }}
+        style={{ minHeight: 340 }}
       >
+        <div ref={imgRef} className="absolute inset-x-0" style={{ top: "-15%", height: "130%" }}>
+          <Image
+            src={GALLERY.eciRight}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="100vw"
+          />
+        </div>
+
         {/* Legibility overlay: solid on the left where the text sits,
             fading to transparent on the right so the photo still reads. */}
         <div
@@ -1171,7 +1187,7 @@ function MembershipCtaSection() {
         />
 
         <div className="relative z-10 flex min-h-[340px] flex-col justify-center gap-6 p-8 sm:p-12 lg:p-16">
-          <h2 className="max-w-md text-3xl font-bold leading-tight text-white sm:text-4xl">
+          <h2 className="max-w-md text-3xl font-semibold leading-tight text-white sm:text-4xl">
             Ready to be part of the mission?
           </h2>
           <div>

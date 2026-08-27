@@ -227,7 +227,7 @@ export default function Footer() {
         <div className="flex flex-col gap-8 border-b border-white/10 py-16 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-lg">
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Stay connected</p>
-            <h2 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-medium leading-tight tracking-tight sm:text-4xl">
               Event updates and chapter news, straight to your inbox.
             </h2>
           </div>
