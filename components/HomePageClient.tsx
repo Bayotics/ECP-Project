@@ -282,19 +282,29 @@ function DotGridTexture({ opacity = 0.06 }: { opacity?: number }) {
    elsewhere on the page, kept to each section's margins so nothing sits on
    top of readable text. Two presets so neighboring sections don't repeat
    the exact same scatter, while staying the same visual language. */
+/* Reused hand-drawn accent shapes, all sized for a 0-12 viewBox. */
+const SWIRL_A = <path d="M2,9 C2,4 6,2 9,4 C11,5.5 10,8 8,8 C6.5,8 6,6.5 7,6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />;
+const SWIRL_B = <path d="M10,3 C10,7 7,10 4,8 C2,6.5 3,4 5,4 C6,4 6.5,5 6,6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />;
+const SQUIGGLE = <path d="M4,1 C7,3 1,5 4,7 C7,9 1,11 4,12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />;
+const SPARKLE = <path d="M6,0 L7.2,4.8 L12,6 L7.2,7.2 L6,12 L4.8,7.2 L0,6 L4.8,4.8 Z" />;
+const RING = <circle cx="6" cy="6" r="4" fill="none" stroke="currentColor" strokeWidth="1.2" />;
+
 function ConfettiScatter({ variant }: { variant: "mission" | "whatWeDo" }) {
   const presets = {
     mission: {
       shapes: [
-        { style: { top: "4%", left: "91%" },
-          node: <path d="M2,9 C2,4 6,2 9,4 C11,5.5 10,8 8,8 C6.5,8 6,6.5 7,6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /> },
+        { style: { top: "4%", left: "91%" }, node: SWIRL_A },
         { style: { top: "50%", left: "95%" }, node: <rect width="8" height="8" transform="rotate(20)" /> },
         { style: { top: "90%", left: "68%" }, node: <polygon points="5,0 10,9 0,9" /> },
         { style: { top: "3%", left: "16%" }, node: <circle cx="4" cy="4" r="4" /> },
+        { style: { top: "35%", left: "8%" }, node: SPARKLE },
+        { style: { top: "80%", left: "14%" }, node: SWIRL_B },
+        { style: { top: "62%", left: "90%" }, node: RING },
       ],
       dots: [
         { style: { top: "22%", left: "4%" }, color: EKO_RED },
         { style: { top: "76%", left: "97%" }, color: EKO_YELLOW },
+        { style: { top: "10%", left: "60%" }, color: EKO_BLUE },
       ],
     },
     whatWeDo: {
@@ -305,11 +315,16 @@ function ConfettiScatter({ variant }: { variant: "mission" | "whatWeDo" }) {
         { style: { top: "88%", left: "88%" }, node: <rect width="8" height="8" transform="rotate(40)" /> },
         { style: { top: "40%", left: "2%" }, node: <circle cx="4" cy="4" r="4" /> },
         { style: { top: "8%", left: "48%" }, node: <polygon points="5,0 10,9 0,9" /> },
+        { style: { top: "58%", left: "50%" }, node: SWIRL_A },
+        { style: { top: "94%", left: "32%" }, node: SPARKLE },
+        { style: { top: "30%", left: "96%" }, node: SQUIGGLE },
+        { style: { top: "68%", left: "96%" }, node: RING },
       ],
       dots: [
         { style: { top: "24%", left: "96%" }, color: EKO_GREEN },
         { style: { top: "60%", left: "1%" }, color: EKO_YELLOW },
         { style: { top: "94%", left: "50%" }, color: EKO_RED },
+        { style: { top: "3%", left: "70%" }, color: EKO_BLUE },
       ],
     },
   } as const;

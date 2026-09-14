@@ -41,12 +41,12 @@ const PROJECT_STATS = [
 const MISSION_VISION = [
   {
     title: "Our Mission",
-    text: "We preserve and support our cultural heritage, render humanitarian assistance to those in need, encourage community development and outreach, and organise the family and friends of Lagos, Nigeria, for worthy causes.",
+    text: "To unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives.",
     color: EKO_GREEN,
   },
   {
     title: "Our Vision",
-    text: "We envision a world where peace prevails and where abundant opportunities exist for our youth and for a strong, vibrant senior community.",
+    text: "To be a vibrant and sustainable organization that celebrates Lagosian heritage, strengthens our community, empowers future generations, and creates lasting positive impact.",
     color: EKO_RED,
   },
   {
@@ -325,7 +325,7 @@ export default function ProjectsPage() {
           <SectionIntro
             eyebrow="Purpose"
             title="Our mission and vision guide every initiative we run"
-            text="The club’s projects do not stand alone. They flow directly from our mission to preserve heritage, provide humanitarian assistance, strengthen community development and outreach, and bring family and friends of Lagos together for worthy causes."
+            text="The club’s projects do not stand alone. They flow directly from our mission to unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives."
           />
 
           <motion.div

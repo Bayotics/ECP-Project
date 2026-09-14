@@ -39,12 +39,12 @@ const stagger = {
 const STORY_PILLARS = [
   {
     title: "Mission",
-    text: "We preserve and support our cultural heritage, render humanitarian assistance to those in need, encourage community development and outreach, and organise the family and friends of Lagos, Nigeria, for worthy causes.",
+    text: "To unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives.",
     color: EKO_GREEN,
   },
   {
     title: "Vision",
-    text: "We envision a world where peace prevails and where abundant opportunities exist for our youth and for a strong, vibrant senior community.",
+    text: "To be a vibrant and sustainable organization that celebrates Lagosian heritage, strengthens our community, empowers future generations, and creates lasting positive impact.",
     color: EKO_RED,
   },
   {
@@ -493,7 +493,7 @@ export default function AboutPage() {
           <SectionIntro
             eyebrow="Why we exist"
             title="Our mission, vision, and values"
-            text="We are guided by a clear purpose: to preserve our heritage, serve people in need, strengthen community, and organise family and friends of Lagos, Nigeria, for worthy causes."
+            text="We are guided by a clear purpose: to unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives."
           />
 
           <motion.div
