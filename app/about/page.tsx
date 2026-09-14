@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -114,48 +115,69 @@ const SERVICE_PROGRAMS = [
   },
 ];
 
+/* Real office holders, taken from the official portrait badges in
+   /public/gallery/excos. Those source images carry the name and role baked
+   into the artwork, which turns into an illegible smudge at card size — so
+   each card crops to the portrait and renders the name and role as real
+   text instead. The zoom (EXCO_ZOOM) is tight enough that the baked-in
+   caption falls below the visible crop; `focusY` (a percentage down the
+   source image) is the point that zoom centres on, tuned per photo so each
+   face lands centred despite headwraps and caps sitting at different
+   heights.
+
+   Deliberately no bios: these are real people, and inventing career
+   summaries for them would be putting words in their mouths. */
+const EXCO_ZOOM = 2.6;
+
 const EXCO_MEMBERS = [
   {
-    name: "Taiwo Adesanya",
-    role: "Chairperson",
-    bio: "Provides strategic leadership for the club and helps shape major partnerships, advocacy priorities, and long-range direction.",
-    initials: "TA",
+    name: "Hon. Olabisi Dabiri-Okoya",
+    role: "President",
+    image: "/gallery/excos/olabisi-dabiri-okoya.png",
+    focusY: 26,
     color: EKO_GREEN,
   },
   {
-    name: "Folake Bello",
-    role: "Secretary-General",
-    bio: "Coordinates administration, records, and day-to-day execution so programmes move from vision to delivery with discipline.",
-    initials: "FB",
+    name: "Hon. Adebimpe Daniells",
+    role: "Vice President",
+    image: "/gallery/excos/adebimpe-daniells.png",
+    focusY: 26,
     color: EKO_RED,
   },
   {
-    name: "Kemi Adewale",
-    role: "Legal Advisor",
-    bio: "Supports governance, compliance, and policy review, helping the organisation act with clarity and institutional confidence.",
-    initials: "KA",
+    name: "Hon. Olabisi Lawal",
+    role: "Treasurer / Financial Secretary",
+    image: "/gallery/excos/olabisi-lawal.png",
+    focusY: 37,
     color: EKO_BLUE,
   },
   {
-    name: "Yetunde Adewale",
-    role: "Vice Chair",
-    bio: "Supports executive coordination, member welfare initiatives, and cross-committee alignment across programmes and events.",
-    initials: "YA",
+    name: "Hon. Folashade Adedeji",
+    role: "PRO / Social Secretary",
+    image: "/gallery/excos/folashade-adedeji.png",
+    focusY: 37,
     color: EKO_YELLOW,
   },
   {
-    name: "Rotimi Ogunleye",
-    role: "Projects Director",
-    bio: "Oversees project delivery and community-facing initiatives, ensuring ideas are translated into measurable impact.",
-    initials: "RO",
+    name: "Hon. Bola Okoya",
+    role: "Chairman, Board of Trustees",
+    image: "/gallery/excos/bola-okoya.png",
+    focusY: 21,
     color: EKO_GREEN,
   },
   {
-    name: "Sola Afolabi",
-    role: "Welfare Officer",
-    bio: "Champions member care, solidarity, and the supportive culture that keeps the Eko family connected.",
-    initials: "SA",
+    name: "Hon. Elder Modupe Mabinuori-Olageshin",
+    role: "Vice Chairwoman / Treasurer, Board of Trustees",
+    image: "/gallery/excos/modupe-mabinuori-olageshin.png",
+    focusY: 26,
     color: EKO_RED,
+  },
+  {
+    name: "Hon. Saheed Abdullateef",
+    role: "Secretary, Board of Trustees",
+    image: "/gallery/excos/saheed-abdullateef.png",
+    focusY: 18,
+    color: EKO_BLUE,
   },
 ];
 
@@ -607,25 +629,46 @@ export default function AboutPage() {
                 key={member.name}
                 variants={riseIn}
                 custom={index * 0.06}
-                className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)] transition-transform duration-300 hover:-translate-y-1"
+                className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 text-center shadow-[0_24px_80px_rgba(15,23,42,0.07)] transition-transform duration-300 hover:-translate-y-1"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div
+                  className="relative mx-auto h-32 w-32 overflow-hidden rounded-full border-4"
+                  style={{ borderColor: member.color }}
+                >
+                  {/* The zoom is done by sizing this box to EXCO_ZOOM× the
+                      frame and offsetting it, rather than by CSS-scaling the
+                      image: a transform would upscale whatever small file
+                      next/image decided to serve for a 128px frame, which is
+                      what made these portraits look soft. At full size the
+                      element asks for — and gets — a sharp source. */}
                   <div
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white"
-                    style={{ background: member.color }}
+                    className="absolute"
+                    style={{
+                      width: `${EXCO_ZOOM * 100}%`,
+                      height: `${EXCO_ZOOM * 100}%`,
+                      left: `${50 - EXCO_ZOOM * 50}%`,
+                      top: `${50 - EXCO_ZOOM * member.focusY}%`,
+                    }}
                   >
-                    {member.initials}
+                    <Image
+                      src={member.image}
+                      alt={`${member.name}, ${member.role}`}
+                      fill
+                      className="object-cover"
+                      sizes="340px"
+                      quality={100}
+                    />
                   </div>
-                  <span
-                    className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-900"
-                    style={{ background: `${member.color}18` }}
-                  >
-                    {member.role}
-                  </span>
                 </div>
-                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-neutral-950">{member.name}</h3>
-                <p className="mt-3 text-sm leading-7 text-neutral-600">{member.bio}</p>
-                <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: member.color }} />
+                <h3 className="mt-5 text-xl font-bold leading-snug tracking-[-0.02em] text-neutral-950">
+                  {member.name}
+                </h3>
+                <span
+                  className="mt-3 inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-900"
+                  style={{ background: `${member.color}18` }}
+                >
+                  {member.role}
+                </span>
               </motion.article>
             ))}
           </motion.div>
