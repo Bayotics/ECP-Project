@@ -255,6 +255,84 @@ function HeroSection() {
 }
 
 /* ══════════════════════════════════════════════════════
+   DECORATIVE BACKGROUND LAYERS — kept out of the way of
+   content (absolute, pointer-events-none, aria-hidden) and
+   deliberately restrained to the site's existing green/black
+   palette, so the dark sections read as art-directed rather
+   than a flat fill without introducing new colors or fighting
+   the green → black gradient blend between them.
+   ══════════════════════════════════════════════════════ */
+
+/* Faint dot-grid texture — the "halftone" ambient texture. */
+function DotGridTexture({ opacity = 0.06 }: { opacity?: number }) {
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        backgroundImage: `radial-gradient(rgba(255,255,255,${opacity}) 1px, transparent 1px)`,
+        backgroundSize: "24px 24px",
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+/* Minimal scattered "confetti" — a handful of small line-art shapes (one a
+   loose hand-drawn swirl) plus a couple of tiny dots in colors already used
+   elsewhere on the page, kept to each section's margins so nothing sits on
+   top of readable text. Two presets so neighboring sections don't repeat
+   the exact same scatter, while staying the same visual language. */
+function ConfettiScatter({ variant }: { variant: "mission" | "whatWeDo" }) {
+  const presets = {
+    mission: {
+      shapes: [
+        { style: { top: "4%", left: "91%" },
+          node: <path d="M2,9 C2,4 6,2 9,4 C11,5.5 10,8 8,8 C6.5,8 6,6.5 7,6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /> },
+        { style: { top: "50%", left: "95%" }, node: <rect width="8" height="8" transform="rotate(20)" /> },
+        { style: { top: "90%", left: "68%" }, node: <polygon points="5,0 10,9 0,9" /> },
+        { style: { top: "3%", left: "16%" }, node: <circle cx="4" cy="4" r="4" /> },
+      ],
+      dots: [
+        { style: { top: "22%", left: "4%" }, color: EKO_RED },
+        { style: { top: "76%", left: "97%" }, color: EKO_YELLOW },
+      ],
+    },
+    whatWeDo: {
+      shapes: [
+        { style: { top: "6%", left: "4%" }, node: <rect width="10" height="10" transform="rotate(15)" /> },
+        { style: { top: "14%", left: "92%" }, node: <circle cx="5" cy="5" r="5" /> },
+        { style: { top: "78%", left: "6%" }, node: <polygon points="6,0 12,10 0,10" /> },
+        { style: { top: "88%", left: "88%" }, node: <rect width="8" height="8" transform="rotate(40)" /> },
+        { style: { top: "40%", left: "2%" }, node: <circle cx="4" cy="4" r="4" /> },
+        { style: { top: "8%", left: "48%" }, node: <polygon points="5,0 10,9 0,9" /> },
+      ],
+      dots: [
+        { style: { top: "24%", left: "96%" }, color: EKO_GREEN },
+        { style: { top: "60%", left: "1%" }, color: EKO_YELLOW },
+        { style: { top: "94%", left: "50%" }, color: EKO_RED },
+      ],
+    },
+  } as const;
+  const { shapes, dots } = presets[variant];
+  return (
+    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+      {shapes.map((s, i) => (
+        <svg key={i} className="absolute h-3 w-3 text-white/15" style={s.style} viewBox="0 0 12 12" fill="currentColor">
+          {s.node}
+        </svg>
+      ))}
+      {dots.map((d, i) => (
+        <span
+          key={i}
+          className="absolute h-1.5 w-1.5 rounded-full"
+          style={{ ...d.style, background: d.color, opacity: 0.35 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
    3. ECI INTRO + MEDICAL MISSION — blends out of the hero,
       deep-green section: centred org intro, then a two-image
       editorial block for the flagship mission/convention,
@@ -327,9 +405,12 @@ function EciIntroSection() {
     : "The worldwide family of Eko Club gathers for the biennial convention — business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.";
 
   return (
-    <section style={{ backgroundColor: DEEP_GREEN }} className="w-full pt-4 pb-24 px-6 sm:px-10 sm:pb-28 lg:px-16 lg:pb-32">
+    <section style={{ backgroundColor: DEEP_GREEN }} className="relative w-full overflow-hidden pt-4 pb-24 px-6 sm:px-10 sm:pb-28 lg:px-16 lg:pb-32">
+      <DotGridTexture />
+      <ConfettiScatter variant="mission" />
+
       {/* ── Part A: Eko Club International intro ── */}
-      <div ref={introRef} className="max-w-3xl mx-auto text-center mb-20 sm:mb-24 lg:mb-28">
+      <div ref={introRef} className="relative z-10 max-w-3xl mx-auto text-center mb-20 sm:mb-24 lg:mb-28">
         <div className="inline-flex items-center gap-3 mb-5">
           <span className="h-px w-8 bg-white/30" aria-hidden="true" />
           <span className="text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-white/60">
@@ -348,7 +429,7 @@ function EciIntroSection() {
       </div>
 
       {/* ── Part B: Medical Mission / Convention — two-image editorial ── */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left: two overlapping images */}
         <div ref={missionImagesRef} className="relative h-[340px] sm:h-[420px] lg:h-[480px]">
           <div className="absolute left-0 top-0 h-[78%] w-[80%] overflow-hidden rounded-2xl shadow-2xl">
@@ -567,11 +648,14 @@ function WhatWeDoSection() {
 
   return (
     <section
-      className="pt-24 pb-24 px-6 sm:px-10 sm:pt-28 sm:pb-28 lg:px-16 lg:pt-32 lg:pb-32"
+      className="relative overflow-hidden pt-24 pb-24 px-6 sm:px-10 sm:pt-28 sm:pb-28 lg:px-16 lg:pt-32 lg:pb-32"
       style={{ background: `linear-gradient(to bottom, ${DEEP_GREEN} 0%, #000000 38%)` }}
       aria-labelledby="what-we-do-heading"
     >
-      <div className="max-w-6xl mx-auto">
+      <DotGridTexture opacity={0.05} />
+      <ConfettiScatter variant="whatWeDo" />
+
+      <div className="relative z-10 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16 lg:items-center">
           {/* ── Left: intro ── */}
           <div ref={introColRef}>
