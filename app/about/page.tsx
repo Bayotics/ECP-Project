@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEvents } from "@/context";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { HEADER_OFFSET } from "@/components/layout/Header";
+import { cn } from "@/utils/cn";
 
 const EKO_GREEN = "#059669";
 const EKO_RED = "#dc2626";
@@ -55,27 +55,34 @@ const STORY_PILLARS = [
   },
 ];
 
+/* Copy is unchanged; each entry just gains a photo now that these render as
+   image panels rather than icon cards. Two of the four photographs show the
+   thing they are captioned with — the Adopt-a-Highway sign and the
+   Thanksgiving food drive. The other two are general ECP service turnouts:
+   we have no photograph of a scholarship presentation or of assistance to a
+   homeless family, and rather than pass an unrelated scene off as one, they
+   sit under their captions as what they are — members out serving. */
 const VALUES = [
   {
-    icon: "🏙️",
+    image: "/gallery/event8.JPG",
     title: "Support in our communities",
     desc: "We provide a variety of services to underprivileged Lagosian Americans and other minorities in Philadelphia and the surrounding area.",
     color: EKO_GREEN,
   },
   {
-    icon: "🎓",
+    image: "/gallery/event3.JPG",
     title: "Scholarship support",
     desc: "We provide scholarships to minority high school and college students as part of our long-term investment in education.",
     color: EKO_RED,
   },
   {
-    icon: "🤲",
+    image: "/gallery/event4.JPG",
     title: "Humanitarian assistance",
     desc: "We assist homeless families with humanitarian services and practical care wherever help is needed most.",
     color: EKO_BLUE,
   },
   {
-    icon: "🧺",
+    image: "/gallery/about/right-about-hero-1.jpg",
     title: "Thanksgiving outreach",
     desc: "We provide an annual Thanksgiving food drive to the community as part of our commitment to consistent service.",
     color: EKO_YELLOW,
@@ -181,12 +188,289 @@ const EXCO_MEMBERS = [
   },
 ];
 
-const EXCO_PILLARS = [
-  { label: "Strategy", color: EKO_GREEN },
-  { label: "Governance", color: EKO_RED },
-  { label: "Delivery", color: EKO_BLUE },
-  { label: "Care", color: EKO_YELLOW },
+/* Matrons and patrons. Same badge-artwork source format as the excos, so the
+   same crop treatment applies (see the EXCO_MEMBERS note above). Only the two
+   people who supplied a written biography carry a `bio` — the other two open
+   nothing, because inventing a career summary for a real person is not ours
+   to do. Bios are transcribed verbatim from the documents in
+   /public/gallery/patrons. */
+const PATRON_ZOOM = 2.4;
+
+type Person = {
+  name: string;
+  role: string;
+  image: string;
+  /** Point down the SOURCE image, as a percentage, that the crop centres on. */
+  focusY: number;
+  color: string;
+  bio?: string[];
+};
+
+const PATRONS: Person[] = [
+  {
+    name: "Otunba TJ Abass",
+    role: "Grand Patron",
+    image: "/gallery/patrons/tj-abass.png",
+    focusY: 30,
+    color: EKO_GREEN,
+  },
+  {
+    name: "Dr. Ganiyu Mimiko",
+    role: "Patron",
+    image: "/gallery/patrons/ganiyu-mimiko.png",
+    focusY: 30,
+    color: EKO_BLUE,
+    bio: [
+      "Dr. Ganiyu Mimiko was born in Ondo City. He attended Ansar-Ud-Deen primary school, Okelisa from 1963 to 1969. He also attended Jubilee Secondary Modern School in 1970 and attended Independence Grammar School in 1971. He transferred to Ondo Boys High School (OHS) where he completed his secondary school from 1972 to 1975.",
+      "Dr. Mimiko worked with Monier Construction Company (MCC) in Port Harcourt from 1975 to 1982 and was the Laboratory Technical Manager (Grade 1) before leaving for the United State America (USA). While in the USA, he attended the University of District of Columbia (UDC) and obtained his undergraduate (BS) diploma in Civil Engineering in 1988. He joined Connecticut Department of Transportation (CONNDOT) in 1989 till present. As a Project Manager, he oversees various aspects of construction projects. In his quest for more academic advancement, he attended University of New Haven (UNH) and obtained his graduate (MS) diploma in Environmental Engineering 1993. He bagged his doctoral (Ph.D.) degree in Engineering Management from National University in 2009.",
+      "Dr. Mimiko received Certificate of Recognition from American Society of Civil Engineering (National Capital Section) in 1989. He received Certificate of Achievement from Government Institutes, Inc. Washington, DC. He was elected Affiliate Member by the American Society of Civil Engineering for the advancement of professional knowledge and the improvement of civil Engineering. In 2015, after the completion of his Pharmacy Technician Program, he was certified by Ashworth Career School Alpha of Georgia and was enlisted as a member of the International Honor society Delta Epsilon Tau.",
+      "Dr. Mimiko is a former president of Yoruba Community Club (YCC). Also, he was a former president and currently the Treasurer of Ondo Elite Club (OEC) of Rhode Island. In addition, he is currently serving as a member of the Human Rights and Relations Commission in Hamden, CT.",
+    ],
+  },
+  {
+    name: "Chief (Dr.) Maryanne Onitolo",
+    role: "Matron",
+    image: "/gallery/patrons/maryanne-onitolo.png",
+    focusY: 30,
+    color: EKO_RED,
+    bio: [
+      "Maryanne Onitolo, MSN, FNP-BC, DNP, is a board-certified Family Nurse Practitioner licensed in New York and New Jersey. She is a graduate from Monmouth University in New Jersey.",
+      "Known for her dedication, leadership, and commitment to serving others, Maryanne is also a passionate mentor, leader and educator. She is a proud mother of three children, all of whom have pursued careers in medicine. In recognition of her service and leadership, she was honored with the traditional chieftaincy title of Yeye Apesin of Ijora Kingdom, Lagos, Nigeria (by HRM, Oba Fatai Aremu Aromire, the Ojora of Lagos). Outside of work, she enjoys cooking, decorating, and spending time with her family.",
+    ],
+  },
+  {
+    name: "Alhaja Risikat Oshilaja",
+    role: "Matron",
+    image: "/gallery/patrons/risikat-oshilaja.png",
+    focusY: 30,
+    color: EKO_YELLOW,
+  },
 ];
+
+/* ── Shared leadership UI ─────────────────────────────────────────────────
+   One presentation, rendered twice: matrons & patrons first, then the
+   executive council. Left column is the heading, right column a portrait
+   grid; a card belonging to someone with a biography gets an arrow
+   affordance and opens the drawer below it. */
+
+function PersonPortrait({ person, zoom, sizes }: { person: Person; zoom: number; sizes: string }) {
+  /* The crop is done by sizing this inner box to `zoom`× the frame and
+     offsetting it, never by CSS-scaling the <img>: a transform would upscale
+     whatever small file next/image chose for the frame's own dimensions,
+     which is what made these portraits look soft. `top` is expressed in
+     percentages of the frame HEIGHT, hence the 0.8 factor — the box is square
+     but the 4:5 frame is 1.25× as tall as it is wide. */
+  const f = person.focusY / 100;
+  return (
+    <div
+      className="absolute aspect-square"
+      style={{
+        width: `${zoom * 100}%`,
+        left: `${50 - zoom * 50}%`,
+        top: `${50 - f * zoom * 80}%`,
+      }}
+    >
+      <Image
+        src={person.image}
+        alt={`${person.name}, ${person.role}`}
+        fill
+        className="object-cover"
+        sizes={sizes}
+        quality={100}
+      />
+    </div>
+  );
+}
+
+function TwoToneHeading({ lead, tail }: { lead: string; tail: string }) {
+  return (
+    <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-5xl lg:text-[3.4rem]">
+      {lead} <span className="text-neutral-950">{tail}</span>
+    </h2>
+  );
+}
+
+function PeopleSection({
+  id,
+  eyebrow,
+  headingLead,
+  headingTail,
+  intro,
+  people,
+  zoom,
+  className,
+}: {
+  id: string;
+  eyebrow: string;
+  headingLead: string;
+  headingTail: string;
+  intro: string;
+  people: Person[];
+  zoom: number;
+  className?: string;
+}) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const active = openIndex === null ? null : people[openIndex];
+
+  useEffect(() => setMounted(true), []);
+
+  /* The drawer stays mounted and slides out of the viewport when closed.
+     AnimatePresence exit transitions have proved unreliable in this app, and
+     a plain CSS transform transition closes just as smoothly. */
+  useEffect(() => {
+    if (!active) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenIndex(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [active]);
+
+  return (
+    <section id={id} className={cn("relative bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24", className)}>
+      <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">{eyebrow}</p>
+          <div className="mt-5">
+            <TwoToneHeading lead={headingLead} tail={headingTail} />
+          </div>
+          <p className="mt-6 max-w-md text-base leading-7 text-neutral-700">{intro}</p>
+        </div>
+
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid gap-x-2 gap-y-6 sm:grid-cols-2 xl:grid-cols-3"
+        >
+          {people.map((person, index) => {
+            const hasBio = Boolean(person.bio?.length);
+            return (
+              <motion.article key={person.name} variants={riseIn} custom={index * 0.06} className="group">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
+                  <PersonPortrait
+                    person={person}
+                    zoom={zoom}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 45vw, 400px"
+                  />
+                  {/* Hover/focus is tracked in state rather than with a
+                      `hover:` utility because the fill colour differs per
+                      person — an arbitrary-value utility built around a CSS
+                      variable didn't survive the Tailwind build here. */}
+                  {hasBio && (
+                    <button
+                      type="button"
+                      onClick={() => setOpenIndex(index)}
+                      onMouseEnter={() => setHoverIndex(index)}
+                      onMouseLeave={() => setHoverIndex((i) => (i === index ? null : i))}
+                      onFocus={() => setHoverIndex(index)}
+                      onBlur={() => setHoverIndex((i) => (i === index ? null : i))}
+                      aria-label={`Read ${person.name}’s biography`}
+                      style={
+                        hoverIndex === index
+                          ? {
+                              background: person.color,
+                              borderColor: person.color,
+                              color: "#ffffff",
+                            }
+                          : undefined
+                      }
+                      className="absolute bottom-3 left-3 flex h-8 w-8 items-center justify-center rounded-md border border-neutral-900/25 bg-white/70 text-neutral-900 backdrop-blur-sm transition-colors duration-200"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M7 17 17 7M9 7h8v8" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <h3 className="mt-3 text-base font-semibold leading-snug tracking-[-0.01em] text-neutral-950">
+                  {person.name}
+                </h3>
+                <p className="mt-1 text-sm text-neutral-700">{person.role}</p>
+              </motion.article>
+            );
+          })}
+        </motion.div>
+      </div>
+
+      {/* Biography drawer. Portalled to <body> because several ancestors up
+          the About page are animated with transforms, and a transformed
+          ancestor makes `position: fixed` resolve against that element
+          instead of the viewport — which left the drawer clipped and the
+          backdrop covering only part of the screen. */}
+      {mounted &&
+        createPortal(
+          <div
+            className={cn(
+              "fixed inset-0 z-[60]",
+              active ? "pointer-events-auto" : "pointer-events-none",
+            )}
+            aria-hidden={active ? undefined : true}
+          >
+            <div
+              onClick={() => setOpenIndex(null)}
+              className="absolute inset-0 bg-neutral-950/55 transition-opacity duration-500"
+              style={{ opacity: active ? 1 : 0 }}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={active ? `${active.name} biography` : undefined}
+              data-lenis-prevent
+              className="absolute inset-y-0 left-0 w-full max-w-xl overflow-y-auto bg-white px-6 py-16 shadow-[0_0_80px_rgba(15,23,42,0.25)] sm:px-12"
+              style={{
+                transform: active ? "translateX(0)" : "translateX(-100%)",
+                transition: "transform 500ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setOpenIndex(null)}
+                aria-label="Close biography"
+                className="absolute right-6 top-8 flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-900 transition-colors hover:bg-neutral-100"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+
+              {active && (
+                <>
+                  <TwoToneHeading
+                    lead={active.name.split(" ").slice(0, -1).join(" ")}
+                    tail={active.name.split(" ").slice(-1).join("")}
+                  />
+                  <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-neutral-700">
+                    {active.role}
+                  </p>
+                  <div className="mt-8 h-px w-full bg-neutral-200" />
+                  <div className="mt-8 space-y-5">
+                    {active.bio?.map((paragraph) => (
+                      <p key={paragraph.slice(0, 40)} className="text-[15px] leading-7 text-neutral-700">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                  <div className="relative mt-10 aspect-[4/5] w-full max-w-sm overflow-hidden bg-neutral-100">
+                    <PersonPortrait person={active} zoom={zoom} sizes="420px" />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </section>
+  );
+}
 
 const HISTORY_PANELS = {
   origins: {
@@ -313,21 +597,21 @@ function SectionIntro({
       <motion.span
         variants={riseIn}
         custom={0.08}
-        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500"
+        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700"
       >
         {eyebrow}
       </motion.span>
       <motion.h2
         variants={riseIn}
         custom={0.16}
-        className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+        className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
       >
         {title}
       </motion.h2>
       <motion.p
         variants={riseIn}
         custom={0.24}
-        className="mt-4 text-base leading-8 text-neutral-600 sm:text-lg"
+        className="mt-4 text-base leading-8 text-neutral-700 sm:text-lg"
       >
         {text}
       </motion.p>
@@ -335,49 +619,194 @@ function SectionIntro({
   );
 }
 
+/* ─── "What drives us" carousel ─────────────────────── */
+const DRIVES_SLIDE_MS = 4000;
+const DRIVES_FADE_MS = 400;
+
+/* Captions are drawn from copy already on this page (the mission and vision
+   statements, the hero paragraph, and the Thanksgiving entry under our
+   service areas) rather than written fresh, so nothing here claims anything
+   the rest of the page doesn't already say. */
+const DRIVES_SLIDES = [
+  {
+    image: "/gallery/about/right-about-hero-3.jpg",
+    title: "Heritage",
+    text: "We preserve our cultural heritage and keep the story of Lagos alive through fellowship, outreach, and visible impact.",
+    position: "center",
+  },
+  {
+    image: "/gallery/about/right-about-hero-1.jpg",
+    title: "Service",
+    text: "We provide an annual Thanksgiving food drive to the community as part of our commitment to consistent service.",
+    position: "center",
+  },
+  {
+    image: "/gallery/about/right-about-hero-2.jpg",
+    title: "Fellowship",
+    text: "To unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities.",
+    position: "center 40%",
+  },
+  {
+    image: "/gallery/about/right-about-hero-4.jpg",
+    /* 1600x1411, so a 4:3 frame crops top and bottom — biased upward to keep
+       faces in view. The other three are already 4:3 and crop nothing. */
+    title: "Vision",
+    text: "To be a vibrant and sustainable organization that celebrates Lagosian heritage, strengthens our community, and empowers future generations.",
+    position: "center 38%",
+  },
+];
+
+function WhatDrivesUsCarousel() {
+  const reduceMotion = useReducedMotion();
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  /* Advance on a timer that restarts whenever `active` changes — so picking a
+     thumbnail resets the countdown as well as the slide. Skipped entirely
+     under reduced-motion, matching how the homepage event timeline treats
+     its own auto-advance. */
+  useEffect(() => {
+    if (reduceMotion || paused) return;
+    const t = setTimeout(
+      () => setActive((i) => (i + 1) % DRIVES_SLIDES.length),
+      DRIVES_SLIDE_MS,
+    );
+    return () => clearTimeout(t);
+  }, [active, paused, reduceMotion]);
+
+  const fadeMs = reduceMotion ? 0 : DRIVES_FADE_MS;
+  const slide = DRIVES_SLIDES[active];
+
+  return (
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">What drives us</p>
+
+      {/* Thumbnails beside the active image; a row above it once the column
+          is too narrow to sit them side by side. */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="flex gap-2 sm:flex-col">
+          {DRIVES_SLIDES.map((s, i) => (
+            <button
+              key={s.image}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Show ${s.title}`}
+              aria-current={i === active}
+              className={cn(
+                "relative h-14 w-14 shrink-0 overflow-hidden rounded-xl transition-opacity duration-300",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
+                i === active ? "opacity-100" : "opacity-45 hover:opacity-80",
+              )}
+            >
+              <Image
+                src={s.image}
+                alt=""
+                fill
+                sizes="56px"
+                className="object-cover"
+                style={{ objectPosition: s.position }}
+              />
+              {i === active && (
+                <span className="absolute inset-x-0 bottom-0 h-1 bg-black/40">
+                  {/* Keyed on `active` so each new slide mounts a fresh bar
+                      that starts its run from zero. */}
+                  <span
+                    key={active}
+                    className="block h-full origin-left [animation:drives-progress_4000ms_linear_forwards]"
+                    style={{
+                      background: EKO_GREEN,
+                      animationPlayState: paused || reduceMotion ? "paused" : "running",
+                    }}
+                  />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Every slide stays mounted and cross-fades on opacity, which keeps
+            the frame a fixed size instead of reflowing between images. */}
+        <div className="relative aspect-[4/3] flex-1 overflow-hidden rounded-2xl">
+          {DRIVES_SLIDES.map((s, i) => (
+            <Image
+              key={s.image}
+              src={s.image}
+              alt={i === active ? s.title : ""}
+              fill
+              sizes="(max-width: 1024px) 100vw, 420px"
+              className="object-cover transition-opacity"
+              style={{
+                objectPosition: s.position,
+                opacity: i === active ? 1 : 0,
+                transitionDuration: `${fadeMs}ms`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Captions are stacked and absolutely positioned for the same reason:
+          the panel keeps one height rather than jumping as text length
+          changes. min-h holds room for the longest of them. */}
+      <div className="relative mt-4 min-h-[7.5rem] sm:min-h-[6.5rem]">
+        {DRIVES_SLIDES.map((s, i) => (
+          <div
+            key={s.image}
+            aria-hidden={i !== active}
+            className="absolute inset-0 transition-opacity"
+            style={{ opacity: i === active ? 1 : 0, transitionDuration: `${fadeMs}ms` }}
+          >
+            <p className="text-xl font-semibold tracking-[-0.02em] text-white">{s.title}</p>
+            <p className="mt-2 text-sm leading-7 text-white/65">{s.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <span className="sr-only" aria-live="polite">{slide.title}</span>
+    </div>
+  );
+}
+
 export default function AboutPage() {
   const [activeTab, setActiveTab] = useState<HistoryTab>("origins");
   const activePanel = HISTORY_PANELS[activeTab];
-  const statsRef = useRef<HTMLDivElement>(null);
-  const { events } = useEvents();
-  const pastEventsCount = useMemo(() => {
-    const now = new Date();
-    return events.filter(e => (e.status === "published" || e.status === "completed") && new Date(e.date) < now).length;
-  }, [events]);
-
-  const impactStats = [
-    { value: "9", label: "Service programmes", color: EKO_GREEN },
-    { value: "2", label: "High school awards", color: EKO_RED },
-    { value: "3", label: "College awards", color: EKO_BLUE },
-    { value: pastEventsCount > 0 ? pastEventsCount.toString() : "2mi", label: pastEventsCount > 0 ? "Past events on record" : "Adopt-a-highway stretch", color: EKO_YELLOW },
-  ];
-
-  /* GSAP count-up on the hero scorecard (numeric values only) */
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      const statEls = statsRef.current?.querySelectorAll(".stat-value");
-      statEls?.forEach((el) => {
-        const target = parseInt(el.getAttribute("data-target") ?? "0", 10);
-        const obj = { val: 0 };
-        gsap.to(obj, {
-          val: target,
-          duration: 1.6,
-          ease: "power2.out",
-          scrollTrigger: { trigger: statsRef.current, start: "top 80%" },
-          onUpdate: () => {
-            el.textContent = Math.round(obj.val).toString();
-          },
-        });
-      });
-    });
-    return () => ctx.revert();
-  }, [pastEventsCount]);
 
   return (
     <div className="bg-white text-neutral-950">
-      <section className="relative isolate overflow-hidden bg-neutral-950">
-        <div className="absolute inset-0 bg-[#0a0a0a]" />
+      <section className={`relative isolate overflow-hidden bg-neutral-950 ${HEADER_OFFSET.padding}`}>
+        {/* Eyo procession at an ECI street event, dark-overlaid so it reads
+            as texture behind the headline rather than competing with it —
+            the photo is bright (white agbada, daylight street), so the wash
+            has to be heavy to keep white type legible. The animated colour
+            blobs below still sit on top of it. */}
+        <div className="absolute inset-0">
+          <Image
+            src="/gallery/about/hero-1.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            quality={100}
+            className="object-cover"
+          />
+          {/* Weighted vertically rather than horizontally: the right half is
+              already covered by the stats panel, so the left is the only
+              place the photo actually reads — darkening that side would
+              defeat the point. The bright white agbada and the body copy
+              both sit low, so the wash deepens toward the bottom. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(10,10,10,0.66) 0%, rgba(10,10,10,0.72) 45%, rgba(10,10,10,0.88) 100%)",
+            }}
+          />
+        </div>
 
         {QUAD.map((color, index) => (
           <motion.div
@@ -412,7 +841,7 @@ export default function AboutPage() {
                 {QUAD.map((color) => (
                   <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                 ))}
-                <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/80">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
                   About Eko Club Philadelphia
                 </span>
               </motion.div>
@@ -420,7 +849,7 @@ export default function AboutPage() {
               <motion.h1
                 variants={riseIn}
                 custom={0.08}
-                className="mt-7 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl"
+                className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl"
               >
                 Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
                 <span style={{ color: EKO_YELLOW }}> service</span>, our story.
@@ -439,14 +868,14 @@ export default function AboutPage() {
               <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/membership/apply"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   Join the community
                 </Link>
                 <Link
                   href="#lagos-history"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
                 >
                   Explore Lagos history
                 </Link>
@@ -457,44 +886,9 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="grid gap-4 rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
+              className="rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
             >
-              <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">What drives us</p>
-                <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-white">
-                  Presenting our mission, vision, and service with clarity.
-                </p>
-                <p className="mt-3 text-sm leading-7 text-white/65">
-                  This page brings together who we are, what we believe, how we serve, and the Lagos
-                  history we proudly carry as part of our identity.
-                </p>
-              </div>
-
-              <div ref={statsRef} className="grid grid-cols-2 gap-3">
-                {impactStats.map((item) => {
-                  const isNumeric = /^\d+$/.test(item.value);
-                  return (
-                    <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                      {isNumeric ? (
-                        <div
-                          className="stat-value text-3xl font-bold tracking-[-0.04em]"
-                          data-target={item.value}
-                          style={{ color: item.color }}
-                        >
-                          {item.value}
-                        </div>
-                      ) : (
-                        <div className="text-3xl font-bold tracking-[-0.04em]" style={{ color: item.color }}>
-                          {item.value}
-                        </div>
-                      )}
-                      <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
-                        {item.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <WhatDrivesUsCarousel />
             </motion.div>
           </div>
         </div>
@@ -507,7 +901,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-bold leading-none text-neutral-100">
+        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-semibold leading-none text-neutral-100">
           EKO
         </div>
 
@@ -533,10 +927,10 @@ export default function AboutPage() {
                 className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-transform duration-300 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-bold tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
+                  <h3 className="text-2xl font-semibold tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
                   <span className="h-3 w-3 rounded-full" style={{ background: pillar.color }} />
                 </div>
-                <p className="mt-4 text-sm leading-7 text-neutral-600 sm:text-base">{pillar.text}</p>
+                <p className="mt-4 text-sm leading-7 text-neutral-700 sm:text-base">{pillar.text}</p>
               </motion.article>
             ))}
           </motion.div>
@@ -545,142 +939,113 @@ export default function AboutPage() {
 
       <section className="bg-neutral-50 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
-          <SectionIntro
-            eyebrow="Our focus"
-            title="How we turn our mission into practical service"
-            text="Our work is not abstract. It is expressed through scholarships, humanitarian support, community outreach, and consistent service to families in Philadelphia and beyond."
-            align="center"
-          />
-
+          {/* Heading left, supporting line right — the eyebrow, bar and type
+              scale are the same ones SectionIntro uses elsewhere on the page,
+              just laid out in two columns here. */}
           <motion.div
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-80px" }}
-            className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4"
+            className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end lg:gap-16"
+          >
+            <div>
+              <motion.div variants={riseIn} custom={0} className="flex">
+                <QuadBar />
+              </motion.div>
+              <motion.span
+                variants={riseIn}
+                custom={0.08}
+                className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-700"
+              >
+                Our focus
+              </motion.span>
+              <motion.h2
+                variants={riseIn}
+                custom={0.16}
+                className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
+              >
+                How we turn our mission into practical service
+              </motion.h2>
+            </div>
+            <motion.p
+              variants={riseIn}
+              custom={0.24}
+              className="text-base leading-8 text-neutral-700 sm:text-lg"
+            >
+              Our work is not abstract. It is expressed through scholarships, humanitarian
+              support, community outreach, and consistent service to families in
+              Philadelphia and beyond.
+            </motion.p>
+          </motion.div>
+
+          {/* One strip, panels butted edge to edge with the rounding on the
+              outer container only — the photograph carries each panel and the
+              caption sits over its base. */}
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mt-12 grid overflow-hidden rounded-[2rem] sm:grid-cols-2 xl:grid-cols-4"
           >
             {VALUES.map((value, index) => (
               <motion.article
                 key={value.title}
                 variants={riseIn}
                 custom={index * 0.07}
-                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]"
+                className="group relative aspect-[4/5] xl:aspect-[3/4]"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${value.color}12` }}>
-                  {value.icon}
-                </div>
-                <h3 className="mt-5 text-xl font-bold tracking-[-0.03em] text-neutral-950">{value.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-neutral-600">{value.desc}</p>
-                <div className="mt-6 h-1.5 w-16 rounded-full" style={{ background: value.color }} />
-              </motion.article>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-neutral-50/80" />
-
-        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.84fr_1.16fr] lg:gap-16">
-          <div>
-            <SectionIntro
-              eyebrow="Executive council"
-              title="Meet the exco behind the direction of ECP"
-              text="We also want you to meet the people responsible for leadership, continuity, and accountability. This is our executive team, presented with the same care and polish as the rest of our story."
-            />
-
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-80px" }}
-              className="mt-8 rounded-4xl border border-neutral-200 bg-neutral-50 p-6"
-            >
-              <motion.p variants={riseIn} custom={0} className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
-                How the exco leads
-              </motion.p>
-              <motion.div variants={riseIn} custom={0.08} className="mt-5 grid gap-3 sm:grid-cols-2">
-                {EXCO_PILLARS.map((pillar) => (
-                  <div key={pillar.label} className="rounded-3xl border border-white bg-white px-4 py-4">
-                    <div className="h-2 w-14 rounded-full" style={{ background: pillar.color }} />
-                    <p className="mt-3 text-sm font-bold uppercase tracking-[0.18em] text-neutral-700">
-                      {pillar.label}
-                    </p>
-                  </div>
-                ))}
-              </motion.div>
-              <motion.p variants={riseIn} custom={0.16} className="mt-5 text-sm leading-7 text-neutral-600">
-                Our exco anchors planning, member communication, governance, and execution. It is the
-                leadership layer that keeps Eko Club Philadelphia organised, responsive, and visibly aligned
-                with our mission.
-              </motion.p>
-            </motion.div>
-          </div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
-          >
-            {EXCO_MEMBERS.map((member, index) => (
-              <motion.article
-                key={member.name}
-                variants={riseIn}
-                custom={index * 0.06}
-                className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 text-center shadow-[0_24px_80px_rgba(15,23,42,0.07)] transition-transform duration-300 hover:-translate-y-1"
-              >
+                <Image
+                  src={value.image}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                />
                 <div
-                  className="relative mx-auto h-32 w-32 overflow-hidden rounded-full border-4"
-                  style={{ borderColor: member.color }}
-                >
-                  {/* The zoom is done by sizing this box to EXCO_ZOOM× the
-                      frame and offsetting it, rather than by CSS-scaling the
-                      image: a transform would upscale whatever small file
-                      next/image decided to serve for a 128px frame, which is
-                      what made these portraits look soft. At full size the
-                      element asks for — and gets — a sharp source. */}
-                  <div
-                    className="absolute"
-                    style={{
-                      width: `${EXCO_ZOOM * 100}%`,
-                      height: `${EXCO_ZOOM * 100}%`,
-                      left: `${50 - EXCO_ZOOM * 50}%`,
-                      top: `${50 - EXCO_ZOOM * member.focusY}%`,
-                    }}
-                  >
-                    <Image
-                      src={member.image}
-                      alt={`${member.name}, ${member.role}`}
-                      fill
-                      className="object-cover"
-                      sizes="340px"
-                      quality={100}
-                    />
-                  </div>
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(to bottom, rgba(10,10,10,0.1) 35%, rgba(10,10,10,0.88) 100%)" }}
+                  aria-hidden="true"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <div className="h-1.5 w-12 rounded-full" style={{ background: value.color }} aria-hidden="true" />
+                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-white">{value.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/75">{value.desc}</p>
                 </div>
-                <h3 className="mt-5 text-xl font-bold leading-snug tracking-[-0.02em] text-neutral-950">
-                  {member.name}
-                </h3>
-                <span
-                  className="mt-3 inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-900"
-                  style={{ background: `${member.color}18` }}
-                >
-                  {member.role}
-                </span>
               </motion.article>
             ))}
           </motion.div>
         </div>
       </section>
+
+      <PeopleSection
+        id="patrons"
+        eyebrow=""
+        headingLead="Matrons"
+        headingTail="& patrons"
+        intro="The elders who stand behind Eko Club Philadelphia, lending their name, counsel, and standing to the work we do in Lagos and in Philadelphia."
+        people={PATRONS}
+        zoom={PATRON_ZOOM}
+      />
+
+      <PeopleSection
+        id="exco"
+        eyebrow="Executive council"
+        headingLead="Executive"
+        headingTail="council"
+        intro="The people responsible for leadership, continuity, and accountability anchoring planning, member communication, governance, and execution."
+        people={EXCO_MEMBERS}
+        zoom={EXCO_ZOOM}
+        className="bg-neutral-50"
+      />
 
       <section className="bg-[#0a0a0a] py-24 px-6 sm:px-10 lg:px-16">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-start gap-12">
             <div className="lg:w-1/2">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">Our Lagos roots</p>
-              <h2 className="text-4xl font-bold text-white leading-snug mb-5 tracking-tight">
+              <h2 className="text-4xl font-semibold text-white leading-snug mb-5 tracking-tight">
                 The five IBILE divisions — where we come from
               </h2>
               <p className="text-base text-white/55 leading-relaxed font-normal mb-6">
@@ -724,7 +1089,7 @@ export default function AboutPage() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-all"
+                    className="rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-all"
                     style={{
                       borderColor: activeTab === key ? panel.accent : "#e5e7eb",
                       background: activeTab === key ? `${panel.accent}14` : "#ffffff",
@@ -749,7 +1114,7 @@ export default function AboutPage() {
             >
               <div className="flex flex-wrap items-center gap-3">
                 <span
-                  className="rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-950"
+                  className="rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-950"
                   style={{ background: `${activePanel.accent}20` }}
                 >
                   {activePanel.kicker}
@@ -757,10 +1122,10 @@ export default function AboutPage() {
                 <QuadBar />
               </div>
 
-              <h3 className="mt-6 text-3xl font-bold tracking-[-0.04em] text-neutral-950 sm:text-4xl">
+              <h3 className="mt-6 text-3xl font-semibold tracking-[-0.04em] text-neutral-950 sm:text-4xl">
                 {activePanel.title}
               </h3>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-neutral-600 sm:text-lg">
+              <p className="mt-5 max-w-3xl text-base leading-8 text-neutral-700 sm:text-lg">
                 {activePanel.summary}
               </p>
 
@@ -774,7 +1139,7 @@ export default function AboutPage() {
                     className="flex gap-4 rounded-[1.25rem] border border-white bg-white p-5"
                   >
                     <div className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: activePanel.accent }} />
-                    <p className="text-sm leading-7 text-neutral-600 sm:text-base">{bullet}</p>
+                    <p className="text-sm leading-7 text-neutral-700 sm:text-base">{bullet}</p>
                   </motion.div>
                 ))}
               </div>
@@ -807,8 +1172,8 @@ export default function AboutPage() {
                 className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/6 p-6 backdrop-blur-md"
               >
                 <div className="absolute left-0 top-0 h-full w-1.5" style={{ background: item.color }} />
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/45">{item.era}</p>
-                <h3 className="mt-4 text-2xl font-bold tracking-[-0.03em] text-white">{item.title}</h3>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">{item.era}</p>
+                <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-white">{item.title}</h3>
                 <p className="mt-4 text-sm leading-7 text-white/68">{item.text}</p>
               </motion.article>
             ))}
@@ -843,8 +1208,8 @@ export default function AboutPage() {
                   {item.icon}
                 </div>
                 <div className="mt-5 h-2 w-16 rounded-full" style={{ background: item.accent }} />
-                <h3 className="mt-5 text-2xl font-bold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-neutral-600">{item.text}</p>
+                <h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-neutral-700">{item.text}</p>
               </motion.article>
             ))}
           </motion.div>
@@ -858,7 +1223,7 @@ export default function AboutPage() {
           >
             <Link
               href="/projects"
-              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
+              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
               style={{ background: EKO_BLUE }}
             >
               View full projects page
@@ -879,7 +1244,7 @@ export default function AboutPage() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
               Keep the <span style={{ color: EKO_YELLOW }}>Eko spirit</span> moving.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -889,14 +1254,14 @@ export default function AboutPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
                 href="/membership/apply"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO_GREEN }}
               >
                 Apply for membership
               </Link>
               <Link
                 href="/events"
-                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
               >
                 See upcoming events
               </Link>

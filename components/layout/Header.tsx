@@ -29,6 +29,24 @@ const TRAILING_LINKS = [
    fade out — restored once the user scrolls back above this point. */
 const SCROLL_THRESHOLD = 60;
 
+/* The header is fixed, so the space it occupies has to be reserved somehow.
+   Pages without a full-bleed hero get `spacer` as an empty div; pages with
+   one apply `padding` to the hero itself, letting its background run all the
+   way to the top of the page behind the transparent header. Same heights,
+   kept together so they can't drift apart. */
+export const HEADER_OFFSET = {
+  spacer: "h-24 sm:h-28 lg:h-[168px]",
+  padding: "pt-24 sm:pt-28 lg:pt-[168px]",
+} as const;
+
+/* Routes whose first section is a dark full-bleed hero that the transparent
+   header can legibly sit on top of. Each one pads its own hero by
+   HEADER_OFFSET.padding in place of the spacer. Note /programs and /contact
+   are absent on purpose: they render no Header at all (it comes from
+   per-route layouts, and those two have none), so there is no spacer to
+   suppress there. */
+const FULL_BLEED_HERO_ROUTES: string[] = ["/", "/about", "/projects", "/donate"];
+
 function isLinkActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
@@ -196,12 +214,12 @@ export default function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
-  const isHome = pathname === "/";
-  /* Background: transparent only at the very top of the homepage hero;
-     a frosted glass surface everywhere else (never plain transparent once
-     scrolled, and always glass on interior pages since they don't all have
-     a dark hero to sit on top of). */
-  const showGlass = !isHome || scrolled;
+  const hasFullBleedHero = FULL_BLEED_HERO_ROUTES.includes(pathname);
+  /* Background: transparent only at the very top of a full-bleed hero that
+     the header can sit on top of; a frosted glass surface everywhere else
+     (never plain transparent once scrolled, and always glass on pages
+     whose first section is ordinary light content). */
+  const showGlass = !hasFullBleedHero || scrolled;
   /* Logo + Login + Donate declutter while scrolled, and return once the
      user is back at the top of the page. */
   const showExtras = !scrolled;
@@ -369,9 +387,12 @@ export default function Header() {
       </header>
 
       {/* Spacer: reserve the header's resting (logo-visible) height on pages
-          without a full-bleed hero to sit behind. The homepage hero sits
-          behind the transparent header, so no spacer there. */}
-      {!isHome && <div aria-hidden="true" className="h-24 sm:h-28 lg:h-[168px]" />}
+          without a full-bleed hero to sit behind. Pages listed in
+          FULL_BLEED_HERO_ROUTES run their hero up behind the transparent
+          header instead and pad their own hero by HEADER_OFFSET, so they get
+          no spacer — otherwise the gap shows the page background as a band
+          above the hero. */}
+      {!hasFullBleedHero && <div aria-hidden="true" className={HEADER_OFFSET.spacer} />}
 
       {/* ── Mobile off-canvas drawer ──────────────── */}
       <AnimatePresence>

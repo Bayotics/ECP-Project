@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDonations } from "@/context/DonationsContext";
 import { useAuth } from "@/context/AuthContext";
 import type { DonationType, DonationCause } from "@/lib/models/donation";
+import { HEADER_OFFSET } from "@/components/layout/Header";
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 const PRESET_AMOUNTS = [25, 50, 100, 250, 500, 1000];
@@ -112,7 +113,7 @@ export default function DonatePage() {
   return (
     <div className="min-h-screen bg-(--color-neutral-50)">
       {/* Hero */}
-      <section className="relative bg-[#0a0a0a] text-white py-20 px-4 overflow-hidden">
+      <section className={`relative bg-[#0a0a0a] text-white pb-20 px-4 overflow-hidden ${HEADER_OFFSET.padding}`}>
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1559223607-b4d0555ae227?w=1200')] bg-cover bg-center" />
         <div className="relative max-w-3xl mx-auto text-center">
           <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-3">Support Eko Club Philadelphia</p>

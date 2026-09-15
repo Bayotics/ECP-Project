@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { HEADER_OFFSET } from "@/components/layout/Header";
 
 const EKO_GREEN = "#059669";
 const EKO_RED = "#dc2626";
@@ -204,7 +205,7 @@ function SectionIntro({
 export default function ProjectsPage() {
   return (
     <div className="bg-white text-neutral-950">
-      <section className="relative isolate overflow-hidden bg-neutral-950">
+      <section className={`relative isolate overflow-hidden bg-neutral-950 ${HEADER_OFFSET.padding}`}>
         <div className="absolute inset-0 bg-[#0a0a0a]" />
 
         {QUAD.map((color, index) => (

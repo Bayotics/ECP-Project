@@ -224,3 +224,13 @@ body {
   from { stroke-dashoffset: 97.39; }
   to   { stroke-dashoffset: 0; }
 }
+
+/* Progress bar under the active thumbnail of the About page's "What drives
+   us" carousel. An animation rather than a transition so it can be paused
+   mid-run (animation-play-state) while the pointer is over the carousel.
+   Referenced from an `[animation:…]` utility class so the build can see it
+   in use — a keyframes block it can't find referenced gets stripped. */
+@keyframes drives-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
