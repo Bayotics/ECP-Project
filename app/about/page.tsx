@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HEADER_OFFSET } from "@/components/layout/Header";
 import { cn } from "@/utils/cn";
 
@@ -14,27 +16,137 @@ const EKO_BLUE = "#2563eb";
 const EKO_YELLOW = "#d97706";
 const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
 
-const riseIn = {
-  hidden: { opacity: 0, y: 32 },
-  show: (delay = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.65,
-      delay,
-      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-    },
-  }),
+/* ── Scroll reveals ───────────────────────────────────────────────────────
+   GSAP + ScrollTrigger, matching the home page: each reveal plays once per
+   page load, when its element's top reaches 85% of the viewport.
+
+   Every element a reveal animates is rendered with `data-reveal` and an
+   inline `opacity: 0` (HIDDEN), so the server HTML is already in its
+   starting state. Hiding it from an effect instead would let anything
+   already on screen at load — the hero, or a section after a reload
+   mid-page — flash visible, vanish, then animate back in. */
+const HIDDEN: CSSProperties = { opacity: 0 };
+const SHIFT = 48;
+const EASE = "power3.out";
+
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** False on the server and during hydration, true afterwards — for markup
+    (like a portal into document.body) that can only exist in the browser. */
+const noopSubscribe = () => () => {};
+function useIsClient() {
+  return useSyncExternalStore(noopSubscribe, () => true, () => false);
+}
+
+type RevealKit = {
+  /** A paused timeline plus a promise for its completion. (GSAP's own
+      `timeline.then()` holds a single pending promise, so a second caller
+      would silently orphan the first — completion is tracked here instead.) */
+  timeline: () => { tl: gsap.core.Timeline; done: Promise<void> };
+  /** Resolves once `el`'s top reaches 85% of the viewport (straight away if it already has). */
+  entered: (el: Element | null) => Promise<void>;
+  /** Runs `play` once every gate has resolved, unless the section has since unmounted. */
+  after: (gates: Promise<unknown>[], play: () => void) => void;
+  /**
+   * Reveals `items` strictly one after another and resolves once the last
+   * one lands. Nothing starts before `gate` resolves, and each item also
+   * waits until it is itself on screen — so on a phone, where a grid stacks
+   * into one long column, the lower items still animate where they can be
+   * seen rather than off the bottom of the screen.
+   */
+  queue: (items: Element[], from: gsap.TweenVars, gate: Promise<unknown>) => Promise<void>;
 };
 
-const stagger = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+function useReveal(scope: RefObject<HTMLElement | null>, build: (kit: RevealKit) => void) {
+  useIsoLayoutEffect(() => {
+    const root = scope.current;
+    if (!root) return;
+    gsap.registerPlugin(ScrollTrigger);
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(root.querySelectorAll("[data-reveal]"), { opacity: 1 });
+      return;
+    }
+
+    let alive = true;
+    const ctx = gsap.context(() => {}, root);
+
+    const kit: RevealKit = {
+      timeline: () => {
+        let resolve!: () => void;
+        const done = new Promise<void>((r) => (resolve = r));
+        const tl = ctx.add(() => gsap.timeline({ paused: true, onComplete: resolve })) as gsap.core.Timeline;
+        return { tl, done };
+      },
+      entered: (el) =>
+        new Promise<void>((resolve) => {
+          if (!el) return resolve();
+          ctx.add(() => {
+            const st = ScrollTrigger.create({
+              trigger: el,
+              start: "top 85%",
+              once: true,
+              onEnter: () => resolve(),
+            });
+            // Already scrolled past on creation (a reload mid-page, or an
+            // anchor link further down) — don't wait for an onEnter that
+            // may never be needed.
+            if (st.progress > 0) resolve();
+          });
+        }),
+      after: (gates, play) => {
+        Promise.all(gates).then(() => {
+          if (alive) ctx.add(play);
+        });
+      },
+      queue: (items, from, gate) => {
+        if (!items.length) return gate.then(() => undefined);
+        let chain: Promise<unknown> = gate;
+        let landed = 0;
+        let resolveAll!: () => void;
+        const all = new Promise<void>((r) => (resolveAll = r));
+        ctx.add(() => {
+          gsap.set(items, from);
+          ScrollTrigger.batch(items, {
+            start: "top 85%",
+            once: true,
+            onEnter: (batch) => {
+              chain = chain.then(
+                () =>
+                  new Promise<void>((next) => {
+                    if (!alive) return;
+                    ctx.add(() => {
+                      gsap.to(batch, {
+                        opacity: 1,
+                        x: 0,
+                        y: 0,
+                        duration: 0.6,
+                        ease: EASE,
+                        stagger: 0.22,
+                        onComplete: () => {
+                          landed += batch.length;
+                          if (landed >= items.length) resolveAll();
+                          next();
+                        },
+                      });
+                    });
+                  }),
+              );
+            },
+          });
+        });
+        return all;
+      },
+    };
+
+    ctx.add(() => build(kit));
+
+    return () => {
+      alive = false;
+      ctx.revert();
+    };
+  }, []);
+}
 
 
 const STORY_PILLARS = [
@@ -89,38 +201,274 @@ const VALUES = [
   },
 ];
 
+/* The five annual programmes, as listed on the club's original website page
+   (Website.jpg in the events hand-off). Each photo is from that same hand-off:
+   the scholarship presentation, the HomeFront back-to-school drop-off, the
+   Adopt-A-Highway crew at their road sign, and the Thanksgiving turkey
+   table. There was no standalone Make-A-Meal photograph — its only image is
+   the small round one on that old website page, cropped out here, so it is
+   lower-resolution than the rest. */
 const SERVICE_PROGRAMS = [
   {
-    title: "Ronald McDonald House Make-A-Meal Program",
-    text: "We provide breakfast at the PA-RMH for families staying at Ronald McDonald House, and the programme has remained a strong and consistent success over the past four years.",
-    icon: "🍽️",
-    accent: EKO_GREEN,
+    title: "Ronald McDonald House Make-A-Meal",
+    text: "We cook breakfast for families staying at Philadelphia’s Ronald McDonald House.",
+    image: "/gallery/programs/make-a-meal.jpg",
   },
   {
-    title: "Back to School with HomeFront Program",
-    text: "Our participants provide backpacks, school uniforms, school supplies, and monetary donations to children in need as families prepare for a new school year.",
-    icon: "🎒",
-    accent: EKO_RED,
+    title: "Back to School with HomeFront",
+    text: "Backpacks, uniforms, and school supplies for children in need.",
+    image: "/gallery/programs/back-to-school.jpg",
   },
   {
     title: "ECP Scholarship Program",
-    text: "We award scholarships to 2 high school graduates and 3 college students, extending educational support where it can make a lasting difference.",
-    icon: "🏅",
-    accent: EKO_BLUE,
+    text: "Awards to two high school graduates and three college students.",
+    image: "/gallery/programs/scholarship.jpg",
   },
   {
-    title: "PA Adopt-A-Highway Program",
-    text: "We walk a two-mile stretch in Bucks County, Pennsylvania, picking up visible trash and waste as part of our environmental service commitment.",
-    icon: "🛣️",
-    accent: EKO_YELLOW,
+    title: "PA Adopt-A-Highway",
+    text: "Members clear litter from a two-mile stretch of road in Bucks County.",
+    image: "/gallery/programs/adopt-a-highway.jpg",
   },
   {
     title: "Thanksgiving Basket Food Drive",
-    text: "Each year, we host our annual Thanksgiving food drive to provide assistance to families in need within our community.",
-    icon: "🦃",
-    accent: EKO_GREEN,
+    text: "An annual food drive for families in need across our community.",
+    image: "/gallery/programs/thanksgiving.jpg",
   },
 ];
+
+/* Pentagon layout for the programme ring. Positions are percentages of a
+   square box: five circles on a ring of radius RING_R around a centre
+   emblem, starting at the top and going clockwise. The whole figure sits a
+   little below centre because a point-up pentagon is top-heavy — the lower
+   pair of circles doesn't reach as far down as the top one reaches up. */
+const RING_R = 34;
+const RING_CY = 53;
+const RING_D = 30;
+const RING_STEP = (2 * Math.PI) / SERVICE_PROGRAMS.length;
+const RING_START = -Math.PI / 2;
+
+/* Rounded so the server and the browser print identical numbers — trig
+   results can differ in the last few bits between JS engines, which would
+   otherwise surface as a hydration mismatch. */
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
+const onRing = (angle: number) => ({
+  x: round3(50 + RING_R * Math.cos(angle)),
+  y: round3(RING_CY + RING_R * Math.sin(angle)),
+});
+
+const RING_POSITIONS = SERVICE_PROGRAMS.map((_, i) => onRing(RING_START + i * RING_STEP));
+
+/* The dotted ring, split into the five arcs between neighbouring circles so
+   each can be drawn in turn. Only the stretch actually visible between two
+   circles gets dots: RING_COVER is the angle each circle (plus its 4px
+   ring) hides either side of its own centre, measured at the ring's radius.
+   Dots keep the original spacing (2.2) and size, centred in each gap. Arc i
+   runs clockwise from circle i to circle i + 1; the last one closes the
+   ring back to the first. */
+const RING_DOT_GAP = 2.2;
+const RING_DOT_R = 0.275;
+const RING_COVER = 2 * Math.asin((RING_D / 2 + 1.3) / (2 * RING_R));
+const RING_ARCS = RING_POSITIONS.map((_, i) => {
+  const span = RING_STEP - 2 * RING_COVER;
+  const count = Math.floor((span * RING_R) / RING_DOT_GAP) + 1;
+  const used = ((count - 1) * RING_DOT_GAP) / RING_R;
+  const first = RING_START + i * RING_STEP + RING_COVER + (span - used) / 2;
+  return Array.from({ length: count }, (_, k) => onRing(first + (k * RING_DOT_GAP) / RING_R));
+});
+
+function ServiceProgramsSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const figureRef = useRef<HTMLDivElement>(null);
+  const centreRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  /* Centre emblem grows from a dot to full size; then, clockwise from the
+     top, each programme circle grows the same way and the dotted arc to the
+     next circle draws itself dot by dot — five times, the last arc closing
+     the ring. Only once the ring is whole does the right-hand column start:
+     heading, then each list item, then the button, each also waiting until
+     it is on screen. */
+  useReveal(sectionRef, ({ timeline, entered, after, queue }) => {
+    const figure = figureRef.current!;
+    const circles = gsap.utils.toArray<HTMLElement>("[data-ring-circle]", figure);
+    const arcs = RING_ARCS.map((_, i) => gsap.utils.toArray<SVGElement>(`[data-ring-arc="${i}"]`, figure));
+
+    gsap.set([centreRef.current, ...circles], { scale: 0.04, transformOrigin: "50% 50%" });
+
+    const ring = timeline();
+    ring.tl.to(centreRef.current, { opacity: 1, scale: 1, duration: 0.7, ease: EASE });
+    circles.forEach((circle, i) => {
+      ring.tl
+        .to(circle, { opacity: 1, scale: 1, duration: 0.55, ease: EASE })
+        .to(arcs[i], { opacity: 1, duration: 0.12, stagger: 0.09, ease: "none" });
+    });
+    after([entered(figure)], () => ring.tl.play());
+
+    gsap.set(headRef.current, { y: 32 });
+    const head = timeline();
+    head.tl.to(headRef.current, { opacity: 1, y: 0, duration: 0.8, ease: EASE });
+    after([ring.done, entered(headRef.current)], () => head.tl.play());
+
+    const items = gsap.utils.toArray<HTMLElement>(listRef.current!.children);
+    const listDone = queue(items, { y: 32 }, head.done);
+
+    gsap.set(buttonRef.current, { y: 32 });
+    const button = timeline();
+    button.tl.to(buttonRef.current, { opacity: 1, y: 0, duration: 0.6, ease: EASE });
+    after([listDone, entered(buttonRef.current)], () => button.tl.play());
+  });
+
+  return (
+    <section ref={sectionRef} className="relative bg-[#fbfaf4] px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
+        <div ref={figureRef} className="relative mx-auto aspect-square w-full max-w-[36rem]">
+          {/* Dotted ring through the circle centres, as five separately
+              drawn arcs (see RING_ARCS). */}
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            {RING_ARCS.map((dots, i) =>
+              dots.map((dot, k) => (
+                <circle
+                  key={`${i}-${k}`}
+                  data-reveal
+                  data-ring-arc={i}
+                  cx={dot.x}
+                  cy={dot.y}
+                  r={RING_DOT_R}
+                  fill="#0f5e12"
+                  style={HIDDEN}
+                />
+              )),
+            )}
+          </svg>
+
+          {/* Centre emblem */}
+          <div
+            ref={centreRef}
+            data-reveal
+            className="absolute flex items-center justify-center rounded-full bg-green-700"
+            style={{
+              ...HIDDEN,
+              width: `${RING_D}%`,
+              height: `${RING_D}%`,
+              left: `${50 - RING_D / 2}%`,
+              top: `${RING_CY - RING_D / 2}%`,
+            }}
+          >
+            <div className="relative h-[72%] w-[72%] overflow-hidden rounded-full bg-white">
+              <Image src="/new-logo.png" alt="Eko Club Philadelphia" fill sizes="160px" className="object-contain p-1.5" />
+            </div>
+          </div>
+
+          {SERVICE_PROGRAMS.map((program, i) => (
+            /* The grow-in animates this wrapper, not the link: the link
+               carries a CSS transform transition for its hover scale, which
+               would otherwise chase every frame GSAP writes and lag behind. */
+            <div
+              key={program.title}
+              data-reveal
+              data-ring-circle
+              className="absolute"
+              style={{
+                ...HIDDEN,
+                width: `${RING_D}%`,
+                height: `${RING_D}%`,
+                left: `${round3(RING_POSITIONS[i].x - RING_D / 2)}%`,
+                top: `${round3(RING_POSITIONS[i].y - RING_D / 2)}%`,
+              }}
+            >
+            <Link
+              href="/projects"
+              aria-label={program.title}
+              /* `isolate` keeps the sliding panel clipped to the circle in
+                 Safari, which otherwise lets a transformed child escape a
+                 rounded overflow-hidden parent while it animates. */
+              className="group absolute inset-0 isolate block overflow-hidden rounded-full ring-4 ring-[#fbfaf4] transition-transform duration-300 hover:scale-105"
+              style={{ containerType: "inline-size" }}
+            >
+              <Image
+                src={program.image}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 30vw, 180px"
+                className="object-cover"
+              />
+              {/* Glass panel: parked just below the circle and slid up to
+                  cover the lower half on hover/focus. The circle's clipping
+                  turns it into a half-disc that narrows quickly towards the
+                  bottom, so the title hugs the midline where it's widest and
+                  must stay within two lines there. The font is sized off the
+                  circle itself (cqw — the link is a size container) so the
+                  longest title, "Ronald McDonald House Make-A-Meal", still
+                  fits as the ring shrinks; text-balance splits it evenly
+                  instead of leaving a long first line and an orphan. */}
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-0 flex h-1/2 translate-y-full items-start justify-center border-t border-white/30 bg-green-700/55 text-center backdrop-blur-md transition-transform duration-500 ease-out group-hover:translate-y-0 group-focus-visible:translate-y-0"
+                style={{ padding: "4% 8% 0" }}
+              >
+                <span
+                  className="font-semibold text-balance text-white"
+                  style={{ fontSize: "clamp(9px, 7.6cqw, 12px)", lineHeight: 1.15 }}
+                >
+                  {program.title}
+                </span>
+              </span>
+            </Link>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <div ref={headRef} data-reveal style={HIDDEN}>
+            <p className="text-lg font-medium text-green-600/70">Annual service programs</p>
+            <h2 className="mt-4 text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-green-800 sm:text-5xl">
+              Service that shows up every year
+            </h2>
+          </div>
+
+          <ul ref={listRef} className="mt-10 divide-y divide-green-800/10 border-y border-green-800/10">
+            {SERVICE_PROGRAMS.map((program) => (
+              <li key={program.title} data-reveal style={HIDDEN}>
+                <Link
+                  href="/projects"
+                  className="group flex items-center justify-between gap-6 py-4"
+                >
+                  <span>
+                    <span className="block text-base font-semibold text-green-800">{program.title}</span>
+                    <span className="mt-1 block text-sm leading-6 text-green-900/70">{program.text}</span>
+                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5 shrink-0 text-green-700 transition-transform duration-300 group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div ref={buttonRef} data-reveal className="mt-10" style={HIDDEN}>
+            <Link
+              href="/projects"
+              className="inline-flex items-center rounded-full bg-green-700 px-8 py-4 text-base font-medium text-white transition-colors duration-300 hover:bg-green-800"
+            >
+              Learn More
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /* Real office holders, taken from the official portrait badges in
    /public/gallery/excos. Those source images carry the name and role baked
@@ -311,10 +659,28 @@ function PeopleSection({
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const isClient = useIsClient();
   const active = openIndex === null ? null : people[openIndex];
 
-  useEffect(() => setMounted(true), []);
+  const sectionRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+
+  /* Eyebrow (when there is one), heading, then intro slide in from the left
+     one at a time; once all three have landed, the cards slide in from the
+     right one at a time. The trigger is the grid rather than the intro
+     column itself — that column is sticky on large screens, and a sticky
+     element's measured position shifts once it sticks. */
+  useReveal(sectionRef, ({ timeline, entered, after, queue }) => {
+    const lines = gsap.utils.toArray<HTMLElement>(introRef.current!.children);
+    gsap.set(lines, { x: -SHIFT });
+    const intro = timeline();
+    intro.tl.to(lines, { opacity: 1, x: 0, duration: 0.7, ease: EASE, stagger: 0.3 });
+    after([entered(gridRef.current)], () => intro.tl.play());
+
+    queue(gsap.utils.toArray<HTMLElement>(cardsRef.current!.children), { x: SHIFT }, intro.done);
+  });
 
   /* The drawer stays mounted and slides out of the viewport when closed.
      AnimatePresence exit transitions have proved unreliable in this app, and
@@ -334,27 +700,34 @@ function PeopleSection({
   }, [active]);
 
   return (
-    <section id={id} className={cn("relative bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24", className)}>
-      <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">{eyebrow}</p>
-          <div className="mt-5">
+    <section
+      ref={sectionRef}
+      id={id}
+      className={cn("relative bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24", className)}
+    >
+      <div ref={gridRef} className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+        <div ref={introRef} className="lg:sticky lg:top-28 lg:self-start">
+          {/* Omitted when empty, so an invisible line doesn't take a turn in
+              the one-at-a-time sequence. The heading's own top margin keeps
+              the layout identical either way. */}
+          {eyebrow && (
+            <p data-reveal className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700" style={HIDDEN}>
+              {eyebrow}
+            </p>
+          )}
+          <div data-reveal className="mt-5" style={HIDDEN}>
             <TwoToneHeading lead={headingLead} tail={headingTail} />
           </div>
-          <p className="mt-6 max-w-md text-base leading-7 text-neutral-700">{intro}</p>
+          <p data-reveal className="mt-6 max-w-md text-base leading-7 text-neutral-700" style={HIDDEN}>
+            {intro}
+          </p>
         </div>
 
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-80px" }}
-          className="grid gap-x-2 gap-y-6 sm:grid-cols-2 xl:grid-cols-3"
-        >
+        <div ref={cardsRef} className="grid gap-x-2 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
           {people.map((person, index) => {
             const hasBio = Boolean(person.bio?.length);
             return (
-              <motion.article key={person.name} variants={riseIn} custom={index * 0.06} className="group">
+              <article key={person.name} data-reveal className="group" style={HIDDEN}>
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
                   <PersonPortrait
                     person={person}
@@ -395,10 +768,10 @@ function PeopleSection({
                   {person.name}
                 </h3>
                 <p className="mt-1 text-sm text-neutral-700">{person.role}</p>
-              </motion.article>
+              </article>
             );
           })}
-        </motion.div>
+        </div>
       </div>
 
       {/* Biography drawer. Portalled to <body> because several ancestors up
@@ -406,7 +779,7 @@ function PeopleSection({
           ancestor makes `position: fixed` resolve against that element
           instead of the viewport — which left the drawer clipped and the
           backdrop covering only part of the screen. */}
-      {mounted &&
+      {isClient &&
         createPortal(
           <div
             className={cn(
@@ -494,38 +867,18 @@ function SectionIntro({
   align?: "left" | "center";
 }) {
   return (
-    <motion.div
-      variants={stagger}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-80px" }}
-      className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}
-    >
-      <motion.div variants={riseIn} custom={0} className={align === "center" ? "flex justify-center" : "flex"}>
+    <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
+      <div className={align === "center" ? "flex justify-center" : "flex"}>
         <QuadBar />
-      </motion.div>
-      <motion.span
-        variants={riseIn}
-        custom={0.08}
-        className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700"
-      >
+      </div>
+      <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
         {eyebrow}
-      </motion.span>
-      <motion.h2
-        variants={riseIn}
-        custom={0.16}
-        className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
-      >
+      </span>
+      <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
         {title}
-      </motion.h2>
-      <motion.p
-        variants={riseIn}
-        custom={0.24}
-        className="mt-4 text-base leading-8 text-neutral-700 sm:text-lg"
-      >
-        {text}
-      </motion.p>
-    </motion.div>
+      </h2>
+      <p className="mt-4 text-base leading-8 text-neutral-700 sm:text-lg">{text}</p>
+    </div>
   );
 }
 
@@ -742,9 +1095,6 @@ function youTubeEmbedUrl(url: string) {
 function IbileCarousel() {
   const [current, setCurrent] = useState(0);
   const [video, setVideo] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   const next = () => setCurrent((prev) => (prev + 1) % IBILE_SLIDES.length);
   const prev = () => setCurrent((prev) => (prev - 1 + IBILE_SLIDES.length) % IBILE_SLIDES.length);
@@ -870,8 +1220,7 @@ function IbileCarousel() {
           biography drawer: this carousel sits inside transformed ancestors,
           and `position: fixed` resolves against those rather than the
           viewport, which would trap the overlay inside the carousel box. */}
-      {mounted &&
-        video &&
+      {video &&
         createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-2 sm:p-4"
@@ -1006,9 +1355,22 @@ const LAGOS_CHIEFTAINCIES = [
 
 function LagosHistorySection() {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setMounted(true), []);
+  /* Text column slides in from the left; the photo fades in once it has
+     landed (and once the photo is on screen — below the text on phones). */
+  useReveal(sectionRef, ({ timeline, entered, after }) => {
+    gsap.set(textRef.current, { x: -SHIFT });
+    const text = timeline();
+    text.tl.to(textRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(textRef.current)], () => text.tl.play());
+
+    const image = timeline();
+    image.tl.to(imageRef.current, { opacity: 1, duration: 0.9, ease: "power2.out" });
+    after([text.done, entered(imageRef.current)], () => image.tl.play());
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -1025,9 +1387,14 @@ function LagosHistorySection() {
   }, [open]);
 
   return (
-    <section id="lagos-history" className="relative bg-white">
+    <section ref={sectionRef} id="lagos-history" className="relative bg-white">
       <div className="grid lg:grid-cols-2">
-        <div className="flex flex-col justify-center px-6 py-20 sm:px-10 lg:py-28 lg:pl-16 lg:pr-20 xl:pl-24">
+        <div
+          ref={textRef}
+          data-reveal
+          className="flex flex-col justify-center px-6 py-20 sm:px-10 lg:py-28 lg:pl-16 lg:pr-20 xl:pl-24"
+          style={HIDDEN}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">
             HISTORY
           </p>
@@ -1054,7 +1421,7 @@ function LagosHistorySection() {
           </div>
         </div>
 
-        <div className="relative min-h-[24rem] lg:min-h-[42rem]">
+        <div ref={imageRef} data-reveal className="relative min-h-[24rem] lg:min-h-[42rem]" style={HIDDEN}>
           <Image
             src="/gallery/hero-bgs/lagos-island.jpg"
             alt="Lagos Island seen across the lagoon"
@@ -1065,8 +1432,7 @@ function LagosHistorySection() {
         </div>
       </div>
 
-      {mounted &&
-        open &&
+      {open &&
         createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-start justify-center bg-neutral-950/70 p-0 sm:p-6"
@@ -1177,8 +1543,85 @@ function LagosHistorySection() {
 }
 
 export default function AboutPage() {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const heroPanelRef = useRef<HTMLDivElement>(null);
+  const heroButtonsRef = useRef<HTMLDivElement>(null);
+  const whyTextRef = useRef<HTMLDivElement>(null);
+  const whyCardsRef = useRef<HTMLDivElement>(null);
+  const focusHeadingRef = useRef<HTMLDivElement>(null);
+  const focusTextRef = useRef<HTMLParagraphElement>(null);
+  const focusCardsRef = useRef<HTMLDivElement>(null);
+  const rootsTextRef = useRef<HTMLDivElement>(null);
+  const rootsCarouselRef = useRef<HTMLDivElement>(null);
+  const ctaTextRef = useRef<HTMLDivElement>(null);
+  const ctaLeftButtonRef = useRef<HTMLDivElement>(null);
+  const ctaRightButtonRef = useRef<HTMLDivElement>(null);
+
+  useReveal(pageRef, ({ timeline, entered, after, queue }) => {
+    /* Hero — on screen at load, so it plays straight away rather than on
+       scroll. Headline block from the left and the "What drives us" panel
+       from the right together, then the buttons fade in. */
+    gsap.set(heroTextRef.current, { x: -SHIFT });
+    gsap.set(heroPanelRef.current, { x: SHIFT });
+    const hero = timeline();
+    hero.tl
+      .to(heroTextRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE })
+      .to(heroPanelRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE }, "<")
+      .to(heroButtonsRef.current, { opacity: 1, duration: 0.6, ease: "power2.out" });
+    hero.tl.play();
+
+    /* Why we exist — left from the left, right from the right, together.
+       Each has its own trigger so that on phones, where they stack, the
+       cards animate when they reach the screen. */
+    gsap.set(whyTextRef.current, { x: -SHIFT });
+    gsap.set(whyCardsRef.current, { x: SHIFT });
+    const whyText = timeline();
+    whyText.tl.to(whyTextRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(whyTextRef.current)], () => whyText.tl.play());
+    const whyCards = timeline();
+    whyCards.tl.to(whyCardsRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(whyCardsRef.current)], () => whyCards.tl.play());
+
+    /* Our focus — heading from the left, supporting line from the right,
+       then the four image cards rise one at a time. */
+    gsap.set(focusHeadingRef.current, { x: -SHIFT });
+    gsap.set(focusTextRef.current, { x: SHIFT });
+    const focusHeading = timeline();
+    focusHeading.tl.to(focusHeadingRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(focusHeadingRef.current)], () => focusHeading.tl.play());
+    const focusText = timeline();
+    focusText.tl.to(focusTextRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(focusTextRef.current)], () => focusText.tl.play());
+    queue(
+      gsap.utils.toArray<HTMLElement>(focusCardsRef.current!.children),
+      { y: SHIFT },
+      Promise.all([focusHeading.done, focusText.done]),
+    );
+
+    /* Our Lagos roots — text from the left, then the carousel fades in. */
+    gsap.set(rootsTextRef.current, { x: -SHIFT });
+    const rootsText = timeline();
+    rootsText.tl.to(rootsTextRef.current, { opacity: 1, x: 0, duration: 0.8, ease: EASE });
+    after([entered(rootsTextRef.current)], () => rootsText.tl.play());
+    const rootsCarousel = timeline();
+    rootsCarousel.tl.to(rootsCarouselRef.current, { opacity: 1, duration: 0.9, ease: "power2.out" });
+    after([rootsText.done, entered(rootsCarouselRef.current)], () => rootsCarousel.tl.play());
+
+    /* Closing call to action — heading and paragraph fade in, then the two
+       buttons slide in together from opposite sides. */
+    gsap.set(ctaLeftButtonRef.current, { x: -SHIFT });
+    gsap.set(ctaRightButtonRef.current, { x: SHIFT });
+    const cta = timeline();
+    cta.tl
+      .to(ctaTextRef.current, { opacity: 1, duration: 0.8, ease: "power2.out" })
+      .to(ctaLeftButtonRef.current, { opacity: 1, x: 0, duration: 0.7, ease: EASE })
+      .to(ctaRightButtonRef.current, { opacity: 1, x: 0, duration: 0.7, ease: EASE }, "<");
+    after([entered(ctaTextRef.current)], () => cta.tl.play());
+  });
+
   return (
-    <div className="bg-white text-neutral-950">
+    <div ref={pageRef} className="bg-white text-neutral-950">
       <section className={`relative isolate overflow-hidden bg-neutral-950 ${HEADER_OFFSET.padding}`}>
         {/* Eyo procession at an ECI street event, dark-overlaid so it reads
             as texture behind the headline rather than competing with it —
@@ -1233,40 +1676,30 @@ export default function AboutPage() {
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-28 lg:px-8 lg:py-32">
           <div className="grid items-end gap-14 lg:grid-cols-[1.2fr_0.8fr]">
-            <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
-              <motion.div
-                variants={riseIn}
-                custom={0}
-                className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md"
-              >
-                {QUAD.map((color) => (
-                  <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
-                ))}
-                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
-                  About Eko Club Philadelphia
-                </span>
-              </motion.div>
+            <div className="max-w-3xl">
+              <div ref={heroTextRef} data-reveal style={HIDDEN}>
+                <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
+                  {QUAD.map((color) => (
+                    <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
+                  ))}
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                    About Eko Club Philadelphia
+                  </span>
+                </div>
 
-              <motion.h1
-                variants={riseIn}
-                custom={0.08}
-                className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl"
-              >
-                Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
-                <span style={{ color: EKO_YELLOW }}> service</span>, our story.
-              </motion.h1>
+                <h1 className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">
+                  Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
+                  <span style={{ color: EKO_YELLOW }}> service</span>, our story.
+                </h1>
 
-              <motion.p
-                variants={riseIn}
-                custom={0.16}
-                className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg"
-              >
-                We are Eko Club Philadelphia. We preserve our cultural heritage, serve families and
-                communities in need, and keep the story of Lagos alive through fellowship, outreach,
-                and visible impact.
-              </motion.p>
+                <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
+                  We are Eko Club Philadelphia. We preserve our cultural heritage, serve families and
+                  communities in need, and keep the story of Lagos alive through fellowship, outreach,
+                  and visible impact.
+                </p>
+              </div>
 
-              <motion.div variants={riseIn} custom={0.24} className="mt-8 flex flex-wrap gap-3">
+              <div ref={heroButtonsRef} data-reveal className="mt-8 flex flex-wrap gap-3" style={HIDDEN}>
                 <Link
                   href="/membership/apply"
                   className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
@@ -1280,17 +1713,17 @@ export default function AboutPage() {
                 >
                   Explore Lagos history
                 </Link>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            <div
+              ref={heroPanelRef}
+              data-reveal
               className="rounded-4xl border border-white/10 bg-white/6 p-5 backdrop-blur-xl"
+              style={HIDDEN}
             >
               <WhatDrivesUsCarousel />
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -1307,24 +1740,18 @@ export default function AboutPage() {
         </div>
 
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
-          <SectionIntro
-            eyebrow="Why we exist"
-            title="Our mission, vision, and values"
-            text="We are guided by a clear purpose: to unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives."
-          />
+          <div ref={whyTextRef} data-reveal style={HIDDEN}>
+            <SectionIntro
+              eyebrow="Why we exist"
+              title="Our mission, vision, and values"
+              text="We are guided by a clear purpose: to unite Lagosians, preserve our cultural heritage, promote fellowship, and serve our members and communities through charitable, educational, cultural, and humanitarian initiatives."
+            />
+          </div>
 
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="grid gap-5"
-          >
-            {STORY_PILLARS.map((pillar, index) => (
-              <motion.article
+          <div ref={whyCardsRef} data-reveal className="grid gap-5" style={HIDDEN}>
+            {STORY_PILLARS.map((pillar) => (
+              <article
                 key={pillar.title}
-                variants={riseIn}
-                custom={index * 0.08}
                 className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-transform duration-300 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between gap-4">
@@ -1332,9 +1759,9 @@ export default function AboutPage() {
                   <span className="h-3 w-3 rounded-full" style={{ background: pillar.color }} />
                 </div>
                 <p className="mt-4 text-sm leading-7 text-neutral-700 sm:text-base">{pillar.text}</p>
-              </motion.article>
+              </article>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1343,59 +1770,39 @@ export default function AboutPage() {
           {/* Heading left, supporting line right — the eyebrow, bar and type
               scale are the same ones SectionIntro uses elsewhere on the page,
               just laid out in two columns here. */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end lg:gap-16"
-          >
-            <div>
-              <motion.div variants={riseIn} custom={0} className="flex">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end lg:gap-16">
+            <div ref={focusHeadingRef} data-reveal style={HIDDEN}>
+              <div className="flex">
                 <QuadBar />
-              </motion.div>
-              <motion.span
-                variants={riseIn}
-                custom={0.08}
-                className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-700"
-              >
+              </div>
+              <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-700">
                 Our focus
-              </motion.span>
-              <motion.h2
-                variants={riseIn}
-                custom={0.16}
-                className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
-              >
+              </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
                 How we turn our mission into practical service
-              </motion.h2>
+              </h2>
             </div>
-            <motion.p
-              variants={riseIn}
-              custom={0.24}
+            <p
+              ref={focusTextRef}
+              data-reveal
               className="text-base leading-8 text-neutral-700 sm:text-lg"
+              style={HIDDEN}
             >
               Our work is not abstract. It is expressed through scholarships, humanitarian
               support, community outreach, and consistent service to families in
               Philadelphia and beyond.
-            </motion.p>
-          </motion.div>
+            </p>
+          </div>
 
-          {/* One strip, panels butted edge to edge with the rounding on the
-              outer container only — the photograph carries each panel and the
-              caption sits over its base. */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="mt-12 grid overflow-hidden rounded-[2rem] sm:grid-cols-2 xl:grid-cols-4"
-          >
-            {VALUES.map((value, index) => (
-              <motion.article
+          {/* One strip, panels butted edge to edge — the photograph carries
+              each panel and the caption sits over its base. */}
+          <div ref={focusCardsRef} className="mt-12 grid overflow-hidden sm:grid-cols-2 xl:grid-cols-4">
+            {VALUES.map((value) => (
+              <article
                 key={value.title}
-                variants={riseIn}
-                custom={index * 0.07}
+                data-reveal
                 className="group relative aspect-[4/5] xl:aspect-[3/4]"
+                style={HIDDEN}
               >
                 <Image
                   src={value.image}
@@ -1414,9 +1821,9 @@ export default function AboutPage() {
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-white">{value.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-white/75">{value.desc}</p>
                 </div>
-              </motion.article>
+              </article>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1444,7 +1851,7 @@ export default function AboutPage() {
       <section className="bg-[#0a0a0a] py-24 px-6 sm:px-10 lg:px-16">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-start gap-12">
-            <div className="lg:w-1/2">
+            <div ref={rootsTextRef} data-reveal className="lg:w-1/2" style={HIDDEN}>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">Our Lagos roots</p>
               <h2 className="text-4xl font-semibold text-white leading-snug mb-5 tracking-tight">
                 The five IBILE divisions — where we come from
@@ -1464,7 +1871,7 @@ export default function AboutPage() {
                 ))}
               </div>
             </div>
-            <div className="lg:w-1/2 w-full">
+            <div ref={rootsCarouselRef} data-reveal className="lg:w-1/2 w-full" style={HIDDEN}>
               <IbileCarousel />
             </div>
           </div>
@@ -1473,66 +1880,12 @@ export default function AboutPage() {
 
       <LagosHistorySection />
 
-      <section className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionIntro
-            eyebrow="Annual service programs"
-            title="The initiatives through which we serve each year"
-            text="These programmes reflect the real work of our club: feeding families, supporting students, caring for children, keeping our environment clean, and showing up consistently for the community."
-            align="center"
-          />
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4"
-          >
-            {SERVICE_PROGRAMS.map((item, index) => (
-              <motion.article
-                key={item.title}
-                variants={riseIn}
-                custom={index * 0.06}
-                className="rounded-[1.75rem] border border-neutral-200 bg-neutral-50 p-6"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl" style={{ background: `${item.accent}12` }}>
-                  {item.icon}
-                </div>
-                <div className="mt-5 h-2 w-16 rounded-full" style={{ background: item.accent }} />
-                <h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-neutral-950">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-neutral-700">{item.text}</p>
-              </motion.article>
-            ))}
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 flex justify-center"
-          >
-            <Link
-              href="/projects"
-              className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
-              style={{ background: EKO_BLUE }}
-            >
-              View full projects page
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+      <ServiceProgramsSection />
 
       <section className="relative overflow-hidden bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="absolute inset-0 opacity-10" style={{ background: EKO_GREEN }} />
         <div className="relative mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <div ref={ctaTextRef} data-reveal style={HIDDEN}>
             <div className="flex justify-center">
               <QuadBar />
             </div>
@@ -1543,7 +1896,12 @@ export default function AboutPage() {
               Join a community that celebrates Lagos with depth, style, and action. From heritage to
               service, this is where memory becomes movement.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+          </div>
+          {/* Each button sits in its own wrapper, which is what slides: the
+              first button has a CSS transform transition for its hover lift,
+              and that would drag behind GSAP's frame-by-frame writes. */}
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div ref={ctaLeftButtonRef} data-reveal style={HIDDEN}>
               <Link
                 href="/membership/apply"
                 className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
@@ -1551,6 +1909,8 @@ export default function AboutPage() {
               >
                 Apply for membership
               </Link>
+            </div>
+            <div ref={ctaRightButtonRef} data-reveal style={HIDDEN}>
               <Link
                 href="/events"
                 className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
@@ -1558,7 +1918,7 @@ export default function AboutPage() {
                 See upcoming events
               </Link>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
     </div>
