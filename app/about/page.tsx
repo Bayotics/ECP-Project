@@ -54,7 +54,7 @@ type RevealKit = {
    * into one long column, the lower items still animate where they can be
    * seen rather than off the bottom of the screen.
    */
-  queue: (items: Element[], from: gsap.TweenVars, gate: Promise<unknown>) => Promise<void>;
+  queue: (items: Element[], from: gsap.TweenVars, gate: Promise<unknown>, speed?: number) => Promise<void>;
 };
 
 function useReveal(scope: RefObject<HTMLElement | null>, build: (kit: RevealKit) => void) {
@@ -99,7 +99,7 @@ function useReveal(scope: RefObject<HTMLElement | null>, build: (kit: RevealKit)
           if (alive) ctx.add(play);
         });
       },
-      queue: (items, from, gate) => {
+      queue: (items, from, gate, speed = 1) => {
         if (!items.length) return gate.then(() => undefined);
         let chain: Promise<unknown> = gate;
         let landed = 0;
@@ -120,9 +120,9 @@ function useReveal(scope: RefObject<HTMLElement | null>, build: (kit: RevealKit)
                         opacity: 1,
                         x: 0,
                         y: 0,
-                        duration: 0.6,
+                        duration: 0.6 / speed,
                         ease: EASE,
-                        stagger: 0.22,
+                        stagger: 0.22 / speed,
                         onComplete: () => {
                           landed += batch.length;
                           if (landed >= items.length) resolveAll();
@@ -289,7 +289,9 @@ function ServiceProgramsSection() {
      next circle draws itself dot by dot — five times, the last arc closing
      the ring. Only once the ring is whole does the right-hand column start:
      heading, then each list item, then the button, each also waiting until
-     it is on screen. */
+     it is on screen. Everything here runs at PROGRAMS_SPEED× the timings
+     written below. */
+  const PROGRAMS_SPEED = 2;
   useReveal(sectionRef, ({ timeline, entered, after, queue }) => {
     const figure = figureRef.current!;
     const circles = gsap.utils.toArray<HTMLElement>("[data-ring-circle]", figure);
@@ -304,19 +306,22 @@ function ServiceProgramsSection() {
         .to(circle, { opacity: 1, scale: 1, duration: 0.55, ease: EASE })
         .to(arcs[i], { opacity: 1, duration: 0.12, stagger: 0.09, ease: "none" });
     });
+    ring.tl.timeScale(PROGRAMS_SPEED);
     after([entered(figure)], () => ring.tl.play());
 
     gsap.set(headRef.current, { y: 32 });
     const head = timeline();
     head.tl.to(headRef.current, { opacity: 1, y: 0, duration: 0.8, ease: EASE });
+    head.tl.timeScale(PROGRAMS_SPEED);
     after([ring.done, entered(headRef.current)], () => head.tl.play());
 
     const items = gsap.utils.toArray<HTMLElement>(listRef.current!.children);
-    const listDone = queue(items, { y: 32 }, head.done);
+    const listDone = queue(items, { y: 32 }, head.done, PROGRAMS_SPEED);
 
     gsap.set(buttonRef.current, { y: 32 });
     const button = timeline();
     button.tl.to(buttonRef.current, { opacity: 1, y: 0, duration: 0.6, ease: EASE });
+    button.tl.timeScale(PROGRAMS_SPEED);
     after([listDone, entered(buttonRef.current)], () => button.tl.play());
   });
 
