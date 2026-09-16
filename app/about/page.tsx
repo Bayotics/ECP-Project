@@ -472,96 +472,6 @@ function PeopleSection({
   );
 }
 
-const HISTORY_PANELS = {
-  origins: {
-    label: "Origins of Eko",
-    title: "A lagoon city first known as Eko",
-    summary:
-      "In telling our story, we begin with Eko itself: Lagos Island, known to the indigenes as Eko, and later called Lagos through Portuguese contact and the city’s lagoon geography.",
-    bullets: [
-      "We present Eko as the cultural heart of metropolitan Lagos and the traditional seat of the Oba of Lagos.",
-      "We connect the name Lagos to the wetlands, waterways, and lagoon network around the island settlement.",
-      "We want readers to see Lagos not just as a city, but as a layered space of monarchy, commerce, migration, and coastal identity.",
-    ],
-    accent: EKO_GREEN,
-    kicker: "Identity",
-  },
-  monarchy: {
-    label: "Royal lineage",
-    title: "Succession shaped the political history of Lagos",
-    summary:
-      "We trace the line of rulers from Oba Ashipa, Oba Ado, and Oba Gabaro through Akinsemoyin, Ologun Kutere, Akitoye, Kosoko, Dosunmu, Oyekan, Esugbayi Eleko, and later monarchs.",
-    bullets: [
-      "We highlight the importance of Erelu Kuti’s line in succession after disputes around Akinsemoyin’s descendants.",
-      "We bring forward the palace politics, exile, return, and shifting balance between royal authority and influential chiefs.",
-      "We place major nineteenth-century struggles, including the contest between Akitoye and Kosoko, inside the longer story of Lagos state formation.",
-    ],
-    accent: EKO_RED,
-    kicker: "Dynasty",
-  },
-  city: {
-    label: "City and commerce",
-    title: "From island core to economic nerve-centre",
-    summary:
-      "We describe the Lagos core as a highly urbanised chain centred on Lagos Island, Lagos Mainland, Surulere, Apapa, and Eti-Osa, with the city at the pivot of an expanding megacity.",
-    bullets: [
-      "We present Lagos as Nigeria’s chief commercial, financial, and maritime centre.",
-      "We single out Apapa and Tin Can Island as key seaport spaces linked to trade and migration.",
-      "We show how settlements across the island and coastal belt extend the Lagos story far beyond a single historic core.",
-    ],
-    accent: EKO_BLUE,
-    kicker: "Urban power",
-  },
-  chieftaincies: {
-    label: "Traditional institutions",
-    title: "Chiefs, landowners, and civic authority",
-    summary:
-      "We close this history with recognised Lagos chieftaincies, showing how White Cap chiefs, Idejo land-owning families, Ogalade leaders, and war chiefs formed part of the city’s civic structure.",
-    bullets: [
-      "We highlight the White Cap hierarchy, including titled groups such as Eletu Odibo and other palace-linked chiefs.",
-      "We present the Idejo class as the land-owning authority structure tied to major Lagos families and settlements.",
-      "We include Abagbon war chiefs and other titled offices to reveal the institutional depth behind the city’s traditional order.",
-    ],
-    accent: EKO_YELLOW,
-    kicker: "Institutions",
-  },
-} as const;
-
-type HistoryTab = keyof typeof HISTORY_PANELS;
-
-const ROYAL_TIMELINE = [
-  {
-    era: "c. 1680 - 1767",
-    title: "Ashipa, Ado, and Gabaro",
-    text: "We root early Lagos rulership in the sequence of Oba Ashipa, Oba Ado, and Oba Gabaro.",
-    color: EKO_GREEN,
-  },
-  {
-    era: "18th century",
-    title: "Akinsemoyin and Erelu Kuti’s line",
-    text: "We show how succession disputes and the elevation of Erelu Kuti’s descendants became central to the royal history that followed.",
-    color: EKO_RED,
-  },
-  {
-    era: "1806 - 1853",
-    title: "Ologun Kutere to Akitoye",
-    text: "We cover Adele Ajosun, Eshinlokun, Idewu Ojulari, Oluwole, Akitoye, and the struggle with Kosoko in this period.",
-    color: EKO_BLUE,
-  },
-  {
-    era: "1853 - 1965",
-    title: "Dosunmu to Adeniji-Adele II",
-    text: "We follow the line through Dosunmu, Oyekan I, Esugbayi Eleko, Ibikunle Akitoye, Sanusi Olusi, Falolu, and Adeniji-Adele II.",
-    color: EKO_YELLOW,
-  },
-  {
-    era: "1965 - present lineage",
-    title: "Adeyinka Oyekan II to Riliwanu Akiolu I",
-    text: "We connect modern Lagos memory to the later reigns that carried the throne into the contemporary era.",
-    color: EKO_GREEN,
-  },
-];
-
 function QuadBar() {
   return (
     <div className="flex h-1.5 w-28 overflow-hidden rounded-full" aria-hidden="true">
@@ -772,10 +682,501 @@ function WhatDrivesUsCarousel() {
   );
 }
 
-export default function AboutPage() {
-  const [activeTab, setActiveTab] = useState<HistoryTab>("origins");
-  const activePanel = HISTORY_PANELS[activeTab];
+/* The IBILE carousel: an overview plate first, then one slide per division.
+   Slides crossfade rather than slide, exactly as the reference does — and
+   plain CSS opacity transitions rather than framer-motion, since exit
+   animations have proved unreliable elsewhere in this app. */
+const IBILE_SLIDE_MS = 10000;
 
+const IBILE_SLIDES = [
+  {
+    src: "/gallery/about/ibile/ibile-main.png",
+    alt: "IBILE — the five divisions of Lagos State",
+    name: null,
+    video: null,
+  },
+  {
+    src: "/gallery/about/ibile/ikeja-heritage.jpg",
+    alt: "Ikeja heritage",
+    name: "Ikeja",
+    video: "https://www.youtube.com/watch?v=-962rOv3UfI",
+  },
+  {
+    src: "/gallery/about/ibile/badagry-heritage.jpg",
+    alt: "Badagry heritage",
+    name: "Badagry",
+    video: "https://www.youtube.com/watch?v=mG1ep9_8MMA",
+  },
+  {
+    src: "/gallery/about/ibile/ikorodu-heritage.jpg",
+    alt: "Ikorodu heritage",
+    name: "Ikorodu",
+    video: "https://www.youtube.com/watch?v=fYFbFmg3HAM",
+  },
+  {
+    src: "/gallery/about/ibile/lagos-island-heritage.jpg",
+    alt: "Lagos Island heritage",
+    name: "Lagos Island",
+    video: "https://www.youtube.com/watch?v=jrrOuiK5UHc",
+  },
+  {
+    src: "/gallery/about/ibile/epe-heritage.jpg",
+    alt: "Epe heritage",
+    name: "Epe",
+    video: "https://www.youtube.com/watch?v=u0FkwMpBgZs",
+  },
+];
+
+function youTubeEmbedUrl(url: string) {
+  let videoId = "";
+  if (url.includes("watch?v=")) {
+    videoId = url.split("watch?v=")[1].split("&")[0];
+  } else if (url.includes("youtu.be/")) {
+    videoId = url.split("youtu.be/")[1].split("?")[0];
+  } else if (url.includes("/embed/")) {
+    videoId = url.split("/embed/")[1].split("?")[0];
+  }
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+}
+
+function IbileCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [video, setVideo] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const next = () => setCurrent((prev) => (prev + 1) % IBILE_SLIDES.length);
+  const prev = () => setCurrent((prev) => (prev - 1 + IBILE_SLIDES.length) % IBILE_SLIDES.length);
+
+  /* Restarting on `current` means a manual arrow or dot press also resets the
+     dwell time, rather than leaving a slide up for whatever was left of the
+     previous interval. Autoplay holds while a video is open so the slide
+     behind the modal doesn't move on. */
+  useEffect(() => {
+    if (video) return;
+    const interval = setInterval(next, IBILE_SLIDE_MS);
+    return () => clearInterval(interval);
+  }, [current, video]);
+
+  useEffect(() => {
+    if (!video) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setVideo(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [video]);
+
+  return (
+    <div className="relative overflow-hidden rounded-lg shadow-2xl aspect-[4/3] sm:aspect-[16/11] md:aspect-[16/10]">
+      {IBILE_SLIDES.map((slide, index) => (
+        <div
+          key={slide.src}
+          aria-hidden={index !== current}
+          /* pointer-events matters as much as opacity here: all six slides
+             are stacked, and a transparent one still swallows clicks — which
+             left the play button on the active slide unreachable behind the
+             slides rendered after it. */
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            index === current ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <Image
+            src={slide.src}
+            alt={slide.alt}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+            priority={index === 0}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+
+          {/* Only the visible slide's play button is rendered, so the hidden
+              slides stacked on top of it can't swallow the click. */}
+          {slide.video && index === current && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setVideo(slide.video);
+                }}
+                className="group bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-4 sm:p-5 md:p-6 rounded-full transition-all duration-300 hover:scale-110"
+                aria-label={`Play ${slide.name} heritage video`}
+              >
+                <svg viewBox="0 0 24 24" className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 fill-current transition-transform duration-300 group-hover:scale-110" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="6 3 20 12 6 21 6 3" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {slide.name && (
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+              <div
+                className="text-center transition-all duration-500"
+                style={{
+                  opacity: index === current ? 1 : 0,
+                  transform: index === current ? "translateY(0)" : "translateY(20px)",
+                }}
+              >
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+                  {slide.name}
+                </h3>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        onClick={prev}
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110"
+        aria-label="Previous image"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+      <button
+        onClick={next}
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110"
+        aria-label="Next image"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </button>
+
+      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+        {IBILE_SLIDES.map((slide, index) => (
+          <button
+            key={slide.src}
+            onClick={() => setCurrent(index)}
+            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-200 ${
+              index === current ? "bg-white scale-125" : "bg-white/50 hover:bg-white/75"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+
+      {/* Video modal. Portalled to <body> for the same reason as the
+          biography drawer: this carousel sits inside transformed ancestors,
+          and `position: fixed` resolves against those rather than the
+          viewport, which would trap the overlay inside the carousel box. */}
+      {mounted &&
+        video &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-2 sm:p-4"
+            onClick={() => setVideo(null)}
+          >
+            <div
+              className="relative aspect-video w-full max-w-4xl rounded-lg bg-black"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setVideo(null)}
+                className="absolute -top-12 right-0 z-10 rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
+                aria-label="Close video"
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+
+              <iframe
+                key={video}
+                src={youTubeEmbedUrl(video)}
+                title="Heritage video"
+                className="h-full w-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/* ── History of Lagos ─────────────────────────────────────────────────────
+   Transcribed verbatim from the club's own "History of Eko" booklet (pages
+   14-20), which arrived as a scanned PDF. Spellings are left exactly as
+   printed, including the places where the booklet renders the same name two
+   ways (Eshinlokun / Eshilokun, Akintoye / Akitoye) — correcting a primary
+   source is not ours to do.
+
+   The booklet's two genealogical tree diagrams (pages 17-19) are not
+   reproduced: they are drawn charts rather than prose, and the succession
+   they encode is already carried by the genealogy table below. */
+const LAGOS_HISTORY_INTRO =
+  "Eko to its indigenes, grew from a lagoon settlement into the commercial and maritime nerve-centre of Nigeria. Four centuries of that story run through the Obas of Lagos: succession disputes, exile and return, Portuguese and British intervention, and a chieftaincy structure that still orders the city's traditional life.";
+
+const LAGOS_HISTORY_NARRATIVE = [
+  "Addo was the father of three children — namely: Gabaro, Akinsemoyin (probably a corruption of ‘Akisemoye’) and Erelu Kuti, a Princess, from whose line the sixth Oba of Lagos in direct line of succession emerged till today.",
+  "The reason for this was explained by the fact that all Akinsemoyin’s children were females whose children were barred from succession with a curse placed on them for refusing to abide by their father’s wish, and settled succession on the children of his sister, Erelu Kuti.",
+  "Oba Ashipa reigned in Lagos from circa 1680 to circa 1700, followed by Oba Addo from circa 1700 to 1735, succeeded by Oba Gabaro in circa 1735 to k. 1767. Policy disagreement between Oba Gabaro, apparently supported by the Chiefs over political concession to the Idejo Chiefs on their land, led to the banishment of Akinsemoyin to exile in Apa. There is evidence in the record of the Brazilian traders in Whydah to suggest that Akinsemoyin fought his way back to Lagos with arms and munitions supplied by the Portuguese traders in Whydah. Akinsemoyin reciprocated this support by granting them trade monopoly in Lagos.",
+  "It was this factor which brought the British Government to break the Portuguese monopoly of trade in 1851 when they drove King Kosoko from the throne and replaced him with King Akitoye who had lost to King Kosoko in a military encounter in 1845.",
+  "King Ologun Kutere, who succeeded Eletu Omo, son of Gabaro, died in 1806 according to Brazilian traders record. Ologun Kutere was a son of Erelu Kuti, who was succeeded by King Adele Ajosu who was deposed by King Eshinlokun, another son of Ologun Kutere in 1813, which Adele Ajosu fled to Badagry for safety. There he was in 1826 when Captain Clapperton and Richard Lander met him in 1826.",
+  "When King Eshilokun died in November 1829, he was succeeded by his youngest son, Idewu Ojulari. Attempts by Adele Ajosu to fight his way back to the throne failed until a grand conspiracy by Adele Ajosu with the Egba and some palace officials led Idewu Ojulari to commit suicide in 1835. Adele was brought back to Lagos where he reigned for two years and died in 1837.",
+  "King Oluwole, supported by Eletu Odibo Oshobule was put in power to succeed his father, Adele Ajosu. This man became tyrannical and he perished in a gun-powder explosion in 1841. He was succeeded by King Akitoye, another son of Ologun Kutere.",
+  "King Akitoye lost his throne to Kosoko, an elder son of Eshilokun, and uncle of Akitoye, when he was defeated in a military engagement in 1845. Akitoye fled to Abeokuta, and afterwards in Badagry where he was assisted to stage a come back to the throne with the help of the British Navy in December 1851.",
+  "Akitoye died in 1853. He reportedly poisoned himself, sensing his unpopularity with the people. His eldest son, Dosumu who signed a treaty of cession with Britain and started what resulted into British colonization of Nigeria in 1861.",
+  "When Dosumu died in 1885, his son, Oyekan I succeeded him and ruled till his death in 1900. He was succeeded by Esugbayi Eleko who was deposed in 1920 for giving support to agitators against British rule in Lagos. In 1925, Esugbayi was banished to Oyo Province and Ibikunle Akitoye was installed Oba of Lagos. In 1928, Sanusi Olusi was installed Oba after Ibikunle Akitoye who died in that year in a mysterious and suspicious circumstance. When the British colonial authority lost the appeal of Esugbayi against his deportation in 1931, he (Esugbayi) was allowed to return to the throne but he died the following year — 1932.",
+  "He was succeeded by Oba Falolu, who reigned for 17 years and died in 1949. His place was taken over in October 1949 by Oba Adeniji-Adele who reigned till 1964 when he died and was succeeded by Late Oba Adeyinka Oyekan II. Oba Riliwanu Akiolu I succeeded as the 21st Oba of Lagos. Long may he reign!",
+];
+
+const LAGOS_ISLAND_NARRATIVE = [
+  "The core of Lagos State and a highly urbanized division consisting of five local government islets: Lagos Island, Lagos Mainland, Surulere, Apapa and Eti-Osa, with the City of Lagos being the pivot of an ever expanding Lagos Megacity and the divisional headquarters. The center and most developed of this Island chain, Lagos Island, is called ‘Eko’ by the indigenes. The name ‘Lagos’ is a derivative of a Portuguese imposition of ‘Lagos de Curamo’ or ‘Rio Lago’ on account of its wetland topography and network of lagoons.",
+  "The Island is the cultural watershed of the White Cap (idejo) Chieftaincy and metropolitan Lagos with the Oba of Lagos as the paramount monarch and primus inter pares of the State traditional authorities. Lagos is the chief commercial, financial and maritime nerve-center of Nigeria with seaports at Apapa, Tin Can Island. As the economic capital and major port of Africa’s most populous nation, Lagos has attracted immigrants from all over Nigeria and beyond, as well as commercial entrepreneurs and industries from Africa, Europe, Asia and the Americans.",
+  "Major settlements in the Division are Takwa Bay, Victoria Island (Iru), Lagos Island, Ikoyi, Obalende, Otto, Ijora, Apapa, Ebutte-Metta, Yaba, Iddo, Sangotedo, Mayegun, Ogombo, Ogoyo, Okun-Ibeju, Mopo-Akinlade, Moba, Alaguntan, Ado, Langbasa, Ilasan, Igbo-Efon, Ikota and Ikate-Elegushi, Ajiran, Ilasan, Tomaro, Abagbo, Igbo-Ejo (Snake Island), Igbo-Efon, etc.",
+];
+
+const OBAS_OF_LAGOS: [string, string, string, string][] = [
+  ["Oba Asipa", "1603", "1630", "27"],
+  ["Oba Ado", "1630", "1669", "39"],
+  ["Oba Gabaro", "1669", "1704", "35"],
+  ["Oba Akinsemoyin", "1704", "1749", "45"],
+  ["Oba Ologunkutere", "1749", "1775", "26"],
+  ["Oba Adele Ajosun", "1775", "1780", "5"],
+  ["Oba Eshinlokun", "1780", "1819", "39"],
+  ["Oba Idewu Ojulari", "1819", "1834", "15"],
+  ["Oba Oluwole", "1834", "1841", "7"],
+  ["Oba Akintoye", "1841", "1845", "4"],
+  ["Oba Kosoko", "1845", "1851", "6"],
+  ["Oba Akitoye (I)", "1851", "1853", "2"],
+  ["Oba Dosumu", "1853", "1885", "32"],
+  ["Oba Oyekan (I)", "1885", "1900", "15"],
+  ["Oba Esugbayi Eleko", "1900", "1925", "25"],
+  ["Oba Ibikunle Akitoye", "1925", "1928", "3"],
+  ["Oba Sanusi Olusi", "1928", "1931", "3"],
+  ["Oba Esugbayi Eleko", "1931", "1932", "1"],
+  ["Oba Falolu", "1932", "1949", "17"],
+  ["Oba (sir) Adeniji Adele (II)", "1949", "1964", "15"],
+  ["Oba Adeyinka Oyekan (II)", "1965", "2003", "38"],
+  ["Oba Riliwanu Akiolu", "2003", "—", "—"],
+];
+
+const LAGOS_CHIEFTAINCIES = [
+  {
+    title: "Akarigbere White Cap Chiefs",
+    color: EKO_GREEN,
+    names: [
+      "Eletu Odibo (Head)", "Onilegbale", "Olorogun-Adodo", "Eletu Iwase",
+      "Asajon-Oloja - Kosoko", "Ojon", "Eletu Ijebu", "Eletu Omo", "Eletu Ika",
+      "Eletu-Awo", "Erelu Kuti", "Olorogun-Atebo", "Igbesodi", "Olorogun Ide",
+      "Olorogun Agan",
+    ],
+  },
+  {
+    title: "Idejo White Cap Chiefs (the land owners)",
+    color: EKO_RED,
+    names: [
+      "Olumegbon (Head)", "Oniru", "Onisiwo", "Oloto", "Ojora", "Onitolo",
+      "Aromire", "Onitana", "Oluwa", "Onikoyi", "Elegushi",
+    ],
+  },
+  {
+    title: "Ogalade White Cap Chiefs (the spiritual heads)",
+    color: EKO_BLUE,
+    names: [
+      "Opeluwa (Head)", "Obanikoro", "Onisemo", "Modile", "Alagbeji",
+      "Onimole", "Alase", "Osunoba", "Olopon",
+    ],
+  },
+  {
+    title: "Abagbon (war chiefs)",
+    color: EKO_YELLOW,
+    names: [
+      "Ashogbon (Head)", "Saba", "Bajulaiye", "Suenu", "Faji", "Bashua", "Sasi",
+      "Sashore", "Bajulu", "Egbe", "Asesi", "Oshodi Tapa", "Oshodi Buku",
+      "Salawe", "Kakawa", "Etti", "Aiyeomosan", "Aseran", "Okolo", "Iposu",
+      "Erelu",
+    ],
+  },
+];
+
+function LagosHistorySection() {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <section id="lagos-history" className="relative bg-white">
+      <div className="grid lg:grid-cols-2">
+        <div className="flex flex-col justify-center px-6 py-20 sm:px-10 lg:py-28 lg:pl-16 lg:pr-20 xl:pl-24">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">
+            HISTORY
+          </p>
+
+          <h2 className="mt-12 text-[2.6rem] font-normal leading-[1.08] tracking-[-0.02em] text-neutral-950 sm:text-5xl lg:text-[3.6rem]">
+            A lagoon settlement that became a megacity
+          </h2>
+
+          <p className="mt-12 max-w-lg text-base leading-8 text-neutral-700">{LAGOS_HISTORY_INTRO}</p>
+
+          <div className="mt-10">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="group inline-flex items-center gap-4 rounded-full bg-green-400 py-3 pl-7 pr-3 text-base font-medium text-neutral-950 transition-colors duration-300 hover:bg-green-300"
+            >
+              Read full history
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-950/30 transition-transform duration-300 group-hover:translate-x-1">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="relative min-h-[24rem] lg:min-h-[42rem]">
+          <Image
+            src="/gallery/hero-bgs/lagos-island.jpg"
+            alt="Lagos Island seen across the lagoon"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+          />
+        </div>
+      </div>
+
+      {mounted &&
+        open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-start justify-center bg-neutral-950/70 p-0 sm:p-6"
+            onClick={() => setOpen(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="History of Eko"
+              data-lenis-prevent
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex max-h-full w-full max-w-4xl flex-col bg-white sm:rounded-2xl"
+            >
+              {/* The close button sits on the panel, not inside the scrolling
+                  area — this content runs to several thousand pixels, and a
+                  button that scrolls away with it strands the reader. */}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close history"
+                className="absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 shadow-sm transition-colors hover:bg-neutral-100"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+
+              <div className="overflow-y-auto px-6 py-14 sm:px-12 sm:py-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">History of Eko</p>
+              <h2 className="mt-4 text-3xl font-normal leading-tight tracking-[-0.02em] text-neutral-950 sm:text-4xl">
+                The Obas of Lagos, and the city they ruled
+              </h2>
+              <div className="mt-6">
+                <QuadBar />
+              </div>
+
+              <div className="mt-10 space-y-5">
+                {LAGOS_HISTORY_NARRATIVE.map((paragraph) => (
+                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-neutral-700">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+                Lagos Island and the Division
+              </h3>
+              <div className="mt-6 space-y-5">
+                {LAGOS_ISLAND_NARRATIVE.map((paragraph) => (
+                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-neutral-700">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+                Genealogy of the Obas of Lagos
+              </h3>
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-300">
+                      <th className="py-3 pr-4 font-semibold text-neutral-950">Name</th>
+                      <th className="py-3 pr-4 font-semibold text-neutral-950">From</th>
+                      <th className="py-3 pr-4 font-semibold text-neutral-950">To</th>
+                      <th className="py-3 font-semibold text-neutral-950">Years</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {OBAS_OF_LAGOS.map(([name, from, to, years], index) => (
+                      <tr key={`${name}-${from}`} className={index % 2 ? "bg-neutral-50" : undefined}>
+                        <td className="py-3 pr-4 text-neutral-800">{name}</td>
+                        <td className="py-3 pr-4 text-neutral-600">{from}</td>
+                        <td className="py-3 pr-4 text-neutral-600">{to}</td>
+                        <td className="py-3 text-neutral-600">{years}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+                Recognised chieftaincies in the Lagos City Council area
+              </h3>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {LAGOS_CHIEFTAINCIES.map((group) => (
+                  <div key={group.title} className="rounded-2xl border border-neutral-200 p-6">
+                    <div className="h-1.5 w-12 rounded-full" style={{ background: group.color }} aria-hidden="true" />
+                    <h4 className="mt-4 text-base font-semibold text-neutral-950">{group.title}</h4>
+                    <ol className="mt-4 space-y-1.5 text-sm text-neutral-700">
+                      {group.names.map((name, index) => (
+                        <li key={name} className="flex gap-3">
+                          <span className="w-5 shrink-0 text-neutral-400">{index + 1}.</span>
+                          <span>{name}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </section>
+  );
+}
+
+export default function AboutPage() {
   return (
     <div className="bg-white text-neutral-950">
       <section className={`relative isolate overflow-hidden bg-neutral-950 ${HEADER_OFFSET.padding}`}>
@@ -1050,8 +1451,9 @@ export default function AboutPage() {
               </h2>
               <p className="text-base text-white/55 leading-relaxed font-normal mb-6">
                 Ikorodu, Badagry, Ikeja, Lagos Island, Epe — the five historic divisions
-                of Lagos State that our members call home. This section will feature a
-                short looping video montage of each locality. Content arriving soon.
+                of Lagos State that our members call home. Each carries its own festivals,
+                monuments, and traditions, and together they make up the Lagos we carry
+                with us.
               </p>
               <div className="flex flex-wrap gap-2">
                 {["Ikorodu", "Badagry", "Ikeja", "Lagos Island", "Epe"].map(d => (
@@ -1062,124 +1464,14 @@ export default function AboutPage() {
                 ))}
               </div>
             </div>
-            <div className="lg:w-1/2 rounded-2xl bg-white/5 border border-white/10 aspect-video flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-sm font-medium text-white/30">Video montage</p>
-                <p className="text-xs text-white/20 mt-1">Coming soon</p>
-              </div>
+            <div className="lg:w-1/2 w-full">
+              <IbileCarousel />
             </div>
           </div>
         </div>
       </section>
 
-      <section id="lagos-history" className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="absolute inset-x-0 top-0 h-px bg-neutral-200" />
-
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:gap-16">
-          <div className="lg:sticky lg:top-24">
-            <SectionIntro
-              eyebrow="History of Lagos"
-              title="How we present the history of Lagos"
-              text="We have brought the Lagos history we preserve into clear, animated sections so readers can understand how Eko evolved through identity, monarchy, commerce, and traditional institutions."
-            />
-
-            <div className="mt-8 flex flex-wrap gap-2">
-              {(Object.entries(HISTORY_PANELS) as [HistoryTab, (typeof HISTORY_PANELS)[HistoryTab]][]).map(
-                ([key, panel]) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className="rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-all"
-                    style={{
-                      borderColor: activeTab === key ? panel.accent : "#e5e7eb",
-                      background: activeTab === key ? `${panel.accent}14` : "#ffffff",
-                      color: activeTab === key ? "#0a0a0a" : "#525252",
-                    }}
-                  >
-                    {panel.label}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-4xl border border-neutral-200 bg-neutral-50 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:p-8"
-            >
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className="rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-950"
-                  style={{ background: `${activePanel.accent}20` }}
-                >
-                  {activePanel.kicker}
-                </span>
-                <QuadBar />
-              </div>
-
-              <h3 className="mt-6 text-3xl font-semibold tracking-[-0.04em] text-neutral-950 sm:text-4xl">
-                {activePanel.title}
-              </h3>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-neutral-700 sm:text-lg">
-                {activePanel.summary}
-              </p>
-
-              <div className="mt-8 grid gap-4">
-                {activePanel.bullets.map((bullet, index) => (
-                  <motion.div
-                    key={bullet}
-                    initial={{ opacity: 0, x: 14 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.45, delay: index * 0.08 }}
-                    className="flex gap-4 rounded-[1.25rem] border border-white bg-white p-5"
-                  >
-                    <div className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: activePanel.accent }} />
-                    <p className="text-sm leading-7 text-neutral-700 sm:text-base">{bullet}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </section>
-
-      <section className="bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionIntro
-            eyebrow="Royal succession"
-            title="How we trace the royal lineage of Lagos"
-            text="We present the genealogical record and the line of Obas of Lagos in a clear, modern timeline without losing the weight and dignity of the original history."
-            align="center"
-          />
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="mt-14 grid gap-6 lg:grid-cols-5"
-          >
-            {ROYAL_TIMELINE.map((item, index) => (
-              <motion.article
-                key={item.title}
-                variants={riseIn}
-                custom={index * 0.07}
-                className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/6 p-6 backdrop-blur-md"
-              >
-                <div className="absolute left-0 top-0 h-full w-1.5" style={{ background: item.color }} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">{item.era}</p>
-                <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-white">{item.title}</h3>
-                <p className="mt-4 text-sm leading-7 text-white/68">{item.text}</p>
-              </motion.article>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      <LagosHistorySection />
 
       <section className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
