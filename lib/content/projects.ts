@@ -59,7 +59,7 @@ export const PROJECTS: Project[] = [
     where: "Big Oak Road, Bucks County, PA",
     body: [
       "ECP adopted a two-mile stretch of Big Oak Road in Bucks County, Pennsylvania, between Stony Hill Road and Pine Grove Road. Members walk it in teams, picking up the visible trash and waste along the roadside.",
-      "On April 16, 2016, volunteers gave up their Saturday morning to clear litter from the adopted stretch — and the crews have kept coming back since, in spring safety vests and summer club shirts, under the road sign that carries the club’s name.",
+      "On April 16, 2016, volunteers gave up their Saturday morning to clear litter from the adopted stretch, and the crews have kept coming back since, in spring safety vests and summer club shirts, under the road sign that carries the club’s name.",
     ],
     facts: [
       { value: "2 mi", label: "of road adopted" },
@@ -143,7 +143,7 @@ export const PROJECTS: Project[] = [
     where: "Philadelphia Ronald McDonald House",
     body: [
       "Through the Make-A-Meal program, ECP members cook breakfast at the Philadelphia Ronald McDonald House for the families staying there while their children receive care.",
-      "On Saturday, June 17, 2023, members came back for a community service project — cleaning the indoor and outdoor dining tables and chairs, sweeping, gardening, wiping, and sanitizing toys and high-touch surfaces.",
+      "On Saturday, June 17, 2023, members came back for a community service project, cleaning the indoor and outdoor dining tables and chairs, sweeping, gardening, wiping, and sanitizing toys and high-touch surfaces.",
     ],
     facts: [
       { value: "Breakfast", label: "cooked for resident families" },
@@ -172,7 +172,7 @@ export const PROJECTS: Project[] = [
     when: "Back-to-school season",
     where: "HomeFront, Lawrenceville, NJ",
     body: [
-      "ECP sponsored two children through HomeFront in Lawrenceville, New Jersey, donating backpacks, school uniforms, sneakers and other back-to-school essentials — because buying all of that at once can be very difficult for some parents.",
+      "ECP sponsored two children through HomeFront in Lawrenceville, New Jersey, donating backpacks, school uniforms, sneakers and other back-to-school essentials, because buying all of that at once can be very difficult for some parents.",
       "So many supplies came in that the club provided for at least twelve more children as well.",
     ],
     facts: [
@@ -206,7 +206,7 @@ export const PROJECTS: Project[] = [
     kicker: "Food support",
     when: "Every November",
     body: [
-      "Every year ECP hosts a Thanksgiving food drive for families in need in our community. Members set out tables of turkeys and hand them out — in the hall, and out on the street.",
+      "Every year ECP hosts a Thanksgiving food drive for families in need in our community. Members set out tables of turkeys and hand them out in the hall, and out on the street.",
     ],
     facts: [{ value: "Annual", label: "Thanksgiving food drive" }],
     groups: [
@@ -248,7 +248,7 @@ export const PROJECTS: Project[] = [
     when: "October",
     where: "New York City",
     body: [
-      "ECP marches with the wider Eko Club family at the Nigeria Independence Day Parade in New York City — Eyo masquerades, green-and-white flags and sashes, gele and agbada, and the Eko Club International banner out on the street.",
+      "ECP marches with the wider Eko Club family at the Nigeria Independence Day Parade in New York City; Eyo masquerades, green-and-white flags and sashes, gele and agbada, and the Eko Club International banner out on the street.",
     ],
     facts: [{ value: "Eyo", label: "masquerades on the route" }],
     groups: [
@@ -420,7 +420,7 @@ export const WEBINARS: Webinar[] = [
 ];
 
 export const HEALTH_INTRO =
-  "ECP’s Health Education Team hosts webinars with physicians and specialists — many from Capital Health — for residents of Mercer County, Bucks County and Burlington, and for the Nigerian community. The recordings live on the club’s YouTube channel, and you can watch them right here.";
+  "ECP’s Health Education Team hosts webinars with physicians and specialists, many from Capital Health, for residents of Mercer County, Bucks County and Burlington, and for the Nigerian community. The recordings live on the club’s YouTube channel, and you can watch them right here.";
 
 /* ECI (parent body) medical missions — YouTube. */
 export const MEDICAL_MISSION_VIDEOS = [

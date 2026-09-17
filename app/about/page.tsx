@@ -1554,7 +1554,7 @@ export default function AboutPage() {
                   {QUAD.map((color) => (
                     <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                   ))}
-                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/80">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white">
                     About Eko Club Philadelphia
                   </span>
                 </div>

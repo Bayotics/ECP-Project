@@ -64,7 +64,7 @@ function PlayBadge({ label, large }: { label?: string; large?: boolean }) {
         <svg viewBox="0 0 24 24" className={cn("fill-current", large ? "h-10 w-10" : "h-5 w-5")} aria-hidden="true">
           <polygon points="7 4 20 12 7 20 7 4" />
         </svg>
-        {label && <span className="pr-1 text-xs font-semibold uppercase tracking-[0.16em]">{label}</span>}
+        {label && <span className="pr-1 text-xs font-normal uppercase tracking-[0.16em]">{label}</span>}
       </span>
     </span>
   );
@@ -102,7 +102,7 @@ function MediaTile({
       <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/15" aria-hidden="true" />
       {item.kind !== "image" && <PlayBadge label={item.kind === "video" ? "Clip" : undefined} />}
       {more ? (
-        <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-lg font-semibold text-white">
+        <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-lg font-normal text-white">
           +{more} more
         </span>
       ) : null}
@@ -179,14 +179,14 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
           <div ref={textRef} data-reveal className={cn(flip && "lg:order-2")} style={HIDDEN}>
             <div className="flex flex-wrap items-center gap-3">
               <span
-                className="rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-950"
+                className="rounded-full px-4 py-1 text-[11px] font-normal uppercase tracking-[0.2em] text-neutral-950"
                 style={{ background: `${project.accent}1f` }}
               >
                 {project.kicker}
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500">{project.category}</span>
+              <span className="text-[11px] font-normal uppercase tracking-[0.2em] text-neutral-500">{project.category}</span>
             </div>
-            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+            <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
               {project.title}
             </h2>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-600">
@@ -209,20 +209,20 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
             </div>
             <div className="mt-6 space-y-4">
               {project.body.map((paragraph) => (
-                <p key={paragraph.slice(0, 32)} className="text-base leading-8 text-neutral-700">
+                <p key={paragraph.slice(0, 32)} className="text-base leading-8 text-black">
                   {paragraph}
                 </p>
               ))}
             </div>
             <dl className="mt-8 grid grid-cols-2 gap-3 sm:max-w-md">
               {project.facts.map((fact) => (
-                <div key={fact.label} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                <div key={fact.label} className="rounded-2xl border border-neutral-600 bg-white p-4">
                   <dt className="sr-only">{fact.label}</dt>
                   <dd>
-                    <span className="block text-2xl font-semibold tracking-[-0.03em]" style={{ color: project.accent }}>
+                    <span className="block text-2xl font-normal tracking-[-0.03em]" style={{ color: project.accent }}>
                       {fact.value}
                     </span>
-                    <span className="mt-1 block text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{fact.label}</span>
+                    <span className="mt-1 block text-xs font-normal uppercase tracking-[0.14em] text-black">{fact.label}</span>
                   </dd>
                 </div>
               ))}
@@ -230,7 +230,7 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
             {program && (
               <Link
                 href="/programs#calendar"
-                className="group mt-8 inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:text-green-700"
+                className="group mt-8 inline-flex items-center gap-2 text-sm font-normal text-neutral-900 hover:text-green-700"
               >
                 Part of the {program.name} program
                 <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">→</span>
@@ -240,7 +240,7 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
 
           <div ref={mediaRef} data-reveal className={cn(flip && "lg:order-1")} style={HIDDEN}>
             {lead.heading && (
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">{lead.heading}</p>
+              <p className="mb-4 text-xs font-normal uppercase tracking-[0.2em] text-neutral-800">{lead.heading}</p>
             )}
             <Mosaic media={lead.media} onOpen={onOpen} accent={project.accent} />
           </div>
@@ -251,8 +251,8 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
             {extra.map((group) => (
               <div key={group.heading} className="grid gap-6 border-t border-neutral-200 pt-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
                 <div>
-                  {group.heading && <h3 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">{group.heading}</h3>}
-                  {group.text && <p className="mt-3 text-sm leading-7 text-neutral-700">{group.text}</p>}
+                  {group.heading && <h3 className="text-xl font-normal tracking-[-0.02em] text-neutral-950">{group.heading}</h3>}
+                  {group.text && <p className="mt-3 text-sm leading-7 text-black">{group.text}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {group.media.map((item, i) => (
@@ -264,7 +264,7 @@ function ProjectSection({ project, index, onOpen }: { project: Project; index: n
                         className="aspect-[4/5] w-full"
                       />
                       {item.kind === "image" && item.caption && (
-                        <p className="mt-2 text-xs font-semibold text-neutral-700">{item.caption}</p>
+                        <p className="mt-2 text-xs font-normal text-black">{item.caption}</p>
                       )}
                     </div>
                   ))}
@@ -323,24 +323,24 @@ function HealthSection({ onOpen }: { onOpen: OpenViewer }) {
         <div ref={headRef} data-reveal className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end" style={HIDDEN}>
           <div>
             <QuadBar />
-            <span className="mt-5 inline-flex rounded-full border border-white/15 bg-white/8 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">
+            <span className="mt-5 inline-flex rounded-full border border-white/15 bg-white/8 px-4 py-1 text-[11px] font-normal uppercase tracking-[0.22em] text-white/75">
               Health · Webinar series
             </span>
-            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl">
+            <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl">
               Health Education, <span style={{ color: EKO.red }}>on the record</span>
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-8 text-white/70">{HEALTH_INTRO}</p>
           </div>
           <div className="flex flex-wrap items-end gap-3 lg:justify-end">
             <div className="rounded-3xl border border-white/10 bg-white/6 px-6 py-5">
-              <p className="text-4xl font-semibold tracking-[-0.04em] text-white">{WEBINARS.length}</p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Recorded sessions</p>
+              <p className="text-4xl font-normal tracking-[-0.04em] text-white">{WEBINARS.length}</p>
+              <p className="mt-1 text-xs font-normal uppercase tracking-[0.16em] text-white/55">Recorded sessions</p>
             </div>
             <a
               href={YOUTUBE_CHANNEL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-normal text-white transition-colors hover:bg-white/10"
             >
               ECP on YouTube ↗
             </a>
@@ -358,12 +358,12 @@ function HealthSection({ onOpen }: { onOpen: OpenViewer }) {
               <span className="relative block aspect-video w-full overflow-hidden bg-neutral-900">
                 <Image src={ytThumb(w.id)} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 400px" className="object-cover opacity-85 transition-transform duration-700 group-hover:scale-[1.05]" />
                 <PlayBadge />
-                <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-normal text-white backdrop-blur">
                   {w.dateKind === "held" ? w.date : `Published ${w.date}`}
                 </span>
               </span>
               <span className="flex flex-1 flex-col p-5">
-                <span className="text-base font-semibold leading-6 text-white">{w.title}</span>
+                <span className="text-base font-normal leading-6 text-white">{w.title}</span>
                 <span className="mt-3 text-sm text-white/75">{w.speakers}</span>
                 {w.affiliation && <span className="mt-1 text-xs text-white/50">{w.affiliation}</span>}
               </span>
@@ -372,7 +372,7 @@ function HealthSection({ onOpen }: { onOpen: OpenViewer }) {
         </div>
 
         <div ref={flyersRef} data-reveal className="mt-14" style={HIDDEN}>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Session flyers</p>
+          <p className="text-xs font-normal uppercase tracking-[0.2em] text-white/50">Session flyers</p>
           <div className="mt-4 flex gap-3 overflow-x-auto pb-2" data-lenis-prevent>
             {flyers.map((f, i) => (
               <MediaTile
@@ -412,16 +412,16 @@ function MedicalMissionSection({ onOpen }: { onOpen: OpenViewer }) {
     <section ref={sectionRef} id="medical-missions" className="scroll-mt-24 bg-neutral-50 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div ref={textRef} data-reveal style={HIDDEN}>
-          <span className="rounded-full bg-red-600/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-950">
+          <span className="rounded-full bg-red-600/10 px-4 py-1 text-[11px] font-normal uppercase tracking-[0.2em] text-neutral-950">
             Parent body · Eko Club International
           </span>
-          <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+          <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
             ECI Medical Missions
           </h2>
-          <p className="mt-5 text-base leading-8 text-neutral-700">{MEDICAL_MISSION_TEXT}</p>
+          <p className="mt-5 text-base leading-8 text-black">{MEDICAL_MISSION_TEXT}</p>
           <Link
             href="/programs#calendar"
-            className="group mt-8 inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:text-green-700"
+            className="group mt-8 inline-flex items-center gap-2 text-sm font-normal text-neutral-900 hover:text-green-700"
           >
             Part of the Medical Mission program
             <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">→</span>
@@ -440,7 +440,7 @@ function MedicalMissionSection({ onOpen }: { onOpen: OpenViewer }) {
                 <PlayBadge />
               </span>
               <span className="block p-5">
-                <span className="block text-base font-semibold leading-6 text-neutral-950">{v.title}</span>
+                <span className="block text-base font-normal leading-6 text-neutral-950">{v.title}</span>
                 <span className="mt-2 block text-xs text-neutral-500">{v.note}</span>
               </span>
             </button>
@@ -538,14 +538,14 @@ export default function ProjectsPage() {
                   {QUAD.map((color) => (
                     <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                   ))}
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">Projects & initiatives</span>
+                  <span className="text-[11px] font-normal uppercase tracking-[0.24em] text-white">Projects & initiatives</span>
                 </div>
-                <h1 className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">
+                <h1 className="mt-7 text-5xl font-medium leading-tight tracking-tight text-white sm:text-6xl">
                   The <span style={{ color: EKO.green }}>work</span>, on the <span style={{ color: EKO.yellow }}>ground</span>.
                 </h1>
-                <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
-                  Roadside cleanups in Bucks County, scholarships for local students, breakfasts and service days at
-                  Ronald McDonald House, school supplies, Thanksgiving turkeys and a library of health webinars —
+                <p className="mt-6 max-w-2xl text-base leading-8 text-white sm:text-lg">
+                  Scholarships for local students, roadside cleanups in Bucks County, breakfasts and service days at
+                  Ronald McDonald House, school supplies, Thanksgiving turkeys and a library of health webinars
                   documented in the club&apos;s own photos and film.
                 </p>
               </div>
@@ -553,7 +553,7 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => openViewer(featured, 0)}
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-normal text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO.green, boxShadow: `0 0 32px ${EKO.green}66` }}
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
@@ -563,7 +563,7 @@ export default function ProjectsPage() {
                 </button>
                 <Link
                   href="#projects"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
                 >
                   Browse projects
                 </Link>
@@ -583,8 +583,8 @@ export default function ProjectsPage() {
                 </span>
                 <span className="flex items-center justify-between gap-4 px-3 pb-2 pt-4">
                   <span>
-                    <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Film · {FEATURED_VIDEO.length}</span>
-                    <span className="mt-1 block text-lg font-semibold text-white">{FEATURED_VIDEO.title}</span>
+                    <span className="block text-xs font-normal uppercase tracking-[0.2em] text-white/45">Film · {FEATURED_VIDEO.length}</span>
+                    <span className="mt-1 block text-lg font-normal text-white">{FEATURED_VIDEO.title}</span>
                   </span>
                 </span>
               </button>
@@ -598,10 +598,10 @@ export default function ProjectsPage() {
                   <div key={s.label} className="rounded-[1.25rem] border border-white/10 bg-black/25 p-4 backdrop-blur-md">
                     <dt className="sr-only">{s.label}</dt>
                     <dd>
-                      <span className="block text-2xl font-semibold tracking-[-0.04em]" style={{ color: s.color }}>
+                      <span className="block text-2xl font-normal tracking-[-0.04em]" style={{ color: s.color }}>
                         {s.value}
                       </span>
-                      <span className="mt-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">{s.label}</span>
+                      <span className="mt-1 block text-[11px] font-normal uppercase tracking-[0.14em] text-white">{s.label}</span>
                     </dd>
                   </div>
                 ))}
@@ -622,10 +622,10 @@ export default function ProjectsPage() {
         <div className="mx-auto max-w-7xl">
           <div ref={indexHeadRef} data-reveal style={HIDDEN}>
             <QuadBar />
-            <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
+            <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-normal uppercase tracking-[0.22em] text-black">
               Projects
             </span>
-            <h2 className="mt-5 max-w-3xl text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
+            <h2 className="mt-5 max-w-3xl text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
               Where our programs meet real people
             </h2>
           </div>
@@ -640,8 +640,8 @@ export default function ProjectsPage() {
                 <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" aria-hidden="true" />
                 <span className="absolute inset-x-0 bottom-0 p-4">
                   <span className="block h-1 w-8 rounded-full" style={{ background: item.accent }} aria-hidden="true" />
-                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/65">{item.tag}</span>
-                  <span className="mt-1 block text-sm font-semibold leading-5 text-white">{item.title}</span>
+                  <span className="mt-2 block text-[10px] font-normal uppercase tracking-[0.18em] text-white/65">{item.tag}</span>
+                  <span className="mt-1 block text-sm font-normal leading-5 text-white">{item.title}</span>
                 </span>
               </Link>
             ))}
@@ -669,7 +669,7 @@ export default function ProjectsPage() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-normal tracking-[-0.04em] text-white sm:text-5xl">
               Help us keep <span style={{ color: EKO.yellow }}>these projects moving</span>.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -681,7 +681,7 @@ export default function ProjectsPage() {
             <div ref={ctaLeftRef} data-reveal style={HIDDEN}>
               <Link
                 href="/donate"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-normal text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO.green }}
               >
                 Donate now
@@ -690,7 +690,7 @@ export default function ProjectsPage() {
             <div ref={ctaRightRef} data-reveal style={HIDDEN}>
               <Link
                 href="/programs"
-                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
               >
                 View the programs calendar
               </Link>
