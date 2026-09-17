@@ -1430,6 +1430,7 @@ function LagosHistorySection() {
             alt="Lagos Island seen across the lagoon"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
+            quality={95}
             className="object-cover"
           />
         </div>
