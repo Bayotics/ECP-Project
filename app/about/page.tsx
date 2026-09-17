@@ -182,15 +182,15 @@ const VALUES = [
     color: EKO_GREEN,
   },
   {
-    image: "/gallery/event3.JPG",
+    image: "/gallery/programs/scholarship.jpg",
     title: "Scholarship support",
     desc: "We provide scholarships to minority high school and college students as part of our long-term investment in education.",
     color: EKO_RED,
   },
   {
-    image: "/gallery/event4.JPG",
+    image: "/gallery/programs/back-to-school.jpg",
     title: "Humanitarian assistance",
-    desc: "We assist homeless families with humanitarian services and practical care wherever help is needed most.",
+    desc: "We assist less fortunate families with humanitarian services and practical care wherever help is needed most.",
     color: EKO_BLUE,
   },
   {
@@ -414,7 +414,7 @@ function ServiceProgramsSection() {
                 style={{ padding: "4% 8% 0" }}
               >
                 <span
-                  className="font-semibold text-balance text-white"
+                  className="font-normal text-balance text-white"
                   style={{ fontSize: "clamp(9px, 7.6cqw, 12px)", lineHeight: 1.15 }}
                 >
                   {program.title}
@@ -427,8 +427,8 @@ function ServiceProgramsSection() {
 
         <div>
           <div ref={headRef} data-reveal style={HIDDEN}>
-            <p className="text-lg font-medium text-green-600/70">Annual service programs</p>
-            <h2 className="mt-4 text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-green-800 sm:text-5xl">
+            <p className="text-lg font-medium text-neutral-700">Annual service programs</p>
+            <h2 className="mt-4 text-4xl font-normal leading-[1.1] tracking-[-0.02em] text-black sm:text-5xl">
               Service that shows up every year
             </h2>
           </div>
@@ -441,7 +441,7 @@ function ServiceProgramsSection() {
                   className="group flex items-center justify-between gap-6 py-4"
                 >
                   <span>
-                    <span className="block text-base font-semibold text-green-800">{program.title}</span>
+                    <span className="block text-base font-normal text-black">{program.title}</span>
                     <span className="mt-1 block text-sm leading-6 text-green-900/70">{program.text}</span>
                   </span>
                   <svg
@@ -466,7 +466,7 @@ function ServiceProgramsSection() {
               href="/projects"
               className="inline-flex items-center rounded-full bg-green-700 px-8 py-4 text-base font-medium text-white transition-colors duration-300 hover:bg-green-800"
             >
-              Learn More
+              View More
             </Link>
           </div>
         </div>
@@ -637,7 +637,7 @@ function PersonPortrait({ person, zoom, sizes }: { person: Person; zoom: number;
 
 function TwoToneHeading({ lead, tail }: { lead: string; tail: string }) {
   return (
-    <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-5xl lg:text-[3.4rem]">
+    <h2 className="text-4xl font-normal leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-5xl lg:text-[3.4rem]">
       {lead} <span className="text-neutral-950">{tail}</span>
     </h2>
   );
@@ -716,14 +716,14 @@ function PeopleSection({
               the one-at-a-time sequence. The heading's own top margin keeps
               the layout identical either way. */}
           {eyebrow && (
-            <p data-reveal className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700" style={HIDDEN}>
+            <p data-reveal className="text-xs font-normal uppercase tracking-[0.22em] text-black" style={HIDDEN}>
               {eyebrow}
             </p>
           )}
           <div data-reveal className="mt-5" style={HIDDEN}>
             <TwoToneHeading lead={headingLead} tail={headingTail} />
           </div>
-          <p data-reveal className="mt-6 max-w-md text-base leading-7 text-neutral-700" style={HIDDEN}>
+          <p data-reveal className="mt-6 max-w-md text-base leading-7 text-black" style={HIDDEN}>
             {intro}
           </p>
         </div>
@@ -769,10 +769,10 @@ function PeopleSection({
                     </button>
                   )}
                 </div>
-                <h3 className="mt-3 text-base font-semibold leading-snug tracking-[-0.01em] text-neutral-950">
+                <h3 className="mt-3 text-base font-normal leading-snug tracking-[-0.01em] text-neutral-950">
                   {person.name}
                 </h3>
-                <p className="mt-1 text-sm text-neutral-700">{person.role}</p>
+                <p className="mt-1 text-sm text-black">{person.role}</p>
               </article>
             );
           })}
@@ -826,13 +826,13 @@ function PeopleSection({
                     lead={active.name.split(" ").slice(0, -1).join(" ")}
                     tail={active.name.split(" ").slice(-1).join("")}
                   />
-                  <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-neutral-700">
+                  <p className="mt-4 text-sm font-normal uppercase tracking-[0.18em] text-black">
                     {active.role}
                   </p>
                   <div className="mt-8 h-px w-full bg-neutral-200" />
                   <div className="mt-8 space-y-5">
                     {active.bio?.map((paragraph) => (
-                      <p key={paragraph.slice(0, 40)} className="text-[15px] leading-7 text-neutral-700">
+                      <p key={paragraph.slice(0, 40)} className="text-[15px] leading-7 text-black">
                         {paragraph}
                       </p>
                     ))}
@@ -876,13 +876,13 @@ function SectionIntro({
       <div className={align === "center" ? "flex justify-center" : "flex"}>
         <QuadBar />
       </div>
-      <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
+      <span className="mt-5 inline-flex rounded-full border border-neutral-400 bg-white px-4 py-1 text-[11px] font-normal uppercase tracking-[0.22em] text-black">
         {eyebrow}
       </span>
-      <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
+      <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
         {title}
       </h2>
-      <p className="mt-4 text-base leading-8 text-neutral-700 sm:text-lg">{text}</p>
+      <p className="mt-4 text-base leading-8 text-black sm:text-lg">{text}</p>
     </div>
   );
 }
@@ -952,8 +952,6 @@ function WhatDrivesUsCarousel() {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">What drives us</p>
-
       {/* Thumbnails beside the active image; a row above it once the column
           is too narrow to sit them side by side. */}
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -1029,7 +1027,7 @@ function WhatDrivesUsCarousel() {
             className="absolute inset-0 transition-opacity"
             style={{ opacity: i === active ? 1 : 0, transitionDuration: `${fadeMs}ms` }}
           >
-            <p className="text-xl font-semibold tracking-[-0.02em] text-white">{s.title}</p>
+            <p className="text-xl font-normal tracking-[-0.02em] text-white">{s.title}</p>
             <p className="mt-2 text-sm leading-7 text-white/65">{s.text}</p>
           </div>
         ))}
@@ -1180,7 +1178,7 @@ function IbileCarousel() {
                   transform: index === current ? "translateY(0)" : "translateY(20px)",
                 }}
               >
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-normal text-white drop-shadow-lg">
                   {slide.name}
                 </h3>
               </div>
@@ -1400,7 +1398,7 @@ function LagosHistorySection() {
           className="flex flex-col justify-center px-6 py-20 sm:px-10 lg:py-28 lg:pl-16 lg:pr-20 xl:pl-24"
           style={HIDDEN}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">
+          <p className="text-xs font-normal uppercase tracking-[0.2em] text-white/35 mb-4">
             HISTORY
           </p>
 
@@ -1408,16 +1406,16 @@ function LagosHistorySection() {
             A lagoon settlement that became a megacity
           </h2>
 
-          <p className="mt-12 max-w-lg text-base leading-8 text-neutral-700">{LAGOS_HISTORY_INTRO}</p>
+          <p className="mt-12 max-w-lg text-base leading-8 text-black">{LAGOS_HISTORY_INTRO}</p>
 
           <div className="mt-10">
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="group inline-flex items-center gap-4 rounded-full bg-green-400 py-3 pl-7 pr-3 text-base font-medium text-neutral-950 transition-colors duration-300 hover:bg-green-300"
+              className="group inline-flex items-center gap-4 rounded-full bg-green-700 py-3 pl-7 pr-3 text-base font-medium text-white transition-colors duration-300 hover:bg-green-900"
             >
               Read full history
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-950/30 transition-transform duration-300 group-hover:translate-x-1">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white transition-transform duration-300 group-hover:translate-x-1">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
@@ -1428,7 +1426,7 @@ function LagosHistorySection() {
 
         <div ref={imageRef} data-reveal className="relative min-h-[24rem] lg:min-h-[42rem]" style={HIDDEN}>
           <Image
-            src="/gallery/hero-bgs/lagos-island.jpg"
+            src="/gallery/eko/eko-4.jpeg"
             alt="Lagos Island seen across the lagoon"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -1466,7 +1464,7 @@ function LagosHistorySection() {
               </button>
 
               <div className="overflow-y-auto px-6 py-14 sm:px-12 sm:py-16">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">History of Eko</p>
+              <p className="text-xs font-normal uppercase tracking-[0.22em] text-black">History of Eko</p>
               <h2 className="mt-4 text-3xl font-normal leading-tight tracking-[-0.02em] text-neutral-950 sm:text-4xl">
                 The Obas of Lagos, and the city they ruled
               </h2>
@@ -1476,34 +1474,34 @@ function LagosHistorySection() {
 
               <div className="mt-10 space-y-5">
                 {LAGOS_HISTORY_NARRATIVE.map((paragraph) => (
-                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-neutral-700">
+                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-black">
                     {paragraph}
                   </p>
                 ))}
               </div>
 
-              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+              <h3 className="mt-14 text-2xl font-normal tracking-[-0.02em] text-neutral-950">
                 Lagos Island and the Division
               </h3>
               <div className="mt-6 space-y-5">
                 {LAGOS_ISLAND_NARRATIVE.map((paragraph) => (
-                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-neutral-700">
+                  <p key={paragraph.slice(0, 40)} className="text-[15px] leading-8 text-black">
                     {paragraph}
                   </p>
                 ))}
               </div>
 
-              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+              <h3 className="mt-14 text-2xl font-normal tracking-[-0.02em] text-neutral-950">
                 Genealogy of the Obas of Lagos
               </h3>
               <div className="mt-6 overflow-x-auto">
                 <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
                   <thead>
                     <tr className="border-b border-neutral-300">
-                      <th className="py-3 pr-4 font-semibold text-neutral-950">Name</th>
-                      <th className="py-3 pr-4 font-semibold text-neutral-950">From</th>
-                      <th className="py-3 pr-4 font-semibold text-neutral-950">To</th>
-                      <th className="py-3 font-semibold text-neutral-950">Years</th>
+                      <th className="py-3 pr-4 font-normal text-neutral-950">Name</th>
+                      <th className="py-3 pr-4 font-normal text-neutral-950">From</th>
+                      <th className="py-3 pr-4 font-normal text-neutral-950">To</th>
+                      <th className="py-3 font-normal text-neutral-950">Years</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1519,15 +1517,15 @@ function LagosHistorySection() {
                 </table>
               </div>
 
-              <h3 className="mt-14 text-2xl font-semibold tracking-[-0.02em] text-neutral-950">
+              <h3 className="mt-14 text-2xl font-normal tracking-[-0.02em] text-neutral-950">
                 Recognised chieftaincies in the Lagos City Council area
               </h3>
               <div className="mt-6 grid gap-6 sm:grid-cols-2">
                 {LAGOS_CHIEFTAINCIES.map((group) => (
                   <div key={group.title} className="rounded-2xl border border-neutral-200 p-6">
                     <div className="h-1.5 w-12 rounded-full" style={{ background: group.color }} aria-hidden="true" />
-                    <h4 className="mt-4 text-base font-semibold text-neutral-950">{group.title}</h4>
-                    <ol className="mt-4 space-y-1.5 text-sm text-neutral-700">
+                    <h4 className="mt-4 text-base font-normal text-neutral-950">{group.title}</h4>
+                    <ol className="mt-4 space-y-1.5 text-sm text-black">
                       {group.names.map((name, index) => (
                         <li key={name} className="flex gap-3">
                           <span className="w-5 shrink-0 text-neutral-400">{index + 1}.</span>
@@ -1687,17 +1685,17 @@ export default function AboutPage() {
                   {QUAD.map((color) => (
                     <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                   ))}
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/80">
                     About Eko Club Philadelphia
                   </span>
                 </div>
 
-                <h1 className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">
+                <h1 className="mt-7 text-5xl font-medium leading-tight tracking-tight text-white sm:text-6xl">
                   Our <span style={{ color: EKO_GREEN }}>heritage</span>, our
                   <span style={{ color: EKO_YELLOW }}> service</span>, our story.
                 </h1>
 
-                <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
+                <p className="mt-6 max-w-2xl text-base leading-8 text-white sm:text-lg">
                   We are Eko Club Philadelphia. We preserve our cultural heritage, serve families and
                   communities in need, and keep the story of Lagos alive through fellowship, outreach,
                   and visible impact.
@@ -1707,14 +1705,14 @@ export default function AboutPage() {
               <div ref={heroButtonsRef} data-reveal className="mt-8 flex flex-wrap gap-3" style={HIDDEN}>
                 <Link
                   href="/membership/apply"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-normal text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO_GREEN, boxShadow: `0 0 32px ${EKO_GREEN}66` }}
                 >
                   Join the community
                 </Link>
                 <Link
                   href="#lagos-history"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
                 >
                   Explore Lagos history
                 </Link>
@@ -1740,7 +1738,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative overflow-hidden bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-semibold leading-none text-neutral-100">
+        <div className="pointer-events-none absolute -right-10 top-0 select-none text-[8rem] font-normal leading-none text-neutral-100">
           EKO
         </div>
 
@@ -1760,10 +1758,10 @@ export default function AboutPage() {
                 className="group rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-transform duration-300 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-semibold tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
+                  <h3 className="text-2xl font-normal tracking-[-0.03em] text-neutral-950">{pillar.title}</h3>
                   <span className="h-3 w-3 rounded-full" style={{ background: pillar.color }} />
                 </div>
-                <p className="mt-4 text-sm leading-7 text-neutral-700 sm:text-base">{pillar.text}</p>
+                <p className="mt-4 text-sm leading-7 text-black sm:text-base">{pillar.text}</p>
               </article>
             ))}
           </div>
@@ -1780,17 +1778,17 @@ export default function AboutPage() {
               <div className="flex">
                 <QuadBar />
               </div>
-              <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-700">
+              <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-normal uppercase tracking-[0.22em] text-black">
                 Our focus
               </span>
-              <h2 className="mt-5 text-3xl font-bold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
+              <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
                 How we turn our mission into practical service
               </h2>
             </div>
             <p
               ref={focusTextRef}
               data-reveal
-              className="text-base leading-8 text-neutral-700 sm:text-lg"
+              className="text-base leading-8 text-black sm:text-lg"
               style={HIDDEN}
             >
               Our work is not abstract. It is expressed through scholarships, humanitarian
@@ -1823,7 +1821,7 @@ export default function AboutPage() {
                 />
                 <div className="absolute inset-x-0 bottom-0 p-6">
                   <div className="h-1.5 w-12 rounded-full" style={{ background: value.color }} aria-hidden="true" />
-                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-white">{value.title}</h3>
+                  <h3 className="mt-4 text-xl font-normal tracking-[-0.02em] text-white">{value.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-white/75">{value.desc}</p>
                 </div>
               </article>
@@ -1857,12 +1855,12 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-start gap-12">
             <div ref={rootsTextRef} data-reveal className="lg:w-1/2" style={HIDDEN}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35 mb-4">Our Lagos roots</p>
-              <h2 className="text-4xl font-semibold text-white leading-snug mb-5 tracking-tight">
-                The five IBILE divisions — where we come from
+              <p className="text-xs font-normal uppercase tracking-[0.2em] text-white/35 mb-4">Our Lagos roots</p>
+              <h2 className="text-4xl font-normal text-white leading-snug mb-5 tracking-tight">
+                The five IBILE divisions where we come from
               </h2>
-              <p className="text-base text-white/55 leading-relaxed font-normal mb-6">
-                Ikorodu, Badagry, Ikeja, Lagos Island, Epe — the five historic divisions
+              <p className="text-base text-white leading-relaxed font-normal mb-6">
+                Ikorodu, Badagry, Ikeja, Lagos Island, and Epe; the five historic divisions
                 of Lagos State that our members call home. Each carries its own festivals,
                 monuments, and traditions, and together they make up the Lagos we carry
                 with us.
@@ -1870,7 +1868,7 @@ export default function AboutPage() {
               <div className="flex flex-wrap gap-2">
                 {["Ikorodu", "Badagry", "Ikeja", "Lagos Island", "Epe"].map(d => (
                   <span key={d}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-white/15 text-white/50">
+                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-white/50 text-white">
                     {d}
                   </span>
                 ))}
@@ -1894,7 +1892,7 @@ export default function AboutPage() {
             <div className="flex justify-center">
               <QuadBar />
             </div>
-            <h2 className="mt-6 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-normal tracking-[-0.04em] text-white sm:text-5xl">
               Keep the <span style={{ color: EKO_YELLOW }}>Eko spirit</span> moving.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -1909,7 +1907,7 @@ export default function AboutPage() {
             <div ref={ctaLeftButtonRef} data-reveal style={HIDDEN}>
               <Link
                 href="/membership/apply"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-normal text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO_GREEN }}
               >
                 Apply for membership
@@ -1918,7 +1916,7 @@ export default function AboutPage() {
             <div ref={ctaRightButtonRef} data-reveal style={HIDDEN}>
               <Link
                 href="/events"
-                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
               >
                 See upcoming events
               </Link>
