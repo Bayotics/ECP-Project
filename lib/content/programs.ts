@@ -68,7 +68,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [],
     committee: "Education & Youth",
     blurb:
-      "We close the academic year by celebrating the scholars among us — outstanding students of Nigerian heritage whose drive deserves a runway. The evening turns a scholarship check into a moment of recognition the whole community shows up for.",
+      "We close the academic year by celebrating the scholars among us, outstanding students of Nigerian heritage whose drive deserves a runway. The evening turns a scholarship check into a moment of recognition the whole community shows up for.",
     accent: EKO.blue,
     image: { src: "/gallery/projects/scholarship/2026-awardees.jpg", alt: "Scholarship awardees holding their certificates with ECP members" },
     projectId: "scholarships",
@@ -82,7 +82,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [],
     committee: "Health & Medical",
     blurb:
-      "Members fill the Ronald McDonald House kitchen with the smell of home-cooked meals for families whose children are receiving medical care. Quiet, hands-on service — comfort offered one plate at a time.",
+      "Members fill the Ronald McDonald House kitchen with the smell of home-cooked meals for families whose children are receiving medical care. Quiet, hands-on service, comfort offered one plate at a time.",
     accent: EKO.red,
     image: { src: "/gallery/projects/rmh/team-with-ronald.jpg", alt: "ECP volunteers in blue shirts beside the Ronald McDonald statue" },
     projectId: "ronald-mcdonald-house",
@@ -110,7 +110,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [],
     committee: "Culture & Heritage",
     blurb:
-      "Green-white-green takes over the street as we march in the Nigeria Independence Day Parade — drums, agbada, gele, and an unmistakable sense of who we are. It is heritage you can hear from a block away.",
+      "Green-white-green takes over the street as we march in the Nigeria Independence Day Parade, drums, agbada, gele, and an unmistakable sense of who we are. It is heritage you can hear from a block away.",
     accent: EKO.green,
     image: { src: "/gallery/projects/parade/eyo-procession.jpg", alt: "Eyo masquerades processing down the parade route" },
     projectId: "independence-day-parade",
@@ -124,7 +124,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [],
     committee: "Community Service",
     blurb:
-      "No table should sit empty in November. Members gather and distribute turkeys and trimmings so families across the area enjoy a full Thanksgiving meal — and a reminder that they are not alone.",
+      "No table should sit empty in November. Members gather and distribute turkeys and trimmings so families across the area enjoy a full Thanksgiving meal and a reminder that they are not alone.",
     accent: EKO.yellow,
     image: { src: "/gallery/projects/thanksgiving/team-and-turkeys.jpg", alt: "ECP members behind a table of turkeys ready for the giveaway" },
     projectId: "thanksgiving",
@@ -152,7 +152,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [],
     committee: "Health & Medical",
     blurb:
-      "Through the year we bring in doctors and specialists for frank, practical talks and screenings — heart health, diabetes prevention, mental wellness, nutrition — knowledge that helps our community live longer and better.",
+      "Through the year we bring in doctors and specialists for frank, practical talks and screenings, heart health, diabetes prevention, mental wellness, nutrition, knowledge that helps our community live longer and better.",
     accent: EKO.red,
     image: { src: "/gallery/projects/health/flyer-heart-health-2025-01.jpg", alt: "Flyer for ECP's Heart Health webinar with Dr. Craig McMackin" },
     projectId: "health-education",
@@ -169,7 +169,7 @@ export const PROGRAMS: Program[] = [
     activeYears: [2026, 2028, 2030],
     committee: "Health & Medical",
     blurb:
-      "Our flagship. Every two years a team of medical professionals and volunteers travels to deliver free care, screenings, and supplies to communities that need them — the fullest expression of why this club exists.",
+      "Our flagship. Every two years a team of medical professionals and volunteers travels to deliver free care, screenings, and supplies to communities that need them, the fullest expression of why this club exists.",
     accent: EKO.red,
     image: { src: "https://i.ytimg.com/vi/9ViSMyqg5_s/hqdefault.jpg", alt: "Eko Club International Medical Mission, Lagos Island" },
     projectId: "medical-missions",
@@ -183,11 +183,11 @@ export const COMMITTEES: Committee[] = ["Health & Medical", "Education & Youth",
 export const ECI_FLAGSHIP: Record<number, { title: string; text: string }> = {
   2026: {
     title: "ECI Medical Mission — November 2026",
-    text: "Eko Club International’s flagship medical outreach. As a chapter, ECP rallies volunteers, supplies, and support behind the mission — the headline event of the 2026 calendar.",
+    text: "Eko Club International’s flagship medical outreach. As a chapter, ECP rallies volunteers, supplies, and support behind the mission the headline event of the 2026 calendar.",
   },
   2027: {
     title: "ECI 26th Biennial Convention — London 2027",
-    text: "The worldwide family of Eko Club gathers in London for the 26th Biennial Convention — business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.",
+    text: "The worldwide family of Eko Club gathers in London for the 26th Biennial Convention; business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.",
   },
 };
 

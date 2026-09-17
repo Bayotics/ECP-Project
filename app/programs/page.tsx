@@ -56,7 +56,7 @@ function StatusPill({ program, year, today, className }: { program: Program; yea
   if (status === "none") {
     if (!program.signupNote) return null;
     return (
-      <span className={cn("rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-neutral-800 backdrop-blur", className)}>
+      <span className={cn("rounded-full bg-white/90 px-3 py-1 text-[11px] font-normal text-neutral-800 backdrop-blur", className)}>
         {program.signupNote}
       </span>
     );
@@ -64,7 +64,7 @@ function StatusPill({ program, year, today, className }: { program: Program; yea
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold backdrop-blur",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-normal backdrop-blur",
         status === "open" && "bg-green-600 text-white",
         status === "upcoming" && "bg-white/90 text-neutral-900",
         status === "closed" && "bg-neutral-900/70 text-white/85",
@@ -97,26 +97,26 @@ function ProgramCard({ program, year, today }: { program: Program; year: number;
           /* No photograph of this program has been supplied — a typographic
              panel rather than an unrelated stand-in photo. */
           <div className="absolute inset-0 flex flex-col justify-end p-6" style={{ background: `linear-gradient(135deg, ${program.accent} 0%, #0a0a0a 120%)` }}>
-            <p className="text-5xl font-semibold tracking-[-0.04em] text-white/90">{program.when}</p>
+            <p className="text-5xl font-normal tracking-[-0.04em] text-white/90">{program.when}</p>
           </div>
         )}
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           <StatusPill program={program} year={year} today={today} />
           {program.flagship && (
-            <span className="rounded-full bg-red-600 px-3 py-1 text-[11px] font-semibold text-white">Flagship</span>
+            <span className="rounded-full bg-red-600 px-3 py-1 text-[11px] font-normal text-white">Flagship</span>
           )}
         </div>
         {program.image && (
-          <p className="absolute bottom-4 left-5 text-sm font-semibold uppercase tracking-[0.18em] text-white">{program.when}</p>
+          <p className="absolute bottom-4 left-5 text-sm font-normal uppercase tracking-[0.18em] text-white">{program.when}</p>
         )}
       </div>
 
       <div className="flex flex-1 flex-col p-6">
-        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+        <p className="flex items-center gap-2 text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-500">
           <span className="h-2 w-2 rounded-full" style={{ background: committeeColor }} aria-hidden="true" />
           {program.committee}
         </p>
-        <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-neutral-950">{program.name}</h3>
+        <h3 className="mt-3 text-2xl font-normal tracking-[-0.03em] text-neutral-950">{program.name}</h3>
         <p className="mt-3 flex-1 text-sm leading-7 text-neutral-700">{program.blurb}</p>
 
         <div className="mt-6 flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3">
@@ -125,12 +125,12 @@ function ProgramCard({ program, year, today }: { program: Program; year: number;
             <path d="M16 3v4M8 3v4M3 11h18" />
           </svg>
           <p className="text-xs text-neutral-700">
-            <span className="font-semibold text-neutral-900">Sign-up window: </span>
+            <span className="font-normal text-neutral-900">Sign-up window: </span>
             {formatWindow(program)}
           </p>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-100 pt-4 text-sm font-semibold">
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-100 pt-4 text-sm font-normal">
           {program.projectId && (
             <Link href={`/projects#${program.projectId}`} className="group/link inline-flex items-center gap-1.5 text-green-700 hover:text-green-800">
               See it in action
@@ -154,7 +154,7 @@ function CalendarView({ programs, year, today }: { programs: Program[]; year: nu
         <caption className="sr-only">Programs by month, {year}</caption>
         <thead>
           <tr className="border-b border-neutral-200">
-            <th scope="col" className="w-64 px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+            <th scope="col" className="w-64 px-5 py-4 text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-500">
               Program
             </th>
             {MONTHS.map((m, i) => (
@@ -162,7 +162,7 @@ function CalendarView({ programs, year, today }: { programs: Program[]; year: nu
                 key={m}
                 scope="col"
                 className={cn(
-                  "px-1 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em]",
+                  "px-1 py-4 text-center text-[11px] font-normal uppercase tracking-[0.12em]",
                   i === thisMonth ? "text-green-700" : "text-neutral-500",
                 )}
               >
@@ -179,13 +179,13 @@ function CalendarView({ programs, year, today }: { programs: Program[]; year: nu
             return (
               <tr key={p.id} className="border-b border-neutral-100 last:border-0">
                 <th scope="row" className="px-5 py-3 align-middle">
-                  <span className="block text-sm font-semibold text-neutral-950">{p.name}</span>
+                  <span className="block text-sm font-normal text-neutral-950">{p.name}</span>
                   <span className="mt-0.5 block text-xs font-normal text-neutral-500">{formatWindow(p)}</span>
                 </th>
                 {runs.length === 0 ? (
                   <td colSpan={12} className="px-1 py-3">
                     <div
-                      className="flex h-9 items-center justify-center rounded-lg border border-dashed text-xs font-semibold"
+                      className="flex h-9 items-center justify-center rounded-lg border border-dashed text-xs font-normal"
                       style={{ borderColor: `${p.accent}66`, color: p.accent, background: `${p.accent}0d` }}
                     >
                       {p.monthNote}
@@ -368,31 +368,31 @@ export default function ProgramsPage() {
                   {QUAD.map((color) => (
                     <span key={color} className="h-2 w-2 rounded-full" style={{ background: color }} />
                   ))}
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                  <span className="text-[11px] font-normal uppercase tracking-[0.24em] text-white">
                     Programs calendar {PROGRAM_YEARS[0]}–{PROGRAM_YEARS[PROGRAM_YEARS.length - 1]}
                   </span>
                 </div>
-                <h1 className="mt-7 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">
+                <h1 className="mt-7 text-5xl font-medium leading-tight tracking-tight text-white sm:text-6xl">
                   <span style={{ color: EKO.green }}>Nine programs</span>. One
                   <span style={{ color: EKO.yellow }}> year-round</span> rhythm of service.
                 </h1>
-                <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
+                <p className="mt-6 max-w-2xl text-base leading-8 text-white sm:text-lg">
                   From the Adopt-a-Highway cleanup in May to the winter coat drive, these are the programs our
-                  committees run every year — with the Medical Mission, our flagship, in even years. Pick a year to
+                  committees run every year with the Medical Mission, our flagship, in even years. Pick a year to
                   see what&apos;s on and when sign-ups open.
                 </p>
               </div>
               <div ref={heroButtonsRef} data-reveal className="mt-8 flex flex-wrap gap-3" style={HIDDEN}>
                 <Link
                   href="#calendar"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-normal text-white shadow-2xl transition-transform duration-300 hover:-translate-y-0.5"
                   style={{ background: EKO.green, boxShadow: `0 0 32px ${EKO.green}66` }}
                 >
                   Browse the calendar
                 </Link>
                 <Link
                   href="/projects"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
                 >
                   See our projects
                 </Link>
@@ -400,41 +400,41 @@ export default function ProgramsPage() {
             </div>
 
             <div ref={heroPanelRef} data-reveal className="rounded-4xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl" style={HIDDEN}>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{year} at a glance</p>
+              <p className="text-xs font-normal uppercase tracking-[0.22em] text-white">{year} at a glance</p>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                  <p className="text-4xl font-semibold tracking-[-0.04em]" style={{ color: EKO.green }}>
+                  <p className="text-4xl font-normal tracking-[-0.04em]" style={{ color: EKO.green }}>
                     {active.length}
                   </p>
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Programs running</p>
+                  <p className="mt-2 text-xs font-normal uppercase tracking-[0.16em] text-white">Programs running</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                  <p className="text-4xl font-semibold tracking-[-0.04em]" style={{ color: EKO.yellow }}>
+                  <p className="text-4xl font-normal tracking-[-0.04em]" style={{ color: EKO.yellow }}>
                     {today ? openNow.length : "–"}
                   </p>
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Sign-ups open now</p>
+                  <p className="mt-2 text-xs font-normal uppercase tracking-[0.16em] text-white">Sign-ups open now</p>
                 </div>
               </div>
               <div className="mt-3 rounded-3xl border border-white/10 bg-black/20 p-5">
                 {today && openNow.length > 0 ? (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Open now</p>
+                    <p className="text-xs font-normal uppercase tracking-[0.16em] text-white/45">Open now</p>
                     <ul className="mt-2 space-y-1">
                       {openNow.map((p) => (
                         <li key={p.id} className="flex items-center justify-between gap-3 text-sm text-white">
-                          <span className="font-semibold">{p.name}</span>
-                          <span className="text-white/60">closes {formatWindow(p).split("–")[1]?.trim()}</span>
+                          <span className="font-normal">{p.name}</span>
+                          <span className="text-white">closes {formatWindow(p).split("–")[1]?.trim()}</span>
                         </li>
                       ))}
                     </ul>
                   </>
                 ) : (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Next to open</p>
+                    <p className="text-xs font-normal uppercase tracking-[0.16em] text-white/45">Next to open</p>
                     <p className="mt-2 text-sm text-white">
                       {today && nextUp ? (
                         <>
-                          <span className="font-semibold">{nextUp.name}</span>
+                          <span className="font-normal">{nextUp.name}</span>
                           <span className="text-white/60"> · opens {formatWindow(nextUp).split("–")[0].trim()}</span>
                         </>
                       ) : (
@@ -465,10 +465,10 @@ export default function ProgramsPage() {
                   <div key={color} className="flex-1" style={{ background: color }} />
                 ))}
               </div>
-              <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
+              <span className="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-4 py-1 text-[11px] font-normal uppercase tracking-[0.22em] text-neutral-700">
                 Programs calendar
               </span>
-              <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
+              <h2 className="mt-5 text-3xl font-normal tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl">
                 What&apos;s on in {year}
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-8 text-neutral-700">
@@ -486,7 +486,7 @@ export default function ProgramsPage() {
                     aria-selected={y === year}
                     onClick={() => setYear(y)}
                     className={cn(
-                      "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                      "rounded-full px-4 py-2 text-sm font-normal transition-colors",
                       y === year ? "bg-neutral-950 text-white" : "text-neutral-600 hover:text-neutral-950",
                     )}
                   >
@@ -503,7 +503,7 @@ export default function ProgramsPage() {
                       aria-selected={v === view}
                       onClick={() => setView(v)}
                       className={cn(
-                        "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                        "rounded-full px-4 py-2 text-sm font-normal transition-colors",
                         v === view ? "bg-green-700 text-white" : "text-neutral-600 hover:text-neutral-950",
                       )}
                     >
@@ -524,7 +524,7 @@ export default function ProgramsPage() {
                   key={c}
                   onClick={() => setCommittee(c)}
                   aria-pressed={on}
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-normal transition-colors"
                   style={{
                     borderColor: on ? color : "#e5e5e5",
                     background: on ? `${color}14` : "#ffffff",
@@ -547,15 +547,15 @@ export default function ProgramsPage() {
             <div className="absolute inset-y-0 left-0 w-1.5" style={{ background: year % 2 === 0 ? EKO.red : EKO.blue }} aria-hidden="true" />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/50">Parent body · Eko Club International</p>
-                <p className="mt-2 text-xl font-semibold tracking-[-0.02em] sm:text-2xl">{flagship.title}</p>
+                <p className="text-[11px] font-normal uppercase tracking-[0.22em] text-white/50">Parent body · Eko Club International</p>
+                <p className="mt-2 text-xl font-normal tracking-[-0.02em] sm:text-2xl">{flagship.title}</p>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-white/70">{flagship.text}</p>
               </div>
               <a
                 href="https://ekoclubinternational.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex shrink-0 items-center rounded-full border border-white/25 px-5 py-2.5 text-sm font-normal text-white transition-colors hover:bg-white/10"
               >
                 ECI details →
               </a>
@@ -565,8 +565,8 @@ export default function ProgramsPage() {
           <div ref={gridRef} data-reveal className="mt-8" style={HIDDEN}>
             {visible.length === 0 ? (
               <div className="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
-                <p className="text-lg font-semibold text-neutral-900">No programs match this filter in {year}.</p>
-                <button onClick={() => setCommittee("All")} className="mt-3 text-sm font-semibold text-green-700 hover:underline">
+                <p className="text-lg font-normal text-neutral-900">No programs match this filter in {year}.</p>
+                <button onClick={() => setCommittee("All")} className="mt-3 text-sm font-normal text-green-700 hover:underline">
                   Show all committees
                 </button>
               </div>
@@ -595,7 +595,7 @@ export default function ProgramsPage() {
                 ))}
               </div>
             </div>
-            <h2 className="mt-6 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="mt-6 text-4xl font-normal tracking-[-0.04em] text-white sm:text-5xl">
               Every program runs on <span style={{ color: EKO.yellow }}>our members</span>.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -607,7 +607,7 @@ export default function ProgramsPage() {
             <div ref={ctaLeftRef} data-reveal style={HIDDEN}>
               <Link
                 href="/membership/apply"
-                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
+                className="inline-flex items-center rounded-full px-7 py-3.5 text-sm font-normal text-white transition-transform duration-300 hover:-translate-y-0.5"
                 style={{ background: EKO.green }}
               >
                 Apply for membership
@@ -616,7 +616,7 @@ export default function ProgramsPage() {
             <div ref={ctaRightRef} data-reveal style={HIDDEN}>
               <Link
                 href="/projects"
-                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/12"
+                className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
               >
                 See our projects
               </Link>
