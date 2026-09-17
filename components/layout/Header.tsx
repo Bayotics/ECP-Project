@@ -41,11 +41,10 @@ export const HEADER_OFFSET = {
 
 /* Routes whose first section is a dark full-bleed hero that the transparent
    header can legibly sit on top of. Each one pads its own hero by
-   HEADER_OFFSET.padding in place of the spacer. Note /programs and /contact
-   are absent on purpose: they render no Header at all (it comes from
-   per-route layouts, and those two have none), so there is no spacer to
-   suppress there. */
-const FULL_BLEED_HERO_ROUTES: string[] = ["/", "/about", "/projects", "/donate"];
+   HEADER_OFFSET.padding in place of the spacer. Note /contact is absent on
+   purpose: it renders no Header at all (the Header comes from per-route
+   layouts, and /contact has none), so there is no spacer to suppress there. */
+const FULL_BLEED_HERO_ROUTES: string[] = ["/", "/about", "/programs", "/projects", "/donate"];
 
 function isLinkActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);

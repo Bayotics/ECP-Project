@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cchub.africa",
       },
+      {
+        // YouTube video thumbnails (webinar library, medical mission videos)
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        pathname: "/vi/**",
+      },
     ],
   },
 };
