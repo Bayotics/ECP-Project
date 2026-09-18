@@ -1,81 +1,88 @@
 "use client";
 
+/* The shared furniture every admin screen is built from.
+
+   Same house typography as the public pages: weight 400 throughout, a 500
+   page title, uppercase tracked micro-labels, pill controls and rounded
+   panels. Every export keeps the name and props it had before, so the admin
+   pages themselves did not have to change to pick this up. */
+
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/utils/cn";
+import { useIsClient } from "@/components/gsap/useReveal";
+import { EKO } from "@/lib/content/programs";
+
+const QUAD = [EKO.green, EKO.red, EKO.blue, EKO.yellow];
 
 /* ─── Badge ───────────────────────────────────────── */
 const BADGE_COLORS: Record<string, string> = {
   // Application statuses
-  pending:       "bg-yellow-100 text-yellow-800",
-  "under-review":"bg-blue-100 text-blue-800",
-  interview:     "bg-purple-100 text-purple-800",
-  approved:      "bg-green-100 text-green-800",
-  rejected:      "bg-red-100 text-red-800",
+  pending: "border-amber-200 bg-amber-50 text-amber-800",
+  "under-review": "border-blue-200 bg-blue-50 text-blue-800",
+  interview: "border-violet-200 bg-violet-50 text-violet-800",
+  approved: "border-green-200 bg-green-50 text-green-800",
+  rejected: "border-red-200 bg-red-50 text-red-800",
   // User statuses
-  active:        "bg-green-100 text-green-800",
-  inactive:      "bg-gray-100 text-gray-600",
-  suspended:     "bg-red-100 text-red-800",
+  active: "border-green-200 bg-green-50 text-green-800",
+  inactive: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  suspended: "border-red-200 bg-red-50 text-red-800",
   // User roles
-  member:        "bg-blue-100 text-blue-800",
-  admin:         "bg-orange-100 text-orange-800",
-  "super-admin": "bg-red-100 text-red-800",
-  applicant:     "bg-yellow-100 text-yellow-800",
-  guest:         "bg-gray-100 text-gray-600",
-  // Event / News / Product statuses
-  published:     "bg-green-100 text-green-800",
-  draft:         "bg-gray-100 text-gray-600",
-  archived:      "bg-gray-100 text-gray-600",
-  cancelled:     "bg-red-100 text-red-800",
-  completed:     "bg-blue-100 text-blue-800",
-  "out-of-stock":"bg-orange-100 text-orange-800",
-  discontinued:  "bg-red-100 text-red-800",
+  member: "border-blue-200 bg-blue-50 text-blue-800",
+  admin: "border-amber-200 bg-amber-50 text-amber-800",
+  "super-admin": "border-red-200 bg-red-50 text-red-800",
+  applicant: "border-amber-200 bg-amber-50 text-amber-800",
+  guest: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  // Event / news / product statuses
+  published: "border-green-200 bg-green-50 text-green-800",
+  draft: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  archived: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  cancelled: "border-red-200 bg-red-50 text-red-800",
+  completed: "border-blue-200 bg-blue-50 text-blue-800",
+  "out-of-stock": "border-amber-200 bg-amber-50 text-amber-800",
+  discontinued: "border-red-200 bg-red-50 text-red-800",
   // Event types
-  "town-hall":   "bg-teal-100 text-teal-800",
-  workshop:      "bg-cyan-100 text-cyan-800",
-  volunteer:     "bg-lime-100 text-lime-800",
-  meetup:        "bg-violet-100 text-violet-800",
-  seminar:       "bg-pink-100 text-pink-800",
-  "press-conference": "bg-indigo-100 text-indigo-800",
-  other:         "bg-gray-100 text-gray-600",
+  "town-hall": "border-blue-200 bg-blue-50 text-blue-800",
+  workshop: "border-amber-200 bg-amber-50 text-amber-800",
+  volunteer: "border-green-200 bg-green-50 text-green-800",
+  meetup: "border-green-200 bg-green-50 text-green-800",
+  seminar: "border-red-200 bg-red-50 text-red-800",
+  "press-conference": "border-blue-200 bg-blue-50 text-blue-800",
+  other: "border-neutral-200 bg-neutral-100 text-neutral-600",
   // News categories
-  news:              "bg-blue-100 text-blue-800",
-  announcement:      "bg-green-100 text-green-800",
-  report:            "bg-yellow-100 text-yellow-800",
-  opinion:           "bg-purple-100 text-purple-800",
-  "press-release":   "bg-orange-100 text-orange-800",
-  blog:              "bg-pink-100 text-pink-800",
+  news: "border-blue-200 bg-blue-50 text-blue-800",
+  announcement: "border-green-200 bg-green-50 text-green-800",
+  report: "border-amber-200 bg-amber-50 text-amber-800",
+  opinion: "border-violet-200 bg-violet-50 text-violet-800",
+  "press-release": "border-red-200 bg-red-50 text-red-800",
+  blog: "border-cyan-200 bg-cyan-50 text-cyan-800",
   // Committee types
-  standing:      "bg-emerald-100 text-emerald-800",
-  "ad-hoc":      "bg-amber-100 text-amber-800",
-  executive:     "bg-rose-100 text-rose-800",
-  advisory:      "bg-sky-100 text-sky-800",
-  technical:     "bg-violet-100 text-violet-800",
-  // Committee statuses (dissolved = extra)
-  dissolved:     "bg-gray-100 text-gray-500",
+  standing: "border-green-200 bg-green-50 text-green-800",
+  "ad-hoc": "border-amber-200 bg-amber-50 text-amber-800",
+  executive: "border-red-200 bg-red-50 text-red-800",
+  advisory: "border-blue-200 bg-blue-50 text-blue-800",
+  technical: "border-violet-200 bg-violet-50 text-violet-800",
+  dissolved: "border-neutral-200 bg-neutral-100 text-neutral-500",
   // Product categories
-  apparel:       "bg-blue-100 text-blue-800",
-  accessories:   "bg-teal-100 text-teal-800",
-  stationery:    "bg-lime-100 text-lime-800",
-  publications:  "bg-yellow-100 text-yellow-800",
-  digital:       "bg-violet-100 text-violet-800",
+  apparel: "border-green-200 bg-green-50 text-green-800",
+  accessories: "border-amber-200 bg-amber-50 text-amber-800",
+  stationery: "border-blue-200 bg-blue-50 text-blue-800",
+  publications: "border-red-200 bg-red-50 text-red-800",
+  digital: "border-cyan-200 bg-cyan-50 text-cyan-800",
 };
 
-export function Badge({
-  value,
-  className,
-}: {
-  value: string;
-  className?: string;
-}) {
-  const color = BADGE_COLORS[value] ?? "bg-gray-100 text-gray-600";
+export function Badge({ value, className }: { value: string; className?: string }) {
+  const color = BADGE_COLORS[value] ?? "border-neutral-200 bg-neutral-100 text-neutral-600";
   return (
-    <span className={cn("inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize", color, className)}>
+    <span className={cn("inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-normal capitalize", color, className)}>
       {value.replace(/-/g, " ")}
     </span>
   );
 }
 
 /* ─── Modal ───────────────────────────────────────── */
+/* Portalled to <body>: the portal shell is a flex column with its own
+   scrolling main, and a `fixed` overlay inside it can end up clipped. */
 export function AdminModal({
   title,
   open,
@@ -90,49 +97,61 @@ export function AdminModal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const isClient = useIsClient();
 
   useEffect(() => {
     if (!open) return;
+    const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previous;
       document.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !isClient) return null;
 
   const widths = { sm: "max-w-sm", md: "max-w-xl", lg: "max-w-2xl", xl: "max-w-4xl" };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-neutral-950/60 p-4 backdrop-blur-sm [animation:viewer-in_220ms_ease-out]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         ref={ref}
-        className={cn("relative w-full bg-white rounded-2xl shadow-2xl mt-8 mb-8", widths[size])}
+        className={cn("relative my-8 w-full overflow-hidden rounded-[1.5rem] bg-white shadow-2xl", widths[size])}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-(--color-neutral-200)">
-          <h2 className="text-base font-bold text-(--color-neutral-900)">{title}</h2>
+        <div className="flex h-1 w-full" aria-hidden="true">
+          {QUAD.map((c) => (
+            <div key={c} className="flex-1" style={{ background: c }} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-6 py-4">
+          <h2 className="text-lg font-normal tracking-[-0.02em] text-neutral-950">{title}</h2>
           <button
             onClick={onClose}
-            className="text-(--color-neutral-400) hover:text-(--color-neutral-700) text-xl leading-none transition-colors"
-            aria-label="Close modal"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors hover:bg-neutral-200"
+            aria-label="Close"
           >
-            ✕
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
           </button>
         </div>
-        {/* Body */}
         <div className="px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -149,20 +168,23 @@ export function AdminPageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <header className="mb-7 flex flex-col justify-between gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end">
       <div>
-        <h1 className="text-xl font-bold text-(--color-neutral-900) flex items-center gap-2">
+        <div className="flex h-1 w-20 overflow-hidden rounded-full" aria-hidden="true">
+          {QUAD.map((c) => (
+            <div key={c} className="flex-1" style={{ background: c }} />
+          ))}
+        </div>
+        <h1 className="mt-4 flex items-center gap-3 text-2xl font-medium tracking-[-0.03em] text-neutral-950 sm:text-3xl">
           {title}
           {count !== undefined && (
-            <span className="text-sm font-normal bg-(--color-neutral-200) text-(--color-neutral-600) px-2 py-0.5 rounded-full">
-              {count}
-            </span>
+            <span className="rounded-full border border-neutral-200 px-2.5 py-0.5 text-sm font-normal text-neutral-600">{count}</span>
           )}
         </h1>
-        {subtitle && <p className="text-sm text-(--color-neutral-500) mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="mt-2 text-sm leading-7 text-neutral-700">{subtitle}</p>}
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
-    </div>
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+    </header>
   );
 }
 
@@ -177,15 +199,24 @@ export function AdminFilters({
   filters?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3 mb-4">
-      <div className="relative flex-1 max-w-xs">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-neutral-400) text-sm">🔍</span>
+    <div className="mb-5 flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-neutral-200 bg-white p-4">
+      <div className="relative w-full max-w-sm flex-1">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-neutral-400" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <label htmlFor="admin-search" className="sr-only">
+          Search
+        </label>
         <input
+          id="admin-search"
           type="search"
           value={search}
-          onChange={e => onSearchChange(e.target.value)}
-          placeholder="Search…"
-          className="w-full pl-8 pr-4 py-2 text-sm text-(--color-neutral-900) placeholder:text-(--color-neutral-400) caret-(--color-green-600) border border-(--color-neutral-300) rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-(--color-green-400)"
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search"
+          className="w-full rounded-full border border-neutral-300 bg-white py-2.5 pl-11 pr-4 text-sm font-normal text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-200"
         />
       </div>
       {filters}
@@ -208,14 +239,16 @@ export function FilterSelect({
   return (
     <select
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       className={cn(
-        "text-sm text-(--color-neutral-900) border border-(--color-neutral-300) rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-(--color-green-400)",
-        className
+        "rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-normal text-neutral-800 focus:outline-none focus:ring-2 focus:ring-green-200",
+        className,
       )}
     >
-      {options.map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
       ))}
     </select>
   );
@@ -232,15 +265,15 @@ export function AdminTable({
   empty?: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-(--color-neutral-200) overflow-hidden">
+    <div className="overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-(--color-neutral-50) border-b border-(--color-neutral-200)">
-              {headers.map(h => (
+            <tr className="border-b border-neutral-200 bg-neutral-50">
+              {headers.map((h) => (
                 <th
                   key={h}
-                  className="text-left px-4 py-3 text-xs font-bold text-(--color-neutral-500) uppercase tracking-wide whitespace-nowrap"
+                  className="whitespace-nowrap px-5 py-4 text-left text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-500"
                 >
                   {h}
                 </th>
@@ -250,8 +283,8 @@ export function AdminTable({
           <tbody>
             {React.Children.count(children) === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="text-center py-12 text-(--color-neutral-400) text-sm">
-                  {empty ?? "No records found."}
+                <td colSpan={headers.length} className="px-5 py-14 text-center text-sm text-neutral-500">
+                  {empty ?? "Nothing here yet."}
                 </td>
               </tr>
             ) : (
@@ -278,9 +311,9 @@ export function TR({
     <tr
       onClick={onClick}
       className={cn(
-        "border-b border-(--color-neutral-100) last:border-0 transition-colors",
-        onClick && "cursor-pointer hover:bg-(--color-neutral-50)",
-        className
+        "border-b border-neutral-100 transition-colors last:border-0",
+        onClick && "cursor-pointer hover:bg-neutral-50",
+        className,
       )}
     >
       {children}
@@ -299,7 +332,7 @@ export function TD({
   compact?: boolean;
 }) {
   return (
-    <td className={cn(compact ? "px-4 py-2" : "px-4 py-3", "text-(--color-neutral-700) align-middle", className)}>
+    <td className={cn(compact ? "px-5 py-2.5" : "px-5 py-3.5", "align-middle font-normal text-neutral-700", className)}>
       {children}
     </td>
   );
@@ -317,52 +350,29 @@ export function FormField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-(--color-neutral-700) mb-1">{label}</label>
+      <label className="mb-1.5 block text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-600">{label}</label>
       {children}
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
 
+const fieldBase =
+  "w-full rounded-xl border px-4 py-2.5 text-sm font-normal text-neutral-800 placeholder:text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200";
+
 export function FormInput(props: React.InputHTMLAttributes<HTMLInputElement> & { hasError?: boolean }) {
   const { hasError, className, ...rest } = props;
-  return (
-    <input
-      className={cn(
-        "w-full px-3 py-2 text-sm text-(--color-neutral-900) placeholder:text-(--color-neutral-400) caret-(--color-green-600) border rounded-xl focus:outline-none focus:ring-2 focus:ring-(--color-green-400) transition-shadow",
-        hasError ? "border-red-400 bg-red-50" : "border-(--color-neutral-300) bg-white",
-        className
-      )}
-      {...rest}
-    />
-  );
+  return <input className={cn(fieldBase, hasError ? "border-red-400 bg-red-50" : "border-neutral-300 bg-white", className)} {...rest} />;
 }
 
 export function FormSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { className, ...rest } = props;
-  return (
-    <select
-      className={cn(
-        "w-full px-3 py-2 text-sm text-(--color-neutral-900) border border-(--color-neutral-300) rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-(--color-green-400)",
-        className
-      )}
-      {...rest}
-    />
-  );
+  return <select className={cn(fieldBase, "border-neutral-300 bg-white", className)} {...rest} />;
 }
 
 export function FormTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { className, ...rest } = props;
-  return (
-    <textarea
-      rows={3}
-      className={cn(
-        "w-full px-3 py-2 text-sm text-(--color-neutral-900) placeholder:text-(--color-neutral-400) caret-(--color-green-600) border border-(--color-neutral-300) rounded-xl bg-white resize-none focus:outline-none focus:ring-2 focus:ring-(--color-green-400)",
-        className
-      )}
-      {...rest}
-    />
-  );
+  return <textarea rows={3} className={cn(fieldBase, "resize-none border-neutral-300 bg-white leading-7", className)} {...rest} />;
 }
 
 /* ─── Button helpers ──────────────────────────────── */
@@ -384,28 +394,34 @@ export function Btn({
   children: React.ReactNode;
 }) {
   const variants = {
-    primary:   "bg-(--color-green-600) hover:bg-(--color-green-700) text-white",
-    secondary: "bg-white border border-(--color-neutral-300) hover:bg-(--color-neutral-50) text-(--color-neutral-700)",
-    danger:    "bg-red-600 hover:bg-red-700 text-white",
-    ghost:     "hover:bg-(--color-neutral-100) text-(--color-neutral-600)",
-    success:   "bg-green-600 hover:bg-green-700 text-white",
-    warning:   "bg-yellow-500 hover:bg-yellow-600 text-white",
+    primary: "text-white",
+    secondary: "border border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400",
+    danger: "bg-red-600 text-white hover:bg-red-700",
+    ghost: "text-neutral-600 hover:bg-neutral-100",
+    success: "text-white",
+    warning: "text-white",
+  };
+  const background: Record<string, string | undefined> = {
+    primary: EKO.green,
+    success: EKO.green,
+    warning: EKO.yellow,
   };
   const sizes = {
-    xs: "px-2.5 py-1 text-xs",
-    sm: "px-3.5 py-1.5 text-sm",
-    md: "px-5 py-2.5 text-sm",
+    xs: "px-3 py-1 text-xs",
+    sm: "px-4 py-2 text-sm",
+    md: "px-6 py-2.5 text-sm",
   };
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
+      style={background[variant] ? { background: background[variant] } : undefined}
       className={cn(
-        "font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-full font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
-        className
+        className,
       )}
     >
       {children}
@@ -425,18 +441,20 @@ export function AdminStat({
   sub?: string;
   color?: "green" | "blue" | "yellow" | "red" | "purple";
 }) {
-  const colors = {
-    green:  "border-l-4 border-l-(--color-green-500)  bg-(--color-green-50)",
-    blue:   "border-l-4 border-l-blue-500   bg-blue-50",
-    yellow: "border-l-4 border-l-yellow-500 bg-yellow-50",
-    red:    "border-l-4 border-l-red-500    bg-red-50",
-    purple: "border-l-4 border-l-purple-500 bg-purple-50",
+  const colors: Record<string, string> = {
+    green: EKO.green,
+    blue: EKO.blue,
+    yellow: EKO.yellow,
+    red: EKO.red,
+    purple: "#7c3aed",
   };
   return (
-    <div className={cn("rounded-2xl p-5", colors[color])}>
-      <p className="text-xs font-bold text-(--color-neutral-500) uppercase tracking-wide mb-1">{label}</p>
-      <p className="text-3xl font-extrabold text-(--color-neutral-900)">{value}</p>
-      {sub && <p className="text-xs text-(--color-neutral-500) mt-1">{sub}</p>}
+    <div className="rounded-[1.25rem] border border-neutral-200 bg-white p-5">
+      <p className="text-3xl font-normal tracking-[-0.04em]" style={{ color: colors[color] }}>
+        {value}
+      </p>
+      <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-600">{label}</p>
+      {sub && <p className="mt-2 text-xs leading-5 text-neutral-500">{sub}</p>}
     </div>
   );
 }
@@ -444,16 +462,18 @@ export function AdminStat({
 /* ─── Divider ─────────────────────────────────────── */
 export function SectionDivider({ label }: { label: string }) {
   return (
-    <div className="text-xs font-bold text-(--color-neutral-400) uppercase tracking-widest mt-5 mb-2">{label}</div>
+    <div className="mb-3 mt-6 flex items-center gap-3">
+      <span className="text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-500">{label}</span>
+      <span className="h-px flex-1 bg-neutral-200" aria-hidden="true" />
+    </div>
   );
 }
 
 /* ─── No results ──────────────────────────────────── */
-export function EmptyState({ icon = "📂", message }: { icon?: string; message: string }) {
+export function EmptyState({ message }: { icon?: string; message: string }) {
   return (
-    <div className="text-center py-16 text-(--color-neutral-400)">
-      <p className="text-4xl mb-3">{icon}</p>
-      <p className="font-semibold">{message}</p>
+    <div className="rounded-[1.5rem] border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
+      <p className="text-base font-normal text-neutral-800">{message}</p>
     </div>
   );
 }

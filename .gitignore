@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Client source material: member spotlight artwork and the members
+# database. Holds home addresses, phone numbers and dates of birth, so it
+# must never be committed or served. The web-ready crops live in
+# public/gallery/members and the published fields in lib/content/members.ts.
+/private/

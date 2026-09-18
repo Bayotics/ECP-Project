@@ -13,6 +13,19 @@ import type { MembershipApplication } from "@/lib/models/membership";
 
 const STATUS_OPTIONS = ["all", "pending", "under-review", "interview", "approved", "rejected"];
 
+/* Applications taken before the address rebuild (§7) only carry `lga`;
+   everything since carries country, city, state and ZIP. Both read here. */
+function locationOf(app: MembershipApplication) {
+  const parts = [app.city, app.stateProvince].filter(Boolean);
+  if (parts.length) return parts.join(", ");
+  return app.lga ?? "—";
+}
+
+function fullAddressOf(app: MembershipApplication) {
+  const parts = [app.streetAddress, app.aptUnit, app.city, app.stateProvince, app.zipPostal, app.country].filter(Boolean);
+  return parts.length ? parts.join(", ") : app.address ?? "—";
+}
+
 export default function AdminApplicationsPage() {
   const { applications, update, setUnderReview, setInterview, approve, reject, addAdminMessage } = useMembership();
   const { currentUser } = useAuth();
@@ -33,7 +46,7 @@ export default function AdminApplicationsPage() {
       list = list.filter(a =>
         a.fullName.toLowerCase().includes(q) ||
         a.email.toLowerCase().includes(q) ||
-        (a.lga ?? a.city ?? "").toLowerCase().includes(q)
+        locationOf(a).toLowerCase().includes(q)
       );
     }
     return [...list].sort((a, b) => b.appliedAt.localeCompare(a.appliedAt));
@@ -105,17 +118,17 @@ export default function AdminApplicationsPage() {
       />
 
       <AdminTable
-        headers={["Name", "Email", "LGA", "Occupation", "Status", "Applied"]}
+        headers={["Name", "Email", "Location", "Occupation", "Status", "Applied"]}
         empty="No applications match your search."
       >
         {filtered.map(app => (
           <TR key={app.id} onClick={() => openModal(app)}>
-            <TD className="font-medium text-(--color-neutral-900)">{app.fullName}</TD>
+            <TD className="text-neutral-950">{app.fullName}</TD>
             <TD>{app.email}</TD>
-            <TD>{app.lga}</TD>
+            <TD>{locationOf(app)}</TD>
             <TD>{app.occupation}</TD>
             <TD><Badge value={app.status} /></TD>
-            <TD>{new Date(app.appliedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</TD>
+            <TD>{new Date(app.appliedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</TD>
           </TR>
         ))}
       </AdminTable>
@@ -127,67 +140,72 @@ export default function AdminApplicationsPage() {
               {[
                 { label: "Email",      value: selected.email },
                 { label: "Phone",      value: selected.phone },
-                { label: "LGA",        value: selected.lga },
                 { label: "Occupation", value: selected.occupation },
-                { label: "Applied",    value: new Date(selected.appliedAt).toLocaleDateString("en-NG") },
+                { label: "Employer",   value: selected.employer ?? "—" },
+                { label: "Address",    value: fullAddressOf(selected) },
+                { label: "Applied",    value: new Date(selected.appliedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) },
               ].map(f => (
                 <div key={f.label}>
-                  <p className="text-xs font-bold text-(--color-neutral-500) uppercase mb-0.5">{f.label}</p>
-                  <p className="text-(--color-neutral-800)">{f.value}</p>
+                  <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-500">{f.label}</p>
+                  <p className="leading-6 text-neutral-900">{f.value}</p>
                 </div>
               ))}
               <div>
-                <p className="text-xs font-bold text-(--color-neutral-500) uppercase mb-0.5">Status</p>
+                <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-500">Status</p>
                 <Badge value={selected.status} />
               </div>
             </div>
 
             {selected.reasonForJoining && (
               <>
-                <SectionDivider label="Reason for Joining" />
-                <p className="text-sm text-(--color-neutral-700)">{selected.reasonForJoining}</p>
+                <SectionDivider label="Reason for joining" />
+                <p className="text-sm leading-7 text-neutral-800">{selected.reasonForJoining}</p>
               </>
             )}
 
             {selected.areasOfInterest && selected.areasOfInterest.length > 0 && (
               <>
-                <SectionDivider label="Areas of Interest" />
-                <div className="flex flex-wrap gap-2 mt-1">
+                <SectionDivider label="Areas of interest" />
+                <div className="mt-1 flex flex-wrap gap-2">
                   {selected.areasOfInterest.map((a: string) => (
-                    <span key={a} className="bg-(--color-green-50) text-(--color-green-700) text-xs font-semibold px-2.5 py-1 rounded-full">{a}</span>
+                    <span key={a} className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-normal text-green-800">{a}</span>
                   ))}
                 </div>
               </>
             )}
 
-            <SectionDivider label="Update Status" />
+            <SectionDivider label="Move the application on" />
+            <p className="-mt-1 mb-3 text-xs leading-6 text-neutral-500">
+              Submitted, then membership committee review, then Exco sign off. The applicant sees each move on their
+              status page and is emailed.
+            </p>
             <div className="flex flex-wrap gap-2">
-              <Btn size="sm" variant="secondary" onClick={() => void updateStatus("under-review")}>Under Review</Btn>
-              <Btn size="sm" variant="warning"   onClick={() => void updateStatus("interview")}>Interview</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => void updateStatus("under-review")}>Under review</Btn>
+              <Btn size="sm" variant="warning"   onClick={() => void updateStatus("interview")}>Invite to interview</Btn>
               <Btn size="sm" variant="success"   onClick={() => void updateStatus("approved")}>Approve</Btn>
-              <Btn size="sm" variant="danger"    onClick={() => void updateStatus("rejected")}>Reject</Btn>
+              <Btn size="sm" variant="danger"    onClick={() => void updateStatus("rejected")}>Decline</Btn>
             </div>
 
-            <SectionDivider label="Review Notes" />
-            <FormField label="Notes">
+            <SectionDivider label="Review notes" />
+            <FormField label="Internal notes">
               <FormTextarea rows={3} value={reviewNotes} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewNotes(e.target.value)} placeholder="Internal notes…" />
             </FormField>
             <div className="flex justify-end">
               <Btn size="sm" variant="primary" onClick={saveNotes} disabled={saving}>{saving ? "Saving…" : "Save Notes"}</Btn>
             </div>
 
-            <SectionDivider label="Messages to Applicant" />
+            <SectionDivider label="Messages to the applicant" />
             {selected.adminMessages && selected.adminMessages.length > 0 && (
-              <div className="space-y-2 max-h-36 overflow-y-auto">
+              <div className="max-h-40 space-y-2 overflow-y-auto">
                 {selected.adminMessages.map((m: { id: string; fromName: string; sentAt: string; content: string }) => (
-                  <div key={m.id} className="bg-(--color-neutral-50) rounded-lg p-2.5 text-sm">
-                    <p className="font-bold text-(--color-neutral-700) text-xs">{m.fromName} · {new Date(m.sentAt).toLocaleDateString("en-NG")}</p>
-                    <p className="text-(--color-neutral-700) mt-0.5">{m.content}</p>
+                  <div key={m.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+                    <p className="text-xs text-neutral-500">{m.fromName} · {new Date(m.sentAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    <p className="mt-1 leading-6 text-neutral-800">{m.content}</p>
                   </div>
                 ))}
               </div>
             )}
-            <FormField label="New Message">
+            <FormField label="New message">
               <FormTextarea rows={2} value={msgContent} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMsgContent(e.target.value)} placeholder="Type a message…" />
             </FormField>
             <div className="flex justify-end">

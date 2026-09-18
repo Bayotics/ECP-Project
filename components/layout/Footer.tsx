@@ -165,7 +165,7 @@ function NewsletterForm() {
           type="submit"
           disabled={loading}
           className={cn(
-            "flex-shrink-0 rounded-full px-6 py-3 text-sm font-semibold text-[#0a0a0a] transition-colors",
+            "flex-shrink-0 rounded-full px-6 py-3 text-sm font-normal text-[#0a0a0a] transition-colors",
             "bg-white hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           )}
@@ -246,7 +246,7 @@ export default function Footer() {
         {/* ── Newsletter invite ─────────────────────── */}
         <div className="flex flex-col gap-8 border-b border-white/10 py-16 lg:flex-row lg:items-end lg:justify-between">
           <div ref={textRef} className="max-w-lg">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Stay connected</p>
+            <p className="mb-4 text-xs font-normal uppercase tracking-[0.2em] text-white/60">Stay connected</p>
             <h2 className="text-3xl font-medium leading-tight tracking-tight sm:text-4xl">
               Event updates and chapter news, straight to your inbox.
             </h2>
@@ -274,7 +274,7 @@ export default function Footer() {
                 className="h-10 w-10 shrink-0"
               />
               <span className="flex flex-col leading-tight">
-                <span className="font-bold text-white text-base">Eko Club Philadelphia</span>
+                <span className="text-base font-normal text-white">Eko Club Philadelphia</span>
                 <span className="text-xs text-white/40">Eko Club International</span>
               </span>
             </Link>
@@ -304,7 +304,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
+            <h3 className="mb-4 text-xs font-normal uppercase tracking-[0.15em] text-white/60">
               Quick Links
             </h3>
             <ul className="space-y-3">
@@ -316,7 +316,7 @@ export default function Footer() {
 
           {/* Community */}
           <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
+            <h3 className="mb-4 text-xs font-normal uppercase tracking-[0.15em] text-white/60">
               Community
             </h3>
             <ul className="space-y-3">
@@ -328,16 +328,16 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
+            <h3 className="mb-4 text-xs font-normal uppercase tracking-[0.15em] text-white/60">
               Contact
             </h3>
             <address className="not-italic space-y-3 text-sm text-white/50">
               <a
-                href="tel:+2348001234567"
+                href="tel:+16096383297"
                 className="block hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded"
-                aria-label="Call us at +1 (215) 000 1234"
+                aria-label="Call Eko Club Philadelphia at +1 609 638 3297"
               >
-                +1 (215) 000 1234
+                +1 (609) 638 3297
               </a>
               <a
                 href="mailto:info@ekoclubphiladelphia.org"
@@ -371,7 +371,7 @@ export default function Footer() {
             ))}
             <Link
               href="/donate"
-              className="text-xs font-semibold text-(--color-green-400) hover:underline"
+              className="text-xs font-normal text-green-400 hover:underline"
             >
               Donate →
             </Link>

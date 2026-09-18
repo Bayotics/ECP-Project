@@ -8,11 +8,27 @@ function badRequest(message: string) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
 }
 
+/* Addresses are US first with an international fallback, per §7 of the
+   website review: no LGA, no ward. `lga` and `ward` survive on the model
+   only so applications taken before the change still read back. */
+function validateAddress(input: Partial<CreateApplicationInput>): string | null {
+  const country = input.country?.trim();
+  if (!country) return "Country is required";
+  if (!input.city?.trim()) return "City is required";
+  if (country === "US") {
+    if (!input.stateProvince?.trim()) return "State is required";
+    const zip = input.zipPostal?.trim();
+    if (zip && !/^\d{5}(-\d{4})?$/.test(zip)) return "Enter a valid ZIP code";
+  }
+  return null;
+}
+
 function validateCreateApplication(input: Partial<CreateApplicationInput>): string | null {
   if (!input.fullName?.trim()) return "Full name is required";
   if (!input.email?.trim()) return "Email is required";
   if (!input.phone?.trim()) return "Phone number is required";
-  if (!input.lga?.trim()) return "LGA is required";
+  const addressError = validateAddress(input);
+  if (addressError) return addressError;
   if (!input.occupation?.trim()) return "Occupation is required";
   if (!input.reasonForJoining?.trim()) return "Reason for joining is required";
   if (!Array.isArray(input.areasOfInterest)) return "areasOfInterest must be an array";
@@ -82,8 +98,12 @@ export async function POST(request: NextRequest) {
       phone: payload.phone!.trim(),
       dateOfBirth: payload.dateOfBirth,
       gender: payload.gender,
-      lga: payload.lga!.trim(),
-      ward: payload.ward?.trim(),
+      country: payload.country!.trim(),
+      streetAddress: payload.streetAddress?.trim(),
+      aptUnit: payload.aptUnit?.trim(),
+      city: payload.city!.trim(),
+      stateProvince: payload.stateProvince?.trim(),
+      zipPostal: payload.zipPostal?.trim(),
       address: payload.address?.trim(),
       occupation: payload.occupation!.trim(),
       employer: payload.employer?.trim(),

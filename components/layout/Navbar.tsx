@@ -48,14 +48,14 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
   const adminMode = isAdmin || userIsAdmin;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-(--color-neutral-200) bg-white px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
       {/* Left */}
-      <div className="flex items-center gap-2 text-sm text-(--color-neutral-500)">
-        <Link href="/" className="hover:text-(--color-green-600) transition-colors">
+      <div className="flex items-center gap-2 text-sm font-normal text-neutral-500">
+        <Link href="/" className="transition-colors hover:text-green-700">
           ECP
         </Link>
         <span>/</span>
-        <span className="font-medium text-gray-500">
+        <span className="font-normal text-neutral-950">
           {adminMode ? "Admin" : "Member"} Portal
         </span>
         {adminMode && (
@@ -69,20 +69,20 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
       <div className="flex items-center gap-3">
         {/* Notification bell */}
         <button
-          className="relative rounded-full p-2 text-(--color-neutral-500) hover:bg-(--color-neutral-100) transition-colors"
+          className="relative rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-100"
           aria-label="Notifications"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-(--color-danger)" />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-600" />
         </button>
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-(--color-green-500) text-white font-semibold text-sm hover:ring-2 hover:ring-(--color-green-300) transition overflow-hidden"
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#059669] text-sm font-normal text-white transition hover:ring-2 hover:ring-green-200"
             aria-label="User menu"
           >
             {currentUser?.avatarUrl ? (
@@ -94,22 +94,22 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-52 rounded-xl border border-(--color-neutral-200) bg-white shadow-lg py-1 z-50">
+            <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white py-1 shadow-lg">
               {/* User info */}
-              <div className="px-4 py-3 border-b border-(--color-neutral-100)">
-                <p className="text-sm font-semibold text-gray-500 truncate">{displayName}</p>
-                <p className="text-xs text-(--color-neutral-400) truncate">{currentUser?.email}</p>
+              <div className="border-b border-neutral-100 px-4 py-3">
+                <p className="truncate text-sm font-normal text-neutral-950">{displayName}</p>
+                <p className="truncate text-xs text-neutral-500">{currentUser?.email}</p>
               </div>
               <Link
                 href="/member/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-(--color-neutral-700) hover:bg-(--color-neutral-50) transition"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-normal text-neutral-700 transition hover:bg-neutral-50"
               >
                 Dashboard
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm font-normal text-red-700 transition hover:bg-red-50"
               >
                 Sign out
               </button>

@@ -289,12 +289,12 @@ export const ALBUMS: Album[] = [
   },
   {
     id: "leadership",
-    title: "Leadership and members",
+    title: "Executive Council and patrons",
     category: "Leadership",
     accent: EKO.blue,
     href: "/about#patrons",
     blurb:
-      "The Executive Council and Board of Trustees serving the club, and the matrons and patrons who stand behind it.",
+      "The officers serving the club: the Executive Council, the Board of Trustees, and the matrons and patrons who stand behind them. The full roster of members, with years of service and biographies, lives in the member portal.",
     media: [
       img("/gallery/excos/olabisi-dabiri-okoya.png", "Hon. Olabisi Dabiri-Okoya, President", 2000, 2000, "Hon. Olabisi Dabiri-Okoya · President"),
       img("/gallery/excos/adebimpe-daniells.png", "Hon. Adebimpe Daniells, Vice President", 2000, 2000, "Hon. Adebimpe Daniells · Vice President"),
@@ -331,7 +331,6 @@ export const ALBUMS: Album[] = [
       img("/gallery/patrons/ganiyu-mimiko.png", "Dr. Ganiyu Mimiko, Patron", 2000, 2000, "Dr. Ganiyu Mimiko · Patron"),
       img("/gallery/patrons/maryanne-onitolo.png", "Chief (Dr.) Maryanne Onitolo, Matron", 2000, 2000, "Chief (Dr.) Maryanne Onitolo · Matron"),
       img("/gallery/patrons/risikat-oshilaja.png", "Alhaja Risikat Oshilaja, Matron", 2000, 2000, "Alhaja Risikat Oshilaja · Matron"),
-      img("/gallery/about/right-about-hero-2.jpg", "Four members in matching club attire outside a local school", 1600, 1200),
     ],
   },
   {

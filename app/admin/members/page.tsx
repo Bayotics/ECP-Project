@@ -106,7 +106,7 @@ export default function AdminMembersPage() {
     }
   }
 
-  const headers = ["Name", "Email", "Role", "Status", "LGA", "Joined"];
+  const headers = ["Name", "Email", "Role", "Status", "Lagos connection", "Joined"];
 
   return (
     <div className="space-y-6">
@@ -140,7 +140,7 @@ export default function AdminMembersPage() {
             <TD>{user.email}</TD>
             <TD><Badge value={user.role} /></TD>
             <TD><Badge value={user.status} /></TD>
-            <TD>{user.lga ?? "—"}</TD>
+            <TD>{user.lga ?? "Not given"}</TD>
             <TD>{user.joinedAt ? new Date(user.joinedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—"}</TD>
           </TR>
         ))}
@@ -163,7 +163,7 @@ export default function AdminMembersPage() {
               <FormField label="Phone">
                 <FormInput value={createForm.phone} onChange={e => setCreateForm(p => ({ ...p, phone: e.target.value }))} />
               </FormField>
-              <FormField label="LGA">
+              <FormField label="Lagos connection">
                 <FormInput value={createForm.lga} onChange={e => setCreateForm(p => ({ ...p, lga: e.target.value }))} />
               </FormField>
               <FormField label="Role">
@@ -196,7 +196,7 @@ export default function AdminMembersPage() {
               <FormField label="Phone">
                 <FormInput value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
               </FormField>
-              <FormField label="LGA">
+              <FormField label="Lagos connection">
                 <FormInput value={form.lga} onChange={e => setForm(p => ({ ...p, lga: e.target.value }))} />
               </FormField>
               <div className="col-span-2"><FormField label="Occupation">

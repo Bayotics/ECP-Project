@@ -41,9 +41,7 @@ export const HEADER_OFFSET = {
 
 /* Routes whose first section is a dark full-bleed hero that the transparent
    header can legibly sit on top of. Each one pads its own hero by
-   HEADER_OFFSET.padding in place of the spacer. Note /contact is absent on
-   purpose: it renders no Header at all (the Header comes from per-route
-   layouts, and /contact has none), so there is no spacer to suppress there. */
+   HEADER_OFFSET.padding in place of the spacer. */
 const FULL_BLEED_HERO_ROUTES: string[] = [
   "/",
   "/about",
@@ -54,6 +52,7 @@ const FULL_BLEED_HERO_ROUTES: string[] = [
   "/gallery",
   "/store",
   "/donate",
+  "/contact",
 ];
 
 function isLinkActive(pathname: string, href: string) {
@@ -173,7 +172,7 @@ function GetInvolvedMenu({ pathname, showGlass }: { pathname: string; showGlass:
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6">
               {GET_INVOLVED_LINKS.map((item) => (
                 <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="group/item block">
-                  <p className="text-sm font-semibold text-neutral-900 transition-colors group-hover/item:text-[#059669]">
+                  <p className="text-sm font-normal text-neutral-900 transition-colors group-hover/item:text-[#059669]">
                     {item.label}
                   </p>
                   <p className="mt-1 text-xs leading-snug text-neutral-500">{item.desc}</p>
@@ -201,7 +200,7 @@ function DonatePill({
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         className={cn(
-          "inline-flex items-center justify-center gap-1.5 rounded-full bg-[#059669] px-5 py-2 text-sm font-semibold text-white",
+          "inline-flex items-center justify-center gap-1.5 rounded-full bg-[#059669] px-5 py-2 text-sm font-normal text-white",
           fullWidth && "w-full py-3"
         )}
       >
