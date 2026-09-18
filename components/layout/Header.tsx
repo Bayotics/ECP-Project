@@ -44,7 +44,17 @@ export const HEADER_OFFSET = {
    HEADER_OFFSET.padding in place of the spacer. Note /contact is absent on
    purpose: it renders no Header at all (the Header comes from per-route
    layouts, and /contact has none), so there is no spacer to suppress there. */
-const FULL_BLEED_HERO_ROUTES: string[] = ["/", "/about", "/programs", "/projects", "/donate"];
+const FULL_BLEED_HERO_ROUTES: string[] = [
+  "/",
+  "/about",
+  "/programs",
+  "/projects",
+  "/events",
+  "/news",
+  "/gallery",
+  "/store",
+  "/donate",
+];
 
 function isLinkActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);

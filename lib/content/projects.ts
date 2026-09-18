@@ -91,7 +91,7 @@ export const PROJECTS: Project[] = [
     kicker: "Scholarships",
     when: "Every year",
     body: [
-      "Each year the club awards scholarships to two high school graduates and three college students — a long-term investment in the students of our community.",
+      "Each year the club awards scholarships to two high school graduates and three college students, a long-term investment in the students of our community.",
     ],
     facts: [
       { value: "2", label: "high school awards a year" },
@@ -384,7 +384,7 @@ export const WEBINARS: Webinar[] = [
   },
   {
     id: "cpDJHB6QCnQ",
-    title: "Colon Cancer Seminar: Rectal and Colon Cancer — A Comparison and New Innovations",
+    title: "Colon Cancer Seminar: Rectal and Colon Cancer, A Comparison and New Innovations",
     speakers: "Dr. John Smith Berry IV",
     affiliation: "Capital Health Medical Center, Hopewell, NJ",
     date: "Dec 7, 2024",
@@ -431,7 +431,7 @@ export const MEDICAL_MISSION_VIDEOS = [
   },
   {
     id: "9ViSMyqg5_s",
-    title: "Eko Club International Medical Mission — Day 2, Lagos Island",
+    title: "Eko Club International Medical Mission, Day 2, Lagos Island",
     note: "Published January 2025 · Eko Club International",
   },
 ];

@@ -4,7 +4,7 @@ import EventsPageClient from "@/components/events/EventsPageClient";
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Browse all Eko Club Philadelphia events — cultural galas, community gatherings, social welfare projects, and member meetups.",
+    "Every Eko Club Philadelphia event in one calendar: cultural nights, community gatherings, volunteer days, town halls and member meetups.",
 };
 
 export default function EventsPage() {

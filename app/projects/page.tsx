@@ -286,7 +286,7 @@ function HealthSection({ onOpen }: { onOpen: OpenViewer }) {
     kind: "youtube",
     id: w.id,
     title: w.title,
-    caption: `${w.title} — ${w.speakers}`,
+    caption: `${w.title} · ${w.speakers}`,
   }));
   const flyers: MediaItem[] = webinars
     .filter((w) => w.flyer)

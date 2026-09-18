@@ -210,7 +210,7 @@ function CalendarView({ programs, year, today }: { programs: Program[]; year: nu
                                   }
                                 : undefined
                           }
-                          title={running ? `${p.name} — ${m}` : signing ? `${p.name} sign-ups — ${m}` : undefined}
+                          title={running ? `${p.name}, ${m}` : signing ? `${p.name} sign-ups, ${m}` : undefined}
                         />
                       </td>
                     );
@@ -242,11 +242,11 @@ function flagshipFor(year: number) {
   if (ECI_FLAGSHIP[year]) return ECI_FLAGSHIP[year];
   return year % 2 === 0
     ? {
-        title: `ECI Medical Mission — ${year}`,
+        title: `ECI Medical Mission, ${year}`,
         text: "Eko Club International’s flagship medical outreach. As a chapter, ECP rallies volunteers, supplies, and support behind the mission.",
       }
     : {
-        title: `ECI Biennial Convention — ${year}`,
+        title: `ECI Biennial Convention, ${year}`,
         text: "The worldwide family of Eko Club gathers for business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.",
       };
 }
@@ -599,7 +599,7 @@ export default function ProgramsPage() {
               Every program runs on <span style={{ color: EKO.yellow }}>our members</span>.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
-              Join the club, pick a committee, and sign up when a window opens — or see what these programs have
+              Join the club, pick a committee, and sign up when a window opens, or see what these programs have
               already done on the ground.
             </p>
           </div>

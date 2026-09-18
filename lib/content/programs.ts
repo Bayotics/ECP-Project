@@ -148,7 +148,7 @@ export const PROGRAMS: Program[] = [
     months: [],
     monthNote: "Every other month",
     signup: null,
-    signupNote: "Ongoing — monthly",
+    signupNote: "Ongoing, monthly",
     activeYears: [],
     committee: "Health & Medical",
     blurb:
@@ -182,11 +182,11 @@ export const COMMITTEES: Committee[] = ["Health & Medical", "Education & Youth",
 /* Parent-body (ECI) headline events — spec §11. */
 export const ECI_FLAGSHIP: Record<number, { title: string; text: string }> = {
   2026: {
-    title: "ECI Medical Mission — November 2026",
+    title: "ECI Medical Mission, November 2026",
     text: "Eko Club International’s flagship medical outreach. As a chapter, ECP rallies volunteers, supplies, and support behind the mission the headline event of the 2026 calendar.",
   },
   2027: {
-    title: "ECI 26th Biennial Convention — London 2027",
+    title: "ECI 26th Biennial Convention, London 2027",
     text: "The worldwide family of Eko Club gathers in London for the 26th Biennial Convention; business, culture, and reunion. ECP joins delegates from across the globe to represent Philadelphia.",
   },
 };

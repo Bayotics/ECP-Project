@@ -66,7 +66,7 @@ export default function MediaViewer({
       onClick={onClose}
     >
       <div className="flex items-center justify-between px-4 py-4 text-white/70 sm:px-6">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em]">
+        <span className="text-xs font-normal uppercase tracking-[0.2em]">
           {many ? `${index + 1} / ${items.length}` : ""}
         </span>
         <button
