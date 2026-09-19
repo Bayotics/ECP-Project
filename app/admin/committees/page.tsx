@@ -25,7 +25,7 @@ const BLANK_COMMITTEE: CommitteeForm = {
   name: "", slug: "", description: "", mandate: "",
   type: "standing",
   status: "active",
-  establishedAt: new Date().toISOString().split("T")[0],
+  establishedAt: "",
   members: [],
   imageUrl: "",
 };
@@ -88,7 +88,7 @@ export default function AdminCommitteesPage() {
       mandate: committee.mandate ?? "",
       type: committee.type,
       status: committee.status,
-      establishedAt: committee.establishedAt.split("T")[0],
+      establishedAt: committee.establishedAt ? committee.establishedAt.split("T")[0] : "",
       members: committee.members,
       imageUrl: committee.imageUrl ?? "",
     });
@@ -268,7 +268,7 @@ export default function AdminCommitteesPage() {
               <TD><Badge value={c.status} /></TD>
               <TD>{c.members.length}</TD>
               <TD>{chair?.name ?? <span className="text-(--color-neutral-800) text-xs">Unassigned</span>}</TD>
-              <TD>{new Date(c.establishedAt).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}</TD>
+              <TD>{c.establishedAt ? new Date(c.establishedAt).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "N/A"}</TD>
             </TR>
           );
         })}
@@ -344,7 +344,7 @@ export default function AdminCommitteesPage() {
               <SectionDivider label="Add Member" />
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Full Name *">
-                  <FormInput value={memberForm.name} onChange={e => setMemberForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Adebayo Salako" />
+                  <FormInput value={memberForm.name} onChange={e => setMemberForm(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
                 </FormField>
                 <FormField label="Role">
                   <FormSelect value={memberForm.role} onChange={e => setMemberForm(p => ({ ...p, role: e.target.value }))}>

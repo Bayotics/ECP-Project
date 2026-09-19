@@ -80,11 +80,11 @@ export default function MemberCommitteesPage() {
           <p className="text-sm font-semibold text-(--color-green-700) mb-2">Your Committees</p>
           <div className="flex flex-wrap gap-2">
             {committees.filter(c => myCommitteeIds.has(c.id)).map(c => {
-              const myRole = c.members.find(m => m.userId === currentUser?.id)?.role ?? "Member";
+              const myRole = c.members.find(m => m.userId === currentUser?.id)?.role;
               return (
                 <span key={c.id} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-(--color-green-300) px-3 py-1 text-sm text-(--color-green-800) font-medium">
                   {c.name}
-                  <span className="text-xs text-(--color-green-500)">· {myRole}</span>
+                  <span className="text-xs text-(--color-green-700)">· {myRole ?? "N/A"}</span>
                 </span>
               );
             })}
@@ -100,7 +100,6 @@ export default function MemberCommitteesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {committees.map(c => {
-            const chair = c.members.find(m => m.isChairperson);
             const isMember = myCommitteeIds.has(c.id);
             const hasRequested = submitted.has(c.id);
             const typeColor = TYPE_COLORS[c.type] ?? "bg-gray-50 text-gray-900 border-gray-200";
@@ -116,9 +115,16 @@ export default function MemberCommitteesPage() {
                         <span className="text-[10px] font-bold bg-(--color-green-600) text-white rounded-full px-2 py-0.5">MEMBER</span>
                       )}
                     </div>
-                    <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 border ${typeColor} capitalize`}>
-                      {c.type.replace(/-/g, " ")}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-block text-xs font-normal rounded-full px-2.5 py-0.5 border ${typeColor} capitalize`}>
+                        {c.type.replace(/-/g, " ")}
+                      </span>
+                      {c.month && (
+                        <span className="inline-block rounded-full border border-neutral-200 px-2.5 py-0.5 text-xs font-normal text-neutral-900">
+                          {c.month}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-xs text-(--color-neutral-800) flex-shrink-0">{c.members.length} member{c.members.length !== 1 ? "s" : ""}</span>
                 </div>
@@ -131,18 +137,34 @@ export default function MemberCommitteesPage() {
                   )}
                 </div>
 
-                {/* Contact person */}
-                {chair && (
-                  <div className="mx-5 mb-3 rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200) px-3 py-2.5 flex items-center gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-(--color-green-100) text-(--color-green-700) text-xs font-bold">
-                      {chair.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-(--color-neutral-900) truncate">{chair.name}</p>
-                      <p className="text-xs text-(--color-neutral-800)">Chairperson · Contact</p>
-                    </div>
-                  </div>
-                )}
+                {/* Who put their name down. The club's poll recorded
+                    volunteers, not offices, so a chair only shows when one
+                    has actually been set. */}
+                <div className="mx-5 mb-3 rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200) px-3 py-2.5">
+                  <p className="text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">
+                    Volunteers
+                    {typeof c.votes === "number" && typeof c.pollSize === "number" && (
+                      <span className="ml-2 normal-case tracking-normal text-neutral-900">
+                        {c.votes} of {c.pollSize} voted
+                      </span>
+                    )}
+                  </p>
+                  {c.members.length === 0 ? (
+                    <p className="mt-1.5 text-xs text-neutral-900">Nobody has signed up yet.</p>
+                  ) : (
+                    <ul className="mt-1.5 space-y-1">
+                      {c.members.map(m => (
+                        <li key={m.name} className="flex items-center gap-2 text-xs text-neutral-900">
+                          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-(--color-green-100) text-[10px] text-(--color-green-800)">
+                            {m.name.replace(/^Hon\.\s*/, "").split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                          </span>
+                          <span className="truncate">{m.name}</span>
+                          {m.isChairperson && <span className="text-neutral-900">· Chair</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
                 {/* Action */}
                 <div className="px-5 pb-5">
@@ -183,7 +205,7 @@ export default function MemberCommitteesPage() {
               </label>
               <textarea
                 rows={4}
-                className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-(--color-neutral-300) focus:outline-none focus:ring-2 focus:ring-(--color-green-400) resize-none transition-shadow"
+                className="w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl border border-(--color-neutral-300) focus:outline-none focus:ring-2 focus:ring-(--color-green-400) resize-none transition-shadow"
                 placeholder="Why do you want to join this committee? Any relevant experience?"
                 value={message}
                 onChange={e => setMessage(e.target.value)}

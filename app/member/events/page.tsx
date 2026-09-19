@@ -96,25 +96,25 @@ function RSVPPanel({ event, currentUser, onDone }: { event: Event; currentUser: 
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="block text-xs font-semibold text-gray-900 mb-1">Full Name *</label>
-        <input className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+        <input className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-900 mb-1">Email *</label>
-        <input type="email" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
+        <label className="block text-xs font-semibold text.gray-900 mb-1">Email *</label>
+        <input type="email" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
       </div>
       <div>
         <label className="block text-xs font-semibold text-gray-900 mb-1">Phone <span className="font-normal text-gray-800">(optional — for SMS reminders)</span></label>
-        <input type="tel" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="08012345678" />
+        <input type="tel" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="08012345678" />
       </div>
       <div>
         <label className="block text-xs font-semibold text-gray-900 mb-1">Additional Attendees (besides you)</label>
-        <select className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-200" value={form.guestCount} onChange={e => setForm(p => ({ ...p, guestCount: Number(e.target.value) }))}>
+        <select className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-200" value={form.guestCount} onChange={e => setForm(p => ({ ...p, guestCount: Number(e.target.value) }))}>
           {Array.from({ length: 10 }).map((_, i) => <option key={i} value={i}>{i === 0 ? "Just me" : `+${i} guest${i > 1 ? "s" : ""}`}</option>)}
         </select>
       </div>
       <div>
         <label className="block text-xs font-semibold text-gray-900 mb-1">Notes <span className="font-normal text-gray-800">(optional)</span></label>
-        <textarea className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-200" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+        <textarea className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-green-200" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
       </div>
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
       <button type="submit" disabled={submitting} className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold rounded-lg text-sm transition-colors">

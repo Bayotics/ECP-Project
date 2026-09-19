@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
 import { useDocuments } from "@/context/DocumentsContext";
+import { formatFileSize } from "@/lib/models/document";
 
 type DocCategory = "my-documents" | "organizational" | "all";
 
@@ -13,8 +14,12 @@ interface Doc {
   label: string;
   category: "my-documents" | "organizational";
   uploadedAt: string;
-  simulatedSize: string;
+  /** Real size where the record has one, otherwise the legacy string. */
+  size: string;
   fileType: "pdf" | "docx" | "xlsx" | "img";
+  /** Where the file lives. Absent means no file was ever attached. */
+  url?: string;
+  period?: string;
 }
 
 const FILE_ICONS: Record<string, string> = {
@@ -31,57 +36,23 @@ const FILE_COLORS: Record<string, string> = {
   img:  "bg-purple-50 text-purple-600",
 };
 
-function DownloadButton({ docId }: { docId: string }) {
-  const [state, setState] = useState<"idle" | "progress" | "done">("idle");
-  const [progress, setProgress] = useState(0);
-
-  function handleDownload() {
-    setState("progress");
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setState("done");
-          setTimeout(() => { setState("idle"); setProgress(0); }, 2500);
-          return 100;
-        }
-        return p + Math.random() * 18 + 8;
-      });
-    }, 120);
+/* A real download. The old version animated a fake progress bar and
+   fetched nothing; records now carry the Cloudinary URL of the actual
+   file, and a record without one says so rather than pretending. */
+function DownloadButton({ url, name }: { url?: string; name: string }) {
+  if (!url) {
+    return <span className="text-xs text-neutral-900">No file attached</span>;
   }
-
-  void docId; // used as key if needed
-
-  if (state === "done") {
-    return (
-      <span className="text-xs font-medium text-(--color-green-600) flex items-center gap-1">
-        ✓ Downloaded
-      </span>
-    );
-  }
-
-  if (state === "progress") {
-    return (
-      <div className="flex items-center gap-2 min-w-24">
-        <div className="flex-1 h-1.5 bg-(--color-neutral-200) rounded-full overflow-hidden">
-          <div
-            className="h-full bg-(--color-green-500) rounded-full transition-all duration-150"
-            style={{ width: `${Math.min(progress, 100)}%` }}
-          />
-        </div>
-        <span className="text-xs text-(--color-neutral-800)">{Math.min(Math.round(progress), 100)}%</span>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={handleDownload}
-      className="flex items-center gap-1.5 rounded-lg border border-(--color-neutral-300) px-3 py-1.5 text-xs font-medium text-(--color-neutral-900) hover:bg-(--color-neutral-50) hover:border-(--color-green-400) hover:text-(--color-green-600) transition"
+    <a
+      href={url}
+      download={name}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-1.5 rounded-lg border border-(--color-neutral-300) px-3 py-1.5 text-xs font-medium text-(--color-neutral-900) transition hover:border-(--color-green-400) hover:bg-(--color-neutral-50) hover:text-(--color-green-600)"
     >
-      ↓ Download
-    </button>
+      Download
+    </a>
   );
 }
 
@@ -100,7 +71,7 @@ export default function DocumentsPage() {
     label: d.label,
     category: "my-documents" as const,
     uploadedAt: d.uploadedAt,
-    simulatedSize: d.simulatedSize ?? "—",
+    size: d.simulatedSize ?? "N/A",
     fileType: d.name.endsWith(".pdf") ? "pdf"
       : d.name.endsWith(".doc") || d.name.endsWith(".docx") ? "docx"
       : d.name.endsWith(".xls") || d.name.endsWith(".xlsx") ? "xlsx"
@@ -116,8 +87,10 @@ export default function DocumentsPage() {
       label: d.label,
       category: "organizational" as const,
       uploadedAt: d.uploadedAt,
-      simulatedSize: d.simulatedSize,
-      fileType: (["pdf", "docx", "xlsx", "img"].includes(d.fileType) ? d.fileType : "img") as Doc["fileType"],
+      size: formatFileSize(d.sizeBytes) ?? d.simulatedSize ?? "N/A",
+      fileType: (["pdf", "docx", "xlsx", "img"].includes(d.fileType) ? d.fileType : d.fileType === "doc" ? "docx" : "img") as Doc["fileType"],
+      url: d.url,
+      period: d.period,
     }));
 
   const allDocs = [...myDocs, ...visibleOrgDocs];
@@ -175,12 +148,12 @@ export default function DocumentsPage() {
           placeholder="Search documents…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-48 rounded-lg border border-(--color-neutral-300) px-3.5 py-2 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+          className="flex-1 min-w-48 rounded-lg border border-(--color-neutral-300) px-3.5 py-2 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
         />
         <select
           value={fileTypeFilter}
           onChange={(e) => setFileTypeFilter(e.target.value)}
-          className="rounded-lg border border-(--color-neutral-300) px-3.5 py-2 text-sm outline-none focus:border-(--color-green-500) transition"
+          className="rounded-lg border border-(--color-neutral-300) px-3.5 py-2 text-sm text-gray-700 outline-none focus:border-(--color-green-500) transition"
         >
           <option value="">All types</option>
           <option value="pdf">PDF</option>
@@ -222,7 +195,7 @@ export default function DocumentsPage() {
                   <span className={`text-xs font-medium uppercase px-1.5 py-0.5 rounded ${FILE_COLORS[doc.fileType]}`}>
                     {doc.fileType}
                   </span>
-                  <span className="text-xs text-(--color-neutral-800)">{doc.simulatedSize}</span>
+                  <span className="text-xs text-(--color-neutral-800)">{doc.size}</span>
                   <span className="text-xs text-(--color-neutral-800)">
                     {new Date(doc.uploadedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                   </span>
@@ -233,7 +206,7 @@ export default function DocumentsPage() {
               </div>
               {/* Download */}
               <div className="shrink-0">
-                <DownloadButton docId={doc.id} />
+                <DownloadButton url={doc.url} name={doc.name} />
               </div>
             </div>
           ))}

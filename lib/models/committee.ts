@@ -31,7 +31,17 @@ export interface Committee {
   mandate?: string;
   members: CommitteeMemberProfile[];
   imageUrl?: string;
+  /** When the committee was formed. Empty when the club has not said. */
   establishedAt: string;
+  /** When in the year this initiative runs, as the club's poll sheet words
+      it: "May", "Summer", "Nov – Jan", "Bi-Monthly". */
+  month?: string;
+  /** Results of the club's volunteer poll: how many members put their name
+      down, and out of how many who voted. */
+  votes?: number;
+  pollSize?: number;
+  /** The programme on /programs this committee runs, where there is one. */
+  programId?: string;
   createdAt: string;
   updatedAt: string;
 }

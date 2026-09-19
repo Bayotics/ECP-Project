@@ -106,10 +106,10 @@ export function StatTile({
 }
 
 export const inputClass =
-  "w-full rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-normal text-neutral-800 placeholder:text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200";
+  "w-full rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-normal text-gray-700 placeholder:text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200";
 
 export const selectClass =
-  "rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-normal text-neutral-800 focus:outline-none focus:ring-2 focus:ring-green-200";
+  "rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-normal text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200";
 
 export function SearchInput({
   id,

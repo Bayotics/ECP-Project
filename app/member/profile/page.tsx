@@ -177,7 +177,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">First name</label>
               <input
                 type="text" required value={form.firstName} onChange={set("firstName")}
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
             {/* Last Name */}
@@ -185,7 +185,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">Last name</label>
               <input
                 type="text" required value={form.lastName} onChange={set("lastName")}
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
             {/* Phone */}
@@ -193,7 +193,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">Phone</label>
               <input
                 type="tel" value={form.phone} onChange={set("phone")} placeholder="08012345678"
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
             {/* LGA */}
@@ -201,7 +201,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">Local Government Area</label>
               <select
                 value={form.lga} onChange={set("lga")}
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               >
                 <option value="">Select LGA…</option>
                 {LAGOS_LGAS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -212,7 +212,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">Ward</label>
               <input
                 type="text" value={form.ward} onChange={set("ward")} placeholder="e.g. Ward 3"
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
             {/* Occupation */}
@@ -220,7 +220,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-900 mb-1.5">Occupation</label>
               <input
                 type="text" value={form.occupation} onChange={set("occupation")} placeholder="e.g. Software Engineer"
-                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
+                className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function ProfilePage() {
             <label className="block text-sm font-medium text-gray-900 mb-1.5">Bio <span className="text-(--color-neutral-800)">(optional)</span></label>
             <textarea
               rows={3} value={form.bio} onChange={set("bio")} placeholder="Tell the community about yourself…"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition resize-none"
+              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition resize-none"
             />
           </div>
           {/* Email (read-only) */}
@@ -246,7 +246,7 @@ export default function ProfilePage() {
             <label className="block text-sm font-medium text-gray-900 mb-1.5">Email <span className="text-(--color-neutral-800)">(cannot be changed)</span></label>
             <input
               type="email" value={currentUser?.email ?? ""} readOnly
-              className="w-full rounded-lg border border-(--color-neutral-200) bg-(--color-neutral-50) px-3.5 py-2.5 text-sm text-(--color-neutral-800) cursor-not-allowed"
+              className="w-full rounded-lg border border-(--color-neutral-200) bg-(--color-neutral-50) px-3.5 py-2.5 text-sm text-gray-700 cursor-not-allowed"
             />
           </div>
 
