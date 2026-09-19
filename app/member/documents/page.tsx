@@ -70,7 +70,7 @@ function DownloadButton({ docId }: { docId: string }) {
             style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
-        <span className="text-xs text-(--color-neutral-400)">{Math.min(Math.round(progress), 100)}%</span>
+        <span className="text-xs text-(--color-neutral-800)">{Math.min(Math.round(progress), 100)}%</span>
       </div>
     );
   }
@@ -78,7 +78,7 @@ function DownloadButton({ docId }: { docId: string }) {
   return (
     <button
       onClick={handleDownload}
-      className="flex items-center gap-1.5 rounded-lg border border-(--color-neutral-300) px-3 py-1.5 text-xs font-medium text-(--color-neutral-600) hover:bg-(--color-neutral-50) hover:border-(--color-green-400) hover:text-(--color-green-600) transition"
+      className="flex items-center gap-1.5 rounded-lg border border-(--color-neutral-300) px-3 py-1.5 text-xs font-medium text-(--color-neutral-900) hover:bg-(--color-neutral-50) hover:border-(--color-green-400) hover:text-(--color-green-600) transition"
     >
       ↓ Download
     </button>
@@ -144,8 +144,8 @@ export default function DocumentsPage() {
     <div className="space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-500">Documents Center</h1>
-        <p className="text-sm text-(--color-neutral-500) mt-1">Access your personal documents and organization resources</p>
+        <h1 className="text-2xl font-bold text-gray-900">Documents Center</h1>
+        <p className="text-sm text-(--color-neutral-900) mt-1">Access your personal documents and organization resources</p>
       </div>
 
       {/* Category tabs */}
@@ -157,11 +157,11 @@ export default function DocumentsPage() {
             className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition flex items-center gap-2 ${
               category === cat
                 ? "bg-(--color-green-600) text-white"
-                : "bg-white border border-(--color-neutral-200) text-(--color-neutral-600) hover:border-(--color-green-300)"
+                : "bg-white border border-(--color-neutral-200) text-(--color-neutral-900) hover:border-(--color-green-300)"
             }`}
           >
             {cat === "my-documents" ? "My Documents" : cat === "organizational" ? "Organization" : "All Documents"}
-            <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${category === cat ? "bg-white/20 text-white" : "bg-(--color-neutral-100) text-(--color-neutral-500)"}`}>
+            <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${category === cat ? "bg-white/20 text-white" : "bg-(--color-neutral-100) text-(--color-neutral-900)"}`}>
               {counts[cat]}
             </span>
           </button>
@@ -190,7 +190,7 @@ export default function DocumentsPage() {
         {(search || fileTypeFilter) && (
           <button
             onClick={() => { setSearch(""); setFileTypeFilter(""); }}
-            className="rounded-lg border border-(--color-neutral-200) px-3.5 py-2 text-sm text-(--color-neutral-500) hover:bg-(--color-neutral-50) transition"
+            className="rounded-lg border border-(--color-neutral-200) px-3.5 py-2 text-sm text-(--color-neutral-900) hover:bg-(--color-neutral-50) transition"
           >
             Clear
           </button>
@@ -199,7 +199,7 @@ export default function DocumentsPage() {
 
       {/* Document list */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-(--color-neutral-400)">
+        <div className="text-center py-16 text-(--color-neutral-800)">
           <div className="text-4xl mb-3">📂</div>
           <p className="font-medium">No documents found</p>
           {category === "my-documents" && myDocs.length === 0 && (
@@ -216,14 +216,14 @@ export default function DocumentsPage() {
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-500 truncate">{doc.label}</p>
-                <p className="text-xs text-(--color-neutral-400) mt-0.5 truncate">{doc.name}</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{doc.label}</p>
+                <p className="text-xs text-(--color-neutral-800) mt-0.5 truncate">{doc.name}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className={`text-xs font-medium uppercase px-1.5 py-0.5 rounded ${FILE_COLORS[doc.fileType]}`}>
                     {doc.fileType}
                   </span>
-                  <span className="text-xs text-(--color-neutral-400)">{doc.simulatedSize}</span>
-                  <span className="text-xs text-(--color-neutral-400)">
+                  <span className="text-xs text-(--color-neutral-800)">{doc.simulatedSize}</span>
+                  <span className="text-xs text-(--color-neutral-800)">
                     {new Date(doc.uploadedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                   </span>
                   {doc.category === "my-documents" && (

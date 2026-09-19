@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
     qualities: [75, 100],
     remotePatterns: [
       {
+        // Everything the club uploads through /api/uploads.
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
         hostname: "images.unsplash.com",
       },

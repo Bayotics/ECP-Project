@@ -103,7 +103,7 @@ function StatusTimeline({ application }: { application: MembershipApplication })
                   <div className={cn("pb-6", i === STATUS_STEPS.length - 1 && "pb-0")}>
                     <p className={cn(
                       "text-sm font-semibold leading-none mb-1",
-                      isCurrent ? "text-(--color-green-700)" : isDone ? "text-(--color-neutral-800)" : "text-(--color-neutral-400)"
+                      isCurrent ? "text-(--color-green-700)" : isDone ? "text-(--color-neutral-800)" : "text-(--color-neutral-800)"
                     )}>
                       {step.label}
                       {isCurrent && (
@@ -115,12 +115,12 @@ function StatusTimeline({ application }: { application: MembershipApplication })
                     {event ? (
                       <>
                         {event.message && (
-                          <p className="text-xs text-(--color-neutral-600) mt-0.5 leading-relaxed">{event.message}</p>
+                          <p className="text-xs text-(--color-neutral-900) mt-0.5 leading-relaxed">{event.message}</p>
                         )}
-                        <p className="text-xs text-(--color-neutral-400) mt-1">{formatDate(event.date)}</p>
+                        <p className="text-xs text-(--color-neutral-800) mt-1">{formatDate(event.date)}</p>
                       </>
                     ) : (
-                      <p className="text-xs text-(--color-neutral-400)">{step.description}</p>
+                      <p className="text-xs text-(--color-neutral-800)">{step.description}</p>
                     )}
                   </div>
                 </div>
@@ -141,12 +141,12 @@ function StatusTimeline({ application }: { application: MembershipApplication })
             <div>
               <p className="text-sm font-semibold text-red-700">Application Not Successful</p>
               {application.reviewNotes && (
-                <p className="text-xs text-(--color-neutral-600) mt-1 leading-relaxed">{application.reviewNotes}</p>
+                <p className="text-xs text-(--color-neutral-900) mt-1 leading-relaxed">{application.reviewNotes}</p>
               )}
               {application.reviewedAt && (
-                <p className="text-xs text-(--color-neutral-400) mt-1">{formatDate(application.reviewedAt)}</p>
+                <p className="text-xs text-(--color-neutral-800) mt-1">{formatDate(application.reviewedAt)}</p>
               )}
-              <p className="text-xs text-(--color-neutral-500) mt-2">
+              <p className="text-xs text-(--color-neutral-900) mt-2">
                 You may reapply after 6 months or contact Eko Club Philadelphia at <strong>info@ekoclubphiladelphia.org</strong> for more information.
               </p>
             </div>
@@ -168,7 +168,7 @@ function AdminMessages({ application }: { application: MembershipApplication }) 
           <h3 className="font-bold text-(--color-neutral-800)">Messages from ECP</h3>
         </div>
         <div className="px-5 py-8 text-center">
-          <p className="text-sm text-(--color-neutral-400)">No messages yet. We&apos;ll reach out here when needed.</p>
+          <p className="text-sm text-(--color-neutral-800)">No messages yet. We&apos;ll reach out here when needed.</p>
         </div>
       </div>
     );
@@ -187,9 +187,9 @@ function AdminMessages({ application }: { application: MembershipApplication }) 
           <div key={msg.id} className="px-5 py-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-semibold text-(--color-green-700)">{msg.fromName}</span>
-              <span className="text-xs text-(--color-neutral-400)">· {formatDate(msg.sentAt)}</span>
+              <span className="text-xs text-(--color-neutral-800)">· {formatDate(msg.sentAt)}</span>
             </div>
-            <p className="text-sm text-(--color-neutral-700) leading-relaxed">{msg.content}</p>
+            <p className="text-sm text-(--color-neutral-900) leading-relaxed">{msg.content}</p>
           </div>
         ))}
       </div>
@@ -206,20 +206,20 @@ function DocumentUpload({ application, onUpload }: {
     <div className="rounded-xl border border-(--color-neutral-200) bg-white overflow-hidden">
       <div className="px-5 py-4 border-b border-(--color-neutral-100)">
         <h3 className="font-bold text-(--color-neutral-800)">Upload Additional Documents</h3>
-        <p className="text-xs text-(--color-neutral-500) mt-0.5">You can upload further documents requested by the ECP team.</p>
+        <p className="text-xs text-(--color-neutral-900) mt-0.5">You can upload further documents requested by the ECP team.</p>
       </div>
       <div className="p-5 space-y-3">
         {/* Existing docs */}
         {(application.documents ?? []).length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-2">Uploaded Documents</p>
+            <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide mb-2">Uploaded Documents</p>
             <ul className="space-y-1.5">
               {(application.documents ?? []).map((d) => (
                 <li key={d.id} className="flex items-center gap-2 text-sm">
                   <span className="text-green-600" aria-hidden="true">📄</span>
-                  <span className="font-medium text-(--color-neutral-700)">{d.label}</span>
-                  <span className="text-(--color-neutral-400) text-xs">— {d.name} {d.simulatedSize && `(${d.simulatedSize})`}</span>
-                  <span className="ml-auto text-xs text-(--color-neutral-400)">{formatDate(d.uploadedAt)}</span>
+                  <span className="font-medium text-(--color-neutral-900)">{d.label}</span>
+                  <span className="text-(--color-neutral-800) text-xs">— {d.name} {d.simulatedSize && `(${d.simulatedSize})`}</span>
+                  <span className="ml-auto text-xs text-(--color-neutral-800)">{formatDate(d.uploadedAt)}</span>
                 </li>
               ))}
             </ul>
@@ -227,11 +227,11 @@ function DocumentUpload({ application, onUpload }: {
         )}
 
         {/* Upload new */}
-        <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-2">Add New Document</p>
+        <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide mb-2">Add New Document</p>
         {DOC_LABELS_UPLOAD.map((label) => (
           <div key={label}
             className="flex items-center justify-between rounded-lg border border-(--color-neutral-200) bg-(--color-neutral-50) px-4 py-3 gap-4">
-            <span className="text-sm text-(--color-neutral-700)">📎 {label}</span>
+            <span className="text-sm text-(--color-neutral-900)">📎 {label}</span>
             <label className="text-xs font-semibold text-(--color-green-700) cursor-pointer bg-(--color-green-50) hover:bg-(--color-green-100) border border-(--color-green-200) rounded-lg px-3 py-1.5 transition-colors shrink-0">
               Upload
               <input
@@ -330,10 +330,10 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
     <div className="max-w-2xl mx-auto px-4 py-12">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-200) font-display mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-600) font-display mb-2">
           Application Status
         </h1>
-        <p className="text-sm text-(--color-neutral-500)">
+        <p className="text-sm text-(--color-neutral-900)">
           Enter your application ID or registered email address to check your status.
         </p>
       </div>
@@ -364,7 +364,7 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
           >
             <p className="mb-3 text-3xl" aria-hidden="true">🔍</p>
             <p className="mb-1 font-bold text-(--color-neutral-800)">No application found</p>
-            <p className="text-sm text-(--color-neutral-500)">
+            <p className="text-sm text-(--color-neutral-900)">
               We couldn&apos;t find an application matching <strong>{query}</strong>.
               Check your ID or email and try again.
             </p>
@@ -392,14 +392,14 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
             <div className="rounded-xl border border-(--color-neutral-200) bg-white p-5">
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
-                  <p className="text-xs text-(--color-neutral-500) mb-0.5">Applicant</p>
+                  <p className="text-xs text-(--color-neutral-900) mb-0.5">Applicant</p>
                   <p className="font-bold text-(--color-neutral-800)">{application.fullName}</p>
-                  <p className="text-sm text-(--color-neutral-500)">{application.email}</p>
+                  <p className="text-sm text-(--color-neutral-900)">{application.email}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-(--color-neutral-500) mb-0.5">Application ID</p>
+                  <p className="text-xs text-(--color-neutral-900) mb-0.5">Application ID</p>
                   <p className="font-mono text-sm font-bold text-(--color-green-700)">{application.id}</p>
-                  <p className="text-xs text-(--color-neutral-400) mt-0.5">Submitted {formatDate(application.appliedAt)}</p>
+                  <p className="text-xs text-(--color-neutral-800) mt-0.5">Submitted {formatDate(application.appliedAt)}</p>
                 </div>
               </div>
             </div>
@@ -449,7 +449,7 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
             {application.status === "rejected" && (
               <div className="text-center">
                 <a href="/membership/apply"
-                  className="text-sm text-(--color-neutral-500) hover:text-(--color-green-600)">
+                  className="text-sm text-(--color-neutral-900) hover:text-(--color-green-600)">
                   Apply again
                 </a>
               </div>
@@ -462,11 +462,11 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
       {!searched && (
         <div className="rounded-xl border border-(--color-neutral-200) p-8 text-center bg-(--color-neutral-50)">
           <p className="text-3xl mb-3" aria-hidden="true">📋</p>
-          <p className="font-bold text-(--color-neutral-700) mb-1">Track Your Application</p>
-          <p className="text-sm text-(--color-neutral-500) max-w-xs mx-auto">
+          <p className="font-bold text-(--color-neutral-900) mb-1">Track Your Application</p>
+          <p className="text-sm text-(--color-neutral-900) max-w-xs mx-auto">
             Enter your application ID (shown after submission) or your registered email to see your current status.
           </p>
-          <p className="text-xs text-(--color-neutral-400) mt-4">
+          <p className="text-xs text-(--color-neutral-800) mt-4">
             Don&apos;t have an application yet?{" "}
             <a href="/membership/apply" className="text-(--color-green-600) font-semibold hover:underline">
               Apply now

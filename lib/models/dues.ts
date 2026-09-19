@@ -5,6 +5,7 @@ export interface DuesPayment {
   id: string;
   userId: string;
   year: number;
+  /** US dollars. */
   amount: number;
   status: DuesPaymentStatus;
   dueDate: string;

@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { FREE_SHIPPING_OVER_USD } from "@/lib/models/cart";
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 export default function CartPage() {
@@ -92,7 +93,7 @@ export default function CartPage() {
                         {item.name}
                       </p>
                     </Link>
-                    <p className="text-sm font-bold text-(--color-green-700) mt-1">{formatNaira(item.price)}</p>
+                    <p className="text-sm font-bold text-(--color-green-700) mt-1">{formatUSD(item.price)}</p>
                   </div>
 
                   {/* Qty + remove */}
@@ -115,7 +116,7 @@ export default function CartPage() {
                         className="px-2 py-1 hover:bg-(--color-neutral-100) transition-colors text-sm text-gray-400 font-bold"
                       >+</button>
                     </div>
-                    <p className="text-xs font-bold text-(--color-neutral-600) mt-1">{formatNaira(item.price * item.quantity)}</p>
+                    <p className="text-xs font-bold text-(--color-neutral-600) mt-1">{formatUSD(item.price * item.quantity)}</p>
                   </div>
                 </motion.div>
               ))}
@@ -129,20 +130,20 @@ export default function CartPage() {
               <div className="space-y-3 text-sm mb-5">
                 <div className="flex justify-between text-(--color-neutral-600)">
                   <span>Subtotal</span>
-                  <span className="font-semibold">{formatNaira(subtotal)}</span>
+                  <span className="font-semibold">{formatUSD(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-(--color-neutral-600)">
                   <span>Shipping</span>
                   <span className={`font-semibold ${shippingFee === 0 ? "text-(--color-green-700)" : ""}`}>
-                    {shippingFee === 0 ? "FREE" : formatNaira(shippingFee)}
+                    {shippingFee === 0 ? "FREE" : formatUSD(shippingFee)}
                   </span>
                 </div>
                 {shippingFee > 0 && (
-                  <p className="text-xs text-(--color-neutral-400)">Free shipping on orders over ₦15,000</p>
+                  <p className="text-xs text-(--color-neutral-400)">Free shipping on orders over {formatUSD(FREE_SHIPPING_OVER_USD)}</p>
                 )}
                 <div className="border-t border-(--color-neutral-200) pt-3 flex justify-between">
                   <span className="font-bold text-(--color-neutral-900)">Total</span>
-                  <span className="font-bold text-(--color-green-700) text-base">{formatNaira(total)}</span>
+                  <span className="font-bold text-(--color-green-700) text-base">{formatUSD(total)}</span>
                 </div>
               </div>
               <Link

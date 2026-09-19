@@ -25,18 +25,18 @@ const BADGE_COLORS: Record<string, string> = {
   rejected: "border-red-200 bg-red-50 text-red-800",
   // User statuses
   active: "border-green-200 bg-green-50 text-green-800",
-  inactive: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  inactive: "border-neutral-200 bg-neutral-100 text-neutral-900",
   suspended: "border-red-200 bg-red-50 text-red-800",
   // User roles
   member: "border-blue-200 bg-blue-50 text-blue-800",
   admin: "border-amber-200 bg-amber-50 text-amber-800",
   "super-admin": "border-red-200 bg-red-50 text-red-800",
   applicant: "border-amber-200 bg-amber-50 text-amber-800",
-  guest: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  guest: "border-neutral-200 bg-neutral-100 text-neutral-900",
   // Event / news / product statuses
   published: "border-green-200 bg-green-50 text-green-800",
-  draft: "border-neutral-200 bg-neutral-100 text-neutral-600",
-  archived: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  draft: "border-neutral-200 bg-neutral-100 text-neutral-900",
+  archived: "border-neutral-200 bg-neutral-100 text-neutral-900",
   cancelled: "border-red-200 bg-red-50 text-red-800",
   completed: "border-blue-200 bg-blue-50 text-blue-800",
   "out-of-stock": "border-amber-200 bg-amber-50 text-amber-800",
@@ -48,7 +48,7 @@ const BADGE_COLORS: Record<string, string> = {
   meetup: "border-green-200 bg-green-50 text-green-800",
   seminar: "border-red-200 bg-red-50 text-red-800",
   "press-conference": "border-blue-200 bg-blue-50 text-blue-800",
-  other: "border-neutral-200 bg-neutral-100 text-neutral-600",
+  other: "border-neutral-200 bg-neutral-100 text-neutral-900",
   // News categories
   news: "border-blue-200 bg-blue-50 text-blue-800",
   announcement: "border-green-200 bg-green-50 text-green-800",
@@ -62,7 +62,7 @@ const BADGE_COLORS: Record<string, string> = {
   executive: "border-red-200 bg-red-50 text-red-800",
   advisory: "border-blue-200 bg-blue-50 text-blue-800",
   technical: "border-violet-200 bg-violet-50 text-violet-800",
-  dissolved: "border-neutral-200 bg-neutral-100 text-neutral-500",
+  dissolved: "border-neutral-200 bg-neutral-100 text-neutral-900",
   // Product categories
   apparel: "border-green-200 bg-green-50 text-green-800",
   accessories: "border-amber-200 bg-amber-50 text-amber-800",
@@ -72,7 +72,7 @@ const BADGE_COLORS: Record<string, string> = {
 };
 
 export function Badge({ value, className }: { value: string; className?: string }) {
-  const color = BADGE_COLORS[value] ?? "border-neutral-200 bg-neutral-100 text-neutral-600";
+  const color = BADGE_COLORS[value] ?? "border-neutral-200 bg-neutral-100 text-neutral-900";
   return (
     <span className={cn("inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-normal capitalize", color, className)}>
       {value.replace(/-/g, " ")}
@@ -140,7 +140,7 @@ export function AdminModal({
           <h2 className="text-lg font-normal tracking-[-0.02em] text-neutral-950">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors hover:bg-neutral-200"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 transition-colors hover:bg-neutral-200"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -178,10 +178,10 @@ export function AdminPageHeader({
         <h1 className="mt-4 flex items-center gap-3 text-2xl font-medium tracking-[-0.03em] text-neutral-950 sm:text-3xl">
           {title}
           {count !== undefined && (
-            <span className="rounded-full border border-neutral-200 px-2.5 py-0.5 text-sm font-normal text-neutral-600">{count}</span>
+            <span className="rounded-full border border-neutral-200 px-2.5 py-0.5 text-sm font-normal text-neutral-900">{count}</span>
           )}
         </h1>
-        {subtitle && <p className="mt-2 text-sm leading-7 text-neutral-700">{subtitle}</p>}
+        {subtitle && <p className="mt-2 text-sm leading-7 text-neutral-900">{subtitle}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
@@ -202,7 +202,7 @@ export function AdminFilters({
     <div className="mb-5 flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-neutral-200 bg-white p-4">
       <div className="relative w-full max-w-sm flex-1">
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-neutral-400" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-neutral-800" aria-hidden="true">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -273,7 +273,7 @@ export function AdminTable({
               {headers.map((h) => (
                 <th
                   key={h}
-                  className="whitespace-nowrap px-5 py-4 text-left text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-500"
+                  className="whitespace-nowrap px-5 py-4 text-left text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900"
                 >
                   {h}
                 </th>
@@ -283,7 +283,7 @@ export function AdminTable({
           <tbody>
             {React.Children.count(children) === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="px-5 py-14 text-center text-sm text-neutral-500">
+                <td colSpan={headers.length} className="px-5 py-14 text-center text-sm text-neutral-900">
                   {empty ?? "Nothing here yet."}
                 </td>
               </tr>
@@ -332,7 +332,7 @@ export function TD({
   compact?: boolean;
 }) {
   return (
-    <td className={cn(compact ? "px-5 py-2.5" : "px-5 py-3.5", "align-middle font-normal text-neutral-700", className)}>
+    <td className={cn(compact ? "px-5 py-2.5" : "px-5 py-3.5", "align-middle font-normal text-neutral-900", className)}>
       {children}
     </td>
   );
@@ -350,7 +350,7 @@ export function FormField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-600">{label}</label>
+      <label className="mb-1.5 block text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
@@ -397,7 +397,7 @@ export function Btn({
     primary: "text-white",
     secondary: "border border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400",
     danger: "bg-red-600 text-white hover:bg-red-700",
-    ghost: "text-neutral-600 hover:bg-neutral-100",
+    ghost: "text-neutral-900 hover:bg-neutral-100",
     success: "text-white",
     warning: "text-white",
   };
@@ -453,8 +453,8 @@ export function AdminStat({
       <p className="text-3xl font-normal tracking-[-0.04em]" style={{ color: colors[color] }}>
         {value}
       </p>
-      <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-600">{label}</p>
-      {sub && <p className="mt-2 text-xs leading-5 text-neutral-500">{sub}</p>}
+      <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">{label}</p>
+      {sub && <p className="mt-2 text-xs leading-5 text-neutral-900">{sub}</p>}
     </div>
   );
 }
@@ -463,7 +463,7 @@ export function AdminStat({
 export function SectionDivider({ label }: { label: string }) {
   return (
     <div className="mb-3 mt-6 flex items-center gap-3">
-      <span className="text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-500">{label}</span>
+      <span className="text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-900">{label}</span>
       <span className="h-px flex-1 bg-neutral-200" aria-hidden="true" />
     </div>
   );

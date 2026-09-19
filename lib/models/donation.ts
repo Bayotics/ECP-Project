@@ -21,7 +21,7 @@ export interface Donation {
   donorPhone?: string;
   isAnonymous: boolean;
   // Donation details
-  amount: number; // in Naira
+  amount: number; // US dollars
   type: DonationType;
   cause: DonationCause;
   message?: string;

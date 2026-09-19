@@ -69,7 +69,7 @@ export default function MemberCommitteesPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-(--color-neutral-900)">Chapter Committees</h1>
-        <p className="text-sm text-(--color-neutral-500) mt-1">
+        <p className="text-sm text-(--color-neutral-900) mt-1">
           Browse active committees, learn what they do, and request to join one.
         </p>
       </div>
@@ -94,7 +94,7 @@ export default function MemberCommitteesPage() {
 
       {/* All committees grid */}
       {committees.length === 0 ? (
-        <div className="text-center py-16 text-(--color-neutral-400)">
+        <div className="text-center py-16 text-(--color-neutral-800)">
           <p className="text-lg">No active committees at the moment.</p>
         </div>
       ) : (
@@ -103,7 +103,7 @@ export default function MemberCommitteesPage() {
             const chair = c.members.find(m => m.isChairperson);
             const isMember = myCommitteeIds.has(c.id);
             const hasRequested = submitted.has(c.id);
-            const typeColor = TYPE_COLORS[c.type] ?? "bg-gray-50 text-gray-600 border-gray-200";
+            const typeColor = TYPE_COLORS[c.type] ?? "bg-gray-50 text-gray-900 border-gray-200";
 
             return (
               <div key={c.id} className={`rounded-2xl border bg-white flex flex-col overflow-hidden transition hover:shadow-md ${isMember ? "border-(--color-green-300) ring-1 ring-(--color-green-200)" : "border-(--color-neutral-200)"}`}>
@@ -120,14 +120,14 @@ export default function MemberCommitteesPage() {
                       {c.type.replace(/-/g, " ")}
                     </span>
                   </div>
-                  <span className="text-xs text-(--color-neutral-400) flex-shrink-0">{c.members.length} member{c.members.length !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-(--color-neutral-800) flex-shrink-0">{c.members.length} member{c.members.length !== 1 ? "s" : ""}</span>
                 </div>
 
                 {/* Description */}
                 <div className="px-5 pb-3 flex-1">
-                  <p className="text-sm text-(--color-neutral-600) line-clamp-3">{c.description}</p>
+                  <p className="text-sm text-(--color-neutral-900) line-clamp-3">{c.description}</p>
                   {c.mandate && (
-                    <p className="text-xs text-(--color-neutral-400) mt-2 italic line-clamp-2">{c.mandate}</p>
+                    <p className="text-xs text-(--color-neutral-800) mt-2 italic line-clamp-2">{c.mandate}</p>
                   )}
                 </div>
 
@@ -138,8 +138,8 @@ export default function MemberCommitteesPage() {
                       {chair.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-(--color-neutral-700) truncate">{chair.name}</p>
-                      <p className="text-xs text-(--color-neutral-400)">Chairperson · Contact</p>
+                      <p className="text-xs font-semibold text-(--color-neutral-900) truncate">{chair.name}</p>
+                      <p className="text-xs text-(--color-neutral-800)">Chairperson · Contact</p>
                     </div>
                   </div>
                 )}
@@ -151,7 +151,7 @@ export default function MemberCommitteesPage() {
                       ✓ You are a member of this committee
                     </div>
                   ) : hasRequested ? (
-                    <div className="text-center text-xs text-(--color-neutral-500) font-medium py-2 rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200)">
+                    <div className="text-center text-xs text-(--color-neutral-900) font-medium py-2 rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200)">
                       Request pending review
                     </div>
                   ) : (
@@ -175,15 +175,15 @@ export default function MemberCommitteesPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold text-(--color-neutral-900)">Request to Join</h2>
-              <p className="text-sm text-(--color-neutral-500) mt-0.5">{modalCommittee.name}</p>
+              <p className="text-sm text-(--color-neutral-900) mt-0.5">{modalCommittee.name}</p>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-(--color-neutral-700) mb-1">
-                Message <span className="font-normal text-(--color-neutral-400)">(optional)</span>
+              <label className="block text-xs font-semibold text-(--color-neutral-900) mb-1">
+                Message <span className="font-normal text-(--color-neutral-800)">(optional)</span>
               </label>
               <textarea
                 rows={4}
-                className="w-full px-3 py-2.5 text-sm text-gray-600 rounded-xl border border-(--color-neutral-300) focus:outline-none focus:ring-2 focus:ring-(--color-green-400) resize-none transition-shadow"
+                className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-(--color-neutral-300) focus:outline-none focus:ring-2 focus:ring-(--color-green-400) resize-none transition-shadow"
                 placeholder="Why do you want to join this committee? Any relevant experience?"
                 value={message}
                 onChange={e => setMessage(e.target.value)}
@@ -192,7 +192,7 @@ export default function MemberCommitteesPage() {
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setModalCommittee(null)}
-                className="px-4 py-2 text-sm font-medium rounded-lg border border-(--color-neutral-300) text-(--color-neutral-600) hover:bg-(--color-neutral-50) transition-colors"
+                className="px-4 py-2 text-sm font-medium rounded-lg border border-(--color-neutral-300) text-(--color-neutral-900) hover:bg-(--color-neutral-50) transition-colors"
               >
                 Cancel
               </button>

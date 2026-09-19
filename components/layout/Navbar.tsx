@@ -50,7 +50,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
       {/* Left */}
-      <div className="flex items-center gap-2 text-sm font-normal text-neutral-500">
+      <div className="flex items-center gap-2 text-sm font-normal text-neutral-900">
         <Link href="/" className="transition-colors hover:text-green-700">
           ECP
         </Link>
@@ -69,7 +69,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
       <div className="flex items-center gap-3">
         {/* Notification bell */}
         <button
-          className="relative rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-100"
+          className="relative rounded-full p-2 text-neutral-900 transition-colors hover:bg-neutral-100"
           aria-label="Notifications"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,12 +98,12 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
               {/* User info */}
               <div className="border-b border-neutral-100 px-4 py-3">
                 <p className="truncate text-sm font-normal text-neutral-950">{displayName}</p>
-                <p className="truncate text-xs text-neutral-500">{currentUser?.email}</p>
+                <p className="truncate text-xs text-neutral-900">{currentUser?.email}</p>
               </div>
               <Link
                 href="/member/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-normal text-neutral-700 transition hover:bg-neutral-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-normal text-neutral-900 transition hover:bg-neutral-50"
               >
                 Dashboard
               </Link>

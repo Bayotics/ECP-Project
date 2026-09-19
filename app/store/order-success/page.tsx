@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/client/api";
 import type { Order } from "@/lib/models";
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 function formatDate(iso: string) {
@@ -89,23 +89,23 @@ function OrderSuccessContent() {
                   {item.productName}
                   <span className="text-(--color-neutral-400) ml-1">×{item.quantity}</span>
                 </span>
-                <span className="font-semibold text-(--color-neutral-800)">{formatNaira(item.subtotal)}</span>
+                <span className="font-semibold text-(--color-neutral-800)">{formatUSD(item.subtotal)}</span>
               </div>
             ))}
           </div>
           <div className="border-t border-(--color-neutral-200) mt-4 pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-(--color-neutral-600)">
-              <span>Subtotal</span><span>{formatNaira(order.subtotal)}</span>
+              <span>Subtotal</span><span>{formatUSD(order.subtotal)}</span>
             </div>
             <div className="flex justify-between text-(--color-neutral-600)">
               <span>Shipping</span>
               <span className={order.shippingFee === 0 ? "text-(--color-green-700) font-semibold" : ""}>
-                {order.shippingFee === 0 ? "FREE" : formatNaira(order.shippingFee)}
+                {order.shippingFee === 0 ? "FREE" : formatUSD(order.shippingFee)}
               </span>
             </div>
             <div className="flex justify-between font-bold text-base border-t border-(--color-neutral-200) pt-2">
               <span>Total Paid</span>
-              <span className="text-(--color-green-700)">{formatNaira(order.total)}</span>
+              <span className="text-(--color-green-700)">{formatUSD(order.total)}</span>
             </div>
           </div>
         </div>

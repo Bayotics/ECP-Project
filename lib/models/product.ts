@@ -14,7 +14,7 @@ export interface Product {
   slug: string;
   description: string;
   shortDescription?: string;
-  price: number; // in Naira (kobo-precision stored as whole naira)
+  price: number; // US dollars
   compareAtPrice?: number; // original price for sale display
   category: ProductCategory;
   status: ProductStatus;

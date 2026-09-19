@@ -146,12 +146,12 @@ export default function AdminApplicationsPage() {
                 { label: "Applied",    value: new Date(selected.appliedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) },
               ].map(f => (
                 <div key={f.label}>
-                  <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-500">{f.label}</p>
+                  <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">{f.label}</p>
                   <p className="leading-6 text-neutral-900">{f.value}</p>
                 </div>
               ))}
               <div>
-                <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-500">Status</p>
+                <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">Status</p>
                 <Badge value={selected.status} />
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function AdminApplicationsPage() {
             )}
 
             <SectionDivider label="Move the application on" />
-            <p className="-mt-1 mb-3 text-xs leading-6 text-neutral-500">
+            <p className="-mt-1 mb-3 text-xs leading-6 text-neutral-900">
               Submitted, then membership committee review, then Exco sign off. The applicant sees each move on their
               status page and is emailed.
             </p>
@@ -199,7 +199,7 @@ export default function AdminApplicationsPage() {
               <div className="max-h-40 space-y-2 overflow-y-auto">
                 {selected.adminMessages.map((m: { id: string; fromName: string; sentAt: string; content: string }) => (
                   <div key={m.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
-                    <p className="text-xs text-neutral-500">{m.fromName} · {new Date(m.sentAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    <p className="text-xs text-neutral-900">{m.fromName} · {new Date(m.sentAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
                     <p className="mt-1 leading-6 text-neutral-800">{m.content}</p>
                   </div>
                 ))}

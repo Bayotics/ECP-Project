@@ -29,7 +29,7 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: "bg-red-100 text-red-700",
   };
   return (
-    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${colors[status] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${colors[status] ?? "bg-gray-100 text-gray-900"}`}>
       {status}
     </span>
   );
@@ -95,25 +95,25 @@ function RSVPPanel({ event, currentUser, onDone }: { event: Event; currentUser: 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Full Name *</label>
+        <label className="block text-xs font-semibold text-gray-900 mb-1">Full Name *</label>
         <input className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Email *</label>
+        <label className="block text-xs font-semibold text-gray-900 mb-1">Email *</label>
         <input type="email" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Phone <span className="font-normal text-gray-400">(optional — for SMS reminders)</span></label>
+        <label className="block text-xs font-semibold text-gray-900 mb-1">Phone <span className="font-normal text-gray-800">(optional — for SMS reminders)</span></label>
         <input type="tel" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="08012345678" />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Additional Attendees (besides you)</label>
+        <label className="block text-xs font-semibold text-gray-900 mb-1">Additional Attendees (besides you)</label>
         <select className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-200" value={form.guestCount} onChange={e => setForm(p => ({ ...p, guestCount: Number(e.target.value) }))}>
           {Array.from({ length: 10 }).map((_, i) => <option key={i} value={i}>{i === 0 ? "Just me" : `+${i} guest${i > 1 ? "s" : ""}`}</option>)}
         </select>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1">Notes <span className="font-normal text-gray-400">(optional)</span></label>
+        <label className="block text-xs font-semibold text-gray-900 mb-1">Notes <span className="font-normal text-gray-800">(optional)</span></label>
         <textarea className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-200" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
       </div>
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
@@ -164,7 +164,7 @@ export default function MemberEventsPage() {
 
   const tabClass = (t: Tab) =>
     `px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-      tab === t ? "bg-green-600 text-white" : "text-gray-500 hover:bg-gray-100"
+      tab === t ? "bg-green-600 text-white" : "text-gray-900 hover:bg-gray-100"
     }`;
 
   if (!currentUser) return null;
@@ -173,7 +173,7 @@ export default function MemberEventsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-gray-900">Events</h1>
-        <p className="text-sm text-gray-500 mt-1">Browse all events including exclusive member-only events.</p>
+        <p className="text-sm text-gray-900 mt-1">Browse all events including exclusive member-only events.</p>
       </div>
 
       {/* Tabs */}
@@ -190,9 +190,9 @@ export default function MemberEventsPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-12 text-center text-gray-400 text-sm">Loading events…</div>
+        <div className="py-12 text-center text-gray-800 text-sm">Loading events…</div>
       ) : displayList.length === 0 ? (
-        <div className="py-12 text-center text-gray-400 text-sm">
+        <div className="py-12 text-center text-gray-800 text-sm">
           {tab === "my-rsvps" ? "You haven't registered for any events yet." : "No events in this category."}
         </div>
       ) : selected ? (
@@ -205,7 +205,7 @@ export default function MemberEventsPage() {
                 <h2 className="text-xl font-bold text-gray-900">{selected.title}</h2>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <EventBadge membersOnly={selected.membersOnly} />
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{selected.type.replace("-", " ")}</span>
+                  <span className="text-xs bg-gray-100 text-gray-900 px-2 py-0.5 rounded-full capitalize">{selected.type.replace("-", " ")}</span>
                   {selected.status === "cancelled" && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Cancelled</span>}
                 </div>
               </div>
@@ -218,35 +218,35 @@ export default function MemberEventsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Date & Time</p>
+                <p className="text-xs text-gray-800 mb-0.5">Date & Time</p>
                 <p className="font-medium">{formatDate(selected.date)}</p>
-                {selected.time && <p className="text-gray-600">{selected.time}{selected.endTime ? ` — ${selected.endTime}` : ""}</p>}
+                {selected.time && <p className="text-gray-900">{selected.time}{selected.endTime ? ` — ${selected.endTime}` : ""}</p>}
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Location</p>
+                <p className="text-xs text-gray-800 mb-0.5">Location</p>
                 <p className="font-medium">{selected.location}</p>
-                {selected.venue && <p className="text-gray-600">{selected.venue}</p>}
+                {selected.venue && <p className="text-gray-900">{selected.venue}</p>}
                 {selected.isOnline && selected.meetingUrl && (
                   <a href={selected.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-green-600 text-xs hover:underline">Join Online →</a>
                 )}
               </div>
               {selected.organizerName && (
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-400 mb-0.5">Organiser</p>
+                  <p className="text-xs text-gray-800 mb-0.5">Organiser</p>
                   <p className="font-medium">{selected.organizerName}</p>
                 </div>
               )}
               {selected.maxAttendees && (
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-400 mb-0.5">Capacity</p>
+                  <p className="text-xs text-gray-800 mb-0.5">Capacity</p>
                   <p className="font-medium">{selected.maxAttendees} attendees max</p>
                 </div>
               )}
             </div>
 
             <div>
-              <p className="text-xs text-gray-400 mb-1">About this event</p>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selected.description}</p>
+              <p className="text-xs text-gray-800 mb-1">About this event</p>
+              <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">{selected.description}</p>
             </div>
 
             {/* Registration */}
@@ -290,12 +290,12 @@ export default function MemberEventsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap gap-2 items-center mb-1">
                     <EventBadge membersOnly={ev.membersOnly} />
-                    <span className="text-xs text-gray-400 capitalize">{ev.type.replace("-", " ")}</span>
+                    <span className="text-xs text-gray-800 capitalize">{ev.type.replace("-", " ")}</span>
                     {ev.status === "cancelled" && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Cancelled</span>}
                   </div>
                   <h3 className="font-semibold text-gray-900 leading-snug">{ev.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{formatDate(ev.date)}{ev.time ? ` · ${ev.time}` : ""} · {ev.location}</p>
-                  {ev.shortDescription && <p className="text-sm text-gray-400 mt-1 truncate">{ev.shortDescription}</p>}
+                  <p className="text-sm text-gray-900 mt-1">{formatDate(ev.date)}{ev.time ? ` · ${ev.time}` : ""} · {ev.location}</p>
+                  {ev.shortDescription && <p className="text-sm text-gray-800 mt-1 truncate">{ev.shortDescription}</p>}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   {isRegistered(ev.id) && (

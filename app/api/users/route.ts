@@ -64,6 +64,8 @@ export async function POST(request: NextRequest) {
       displayName: payload.displayName?.trim() || `${payload.firstName.trim()} ${payload.lastName.trim()}`,
       role: payload.role ?? "member",
       status: payload.status ?? "active",
+      title: payload.title,
+      office: payload.office,
       avatarUrl: payload.avatarUrl,
       phone: payload.phone,
       lga: payload.lga,

@@ -147,11 +147,11 @@ export default function AdminProductsPage() {
           <TR key={product.id} onClick={() => openModal(product)}>
             <TD className="font-medium text-(--color-neutral-900)">{product.name}</TD>
             <TD><Badge value={product.category} /></TD>
-            <TD className="font-bold text-(--color-green-700)">₦{product.price.toLocaleString("en-NG")}</TD>
+            <TD className="font-bold text-(--color-green-700)">${product.price.toLocaleString("en-US")}</TD>
             <TD className={product.stock === 0 ? "text-red-600 font-bold" : ""}>{product.stock ?? 0}</TD>
             <TD><Badge value={product.status} /></TD>
-            <TD>{product.isFeatured ? <span className="text-(--color-green-600) text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-400) text-xs">No</span>}</TD>
-            <TD>{product.isMemberOnly ? <span className="text-purple-600 text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-400) text-xs">No</span>}</TD>
+            <TD>{product.isFeatured ? <span className="text-(--color-green-600) text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-800) text-xs">No</span>}</TD>
+            <TD>{product.isMemberOnly ? <span className="text-purple-600 text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-800) text-xs">No</span>}</TD>
           </TR>
         ))}
       </AdminTable>
@@ -173,7 +173,7 @@ export default function AdminProductsPage() {
                   {["draft", "active", "out-of-stock", "discontinued"].map(s => <option key={s} value={s}>{s.replace("-", " ").replace(/\b\w/g, x => x.toUpperCase())}</option>)}
                 </FormSelect>
               </FormField>
-              <FormField label="Price (₦)">
+              <FormField label="Price (USD)">
                 <FormInput type="number" min="0" value={createForm.price} onChange={e => setCreateForm(p => ({ ...p, price: e.target.value }))} placeholder="0" />
               </FormField>
               <FormField label="Stock">
@@ -187,8 +187,8 @@ export default function AdminProductsPage() {
               <FormTextarea rows={3} value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} />
             </FormField>
             <div className="flex gap-5 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isFeatured} onChange={e => setCreateForm(p => ({ ...p, isFeatured: e.target.checked }))} className="accent-(--color-green-600)" /><span className="font-medium text-(--color-neutral-700)">Featured</span></label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isMemberOnly} onChange={e => setCreateForm(p => ({ ...p, isMemberOnly: e.target.checked }))} className="accent-purple-600" /><span className="font-medium text-(--color-neutral-700)">Member Only</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isFeatured} onChange={e => setCreateForm(p => ({ ...p, isFeatured: e.target.checked }))} className="accent-(--color-green-600)" /><span className="font-medium text-(--color-neutral-900)">Featured</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.isMemberOnly} onChange={e => setCreateForm(p => ({ ...p, isMemberOnly: e.target.checked }))} className="accent-purple-600" /><span className="font-medium text-(--color-neutral-900)">Member Only</span></label>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
@@ -219,10 +219,10 @@ export default function AdminProductsPage() {
                   ))}
                 </FormSelect>
               </FormField>
-              <FormField label="Price (₦)">
+              <FormField label="Price (USD)">
                 <FormInput type="number" min="0" step="1" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
               </FormField>
-              <FormField label="Compare Price (₦)">
+              <FormField label="Compare price (USD)">
                 <FormInput type="number" min="0" step="1" value={form.compareAtPrice} onChange={e => setForm(p => ({ ...p, compareAtPrice: e.target.value }))} />
               </FormField>
             </div>
@@ -230,7 +230,7 @@ export default function AdminProductsPage() {
             {/* Stock adjustment */}
             <div>
               <SectionDivider label="Stock Adjustment" />
-              <p className="text-sm text-(--color-neutral-600) mt-1">Current stock: <strong className="text-(--color-neutral-900)">{form.stock}</strong></p>
+              <p className="text-sm text-(--color-neutral-900) mt-1">Current stock: <strong className="text-(--color-neutral-900)">{form.stock}</strong></p>
               <div className="flex items-center gap-2 mt-2">
                 <FormInput
                   className="w-28"
@@ -254,11 +254,11 @@ export default function AdminProductsPage() {
             <div className="flex gap-5 text-sm">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(p => ({ ...p, isFeatured: e.target.checked }))} className="accent-(--color-green-600)" />
-                <span className="font-medium text-(--color-neutral-700)">Featured</span>
+                <span className="font-medium text-(--color-neutral-900)">Featured</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={form.isMemberOnly} onChange={e => setForm(p => ({ ...p, isMemberOnly: e.target.checked }))} className="accent-purple-600" />
-                <span className="font-medium text-(--color-neutral-700)">Member Only</span>
+                <span className="font-medium text-(--color-neutral-900)">Member Only</span>
               </label>
             </div>
 

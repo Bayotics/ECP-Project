@@ -11,8 +11,8 @@ import { useAuth } from "@/context/AuthContext";
 import PaymentWidget from "@/components/payments/PaymentWidget";
 import type { PaymentResult } from "@/components/payments/PaymentWidget";
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 const NIGERIAN_STATES = [
@@ -98,23 +98,23 @@ function OrderSummary() {
               <p className="text-xs font-semibold text-(--color-neutral-800) line-clamp-1">{item.name}</p>
               <p className="text-xs text-(--color-neutral-500)">×{item.quantity}</p>
             </div>
-            <p className="text-xs font-bold text-(--color-neutral-700) shrink-0">{formatNaira(item.price * item.quantity)}</p>
+            <p className="text-xs font-bold text-(--color-neutral-700) shrink-0">{formatUSD(item.price * item.quantity)}</p>
           </div>
         ))}
       </div>
       <div className="border-t border-(--color-neutral-200) pt-3 space-y-1.5 text-sm">
         <div className="flex justify-between text-(--color-neutral-600)">
-          <span>Subtotal</span><span className="font-semibold">{formatNaira(subtotal)}</span>
+          <span>Subtotal</span><span className="font-semibold">{formatUSD(subtotal)}</span>
         </div>
         <div className="flex justify-between text-(--color-neutral-600)">
           <span>Shipping</span>
           <span className={`font-semibold ${shippingFee === 0 ? "text-(--color-green-700)" : ""}`}>
-            {shippingFee === 0 ? "FREE" : formatNaira(shippingFee)}
+            {shippingFee === 0 ? "FREE" : formatUSD(shippingFee)}
           </span>
         </div>
         <div className="flex justify-between font-bold pt-1 border-t border-(--color-neutral-200)">
           <span>Total</span>
-          <span className="text-(--color-green-700)">{formatNaira(total)}</span>
+          <span className="text-(--color-green-700)">{formatUSD(total)}</span>
         </div>
       </div>
     </div>
@@ -310,7 +310,7 @@ export default function CheckoutPage() {
                   )}
 
                   <PaymentWidget
-                    amountNGN={total}
+                    amountUSD={total}
                     email={shipping.email}
                     name={shipping.fullName}
                     phone={shipping.phone}

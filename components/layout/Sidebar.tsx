@@ -186,7 +186,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
   function navClass(active: boolean) {
     return cn(
       "flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-normal transition-colors",
-      active ? "text-neutral-950" : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950",
+      active ? "text-neutral-950" : "text-neutral-900 hover:bg-neutral-100 hover:text-neutral-950",
     );
   }
 
@@ -209,7 +209,7 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
               className={navClass(active)}
               style={active ? { background: `${accent}14`, boxShadow: `inset 0 0 0 1px ${accent}40` } : undefined}
             >
-              <Icon name={icon} className={active ? "" : "text-neutral-400"} />
+              <Icon name={icon} className={active ? "" : "text-neutral-800"} />
               {label}
             </Link>
           );
@@ -217,10 +217,10 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
 
         {!isAdmin && (
           <>
-            <p className="px-3.5 pb-1 pt-5 text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-400">On the site</p>
+            <p className="px-3.5 pb-1 pt-5 text-[11px] font-normal uppercase tracking-[0.18em] text-neutral-800">On the site</p>
             {memberLinksPublic.map(({ href, label, icon }) => (
               <Link key={href} href={href} className={navClass(false)}>
-                <Icon name={icon} className="text-neutral-400" />
+                <Icon name={icon} className="text-neutral-800" />
                 {label}
               </Link>
             ))}
@@ -244,15 +244,15 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
             )}
             <div className="min-w-0">
               <p className="truncate text-sm font-normal text-neutral-950">{currentUser.displayName}</p>
-              <p className="truncate text-xs capitalize text-neutral-500">{currentUser.role.replace("-", " ")}</p>
+              <p className="truncate text-xs capitalize text-neutral-900">{currentUser.role.replace("-", " ")}</p>
             </div>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-normal text-neutral-600 transition-colors hover:bg-red-50 hover:text-red-700"
+          className="flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-normal text-neutral-900 transition-colors hover:bg-red-50 hover:text-red-700"
         >
-          <Icon name="logout" className="text-neutral-400" />
+          <Icon name="logout" className="text-neutral-800" />
           Sign out
         </button>
       </div>

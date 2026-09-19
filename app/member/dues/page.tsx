@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useIsClient } from "@/components/gsap/useReveal";
 import PaymentWidget from "@/components/payments/PaymentWidget";
 import type { PaymentResult } from "@/components/payments/PaymentWidget";
 import type { DuesPayment } from "@/lib/models";
@@ -13,7 +15,7 @@ const STATUS_STYLES: Record<DuesPayment["status"], string> = {
   paid:    "bg-green-100 text-green-700",
   pending: "bg-yellow-100 text-yellow-700",
   overdue: "bg-red-100 text-red-700",
-  waived:  "bg-gray-100 text-gray-600",
+  waived:  "bg-gray-100 text-gray-900",
 };
 
 const STATUS_LABEL: Record<DuesPayment["status"], string> = {
@@ -21,13 +23,46 @@ const STATUS_LABEL: Record<DuesPayment["status"], string> = {
 };
 
 /* ─── Modal shell ───────────────────────────────────────────────────────────── */
+/* Portalled to <body>, like every other overlay in this app: the portal
+   shell is a flex column whose `main` owns the scrolling, and a `fixed`
+   overlay rendered inside it gets clipped by that. `data-lenis-prevent`
+   and the dialog role together tell the portal's wheel forwarder to leave
+   this alone, so the panel scrolls instead of the page behind it. */
 function ModalShell({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+  const isClient = useIsClient();
+
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  if (!isClient) return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-lenis-prevent
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-neutral-950/60 p-4 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        data-lenis-prevent
+        className="my-auto max-h-[90vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl bg-white p-6 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -94,16 +129,16 @@ function PayModal({
           <h2 className="text-xl font-bold text-(--color-neutral-800)">
             {paidMethod === "Zelle" ? "Payment Submitted!" : "Payment Successful!"}
           </h2>
-          <p className="text-sm text-(--color-neutral-500)">
+          <p className="text-sm text-(--color-neutral-900)">
             {paidMethod === "Zelle"
               ? `Your Zelle payment for ${dues.year} dues has been recorded. We'll confirm within 1–2 business days.`
-              : `Your ${dues.year} dues of ₦${dues.amount.toLocaleString()} have been received.`}
+              : `Your ${dues.year} dues of $${dues.amount.toLocaleString("en-US")} have been received.`}
           </p>
           <div className="rounded-lg bg-(--color-green-50) border border-(--color-green-200) px-4 py-3 text-sm">
-            <p className="text-(--color-neutral-500)">Reference</p>
+            <p className="text-(--color-neutral-900)">Reference</p>
             <p className="font-mono font-semibold text-(--color-green-700) mt-0.5">{paidRef}</p>
           </div>
-          <p className="text-xs text-(--color-neutral-400)">A receipt has been sent to {user.email}</p>
+          <p className="text-xs text-(--color-neutral-800)">A receipt has been sent to {user.email}</p>
           <button onClick={onClose} className="w-full rounded-lg bg-(--color-green-600) py-2.5 text-sm font-semibold text-white hover:bg-(--color-green-700) transition">
             Done
           </button>
@@ -117,17 +152,17 @@ function PayModal({
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-bold text-(--color-neutral-900)">Pay Annual Dues</h2>
-          <p className="text-sm text-(--color-neutral-500) mt-1">{dues.year} membership dues · Eko Club Philadelphia</p>
+          <p className="text-sm text-(--color-neutral-900) mt-1">{dues.year} membership dues · Eko Club Philadelphia</p>
         </div>
         <div className="rounded-xl bg-(--color-green-50) border border-(--color-green-200) px-5 py-4 flex items-center justify-between">
           <span className="text-sm text-(--color-green-700) font-medium">Amount due</span>
-          <span className="text-2xl font-bold text-(--color-green-700)">₦{dues.amount.toLocaleString()}</span>
+          <span className="text-2xl font-bold text-(--color-green-700)">${dues.amount.toLocaleString("en-US")}</span>
         </div>
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
         <PaymentWidget
-          amountNGN={dues.amount}
+          amountUSD={dues.amount}
           email={user.email}
           name={user.displayName}
           phone={user.phone}
@@ -186,13 +221,13 @@ export default function DuesPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-(--color-neutral-900)">Dues &amp; Payments</h1>
-        <p className="text-sm text-(--color-neutral-500) mt-1">Track your annual membership dues and payment history</p>
+        <p className="text-sm text-(--color-neutral-900) mt-1">Track your annual membership dues and payment history</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
-          <p className="text-xs font-medium text-(--color-neutral-400) uppercase tracking-wide">Current Year</p>
+          <p className="text-xs font-medium text-(--color-neutral-800) uppercase tracking-wide">Current Year</p>
           <p className="text-2xl font-bold text-(--color-neutral-900) mt-1">{CURRENT_YEAR}</p>
           {currentRecord && (
             <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[currentRecord.status]}`}>
@@ -201,14 +236,18 @@ export default function DuesPage() {
           )}
         </div>
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
-          <p className="text-xs font-medium text-(--color-neutral-400) uppercase tracking-wide">Annual Dues</p>
-          <p className="text-2xl font-bold text-(--color-neutral-900) mt-1">₦5,000</p>
-          <p className="text-xs text-(--color-neutral-400) mt-1">Per calendar year</p>
+          <p className="text-xs font-medium text-(--color-neutral-800) uppercase tracking-wide">Annual Dues</p>
+          {/* From the current year's record rather than a figure typed in
+              here, so changing the amount server side is enough. */}
+          <p className="text-2xl font-bold text-(--color-neutral-900) mt-1">
+            {currentRecord ? `$${currentRecord.amount.toLocaleString("en-US")}` : "N/A"}
+          </p>
+          <p className="text-xs text-(--color-neutral-800) mt-1">Per calendar year</p>
         </div>
         <div className="bg-white rounded-xl border border-(--color-neutral-200) p-5">
-          <p className="text-xs font-medium text-(--color-neutral-400) uppercase tracking-wide">Total Paid</p>
-          <p className="text-2xl font-bold text-(--color-green-600) mt-1">₦{totalPaid.toLocaleString()}</p>
-          <p className="text-xs text-(--color-neutral-400) mt-1">All time</p>
+          <p className="text-xs font-medium text-(--color-neutral-800) uppercase tracking-wide">Total Paid</p>
+          <p className="text-2xl font-bold text-(--color-green-600) mt-1">${totalPaid.toLocaleString("en-US")}</p>
+          <p className="text-xs text-(--color-neutral-800) mt-1">All time</p>
         </div>
       </div>
 
@@ -230,7 +269,7 @@ export default function DuesPage() {
                   ✓ Paid on{" "}
                   {new Date(currentRecord.paidDate!).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
                 </p>
-                <p className="text-xs text-(--color-neutral-500) font-mono">Ref: {currentRecord.reference ?? currentRecord.paystackRef ?? currentRecord.paypalOrderId ?? "—"}</p>
+                <p className="text-xs text-(--color-neutral-900) font-mono">Ref: {currentRecord.reference ?? currentRecord.paystackRef ?? currentRecord.paypalOrderId ?? "—"}</p>
                 {currentRecord.autoRenew && <p className="text-xs text-(--color-green-600) font-medium">🔄 Auto-renewal enabled</p>}
               </>
             ) : (
@@ -257,35 +296,35 @@ export default function DuesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-(--color-neutral-100) bg-(--color-neutral-50)">
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide">Year</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide">Amount</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide">Status</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide hidden sm:table-cell">Date Paid</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide hidden md:table-cell">Reference</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-500) uppercase tracking-wide hidden sm:table-cell">Method</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide">Year</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide">Amount</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide">Status</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide hidden sm:table-cell">Date Paid</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide hidden md:table-cell">Reference</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-(--color-neutral-900) uppercase tracking-wide hidden sm:table-cell">Method</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-(--color-neutral-100)">
               {history.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-(--color-neutral-400) text-sm">No payment history yet</td>
+                  <td colSpan={6} className="px-5 py-8 text-center text-(--color-neutral-800) text-sm">No payment history yet</td>
                 </tr>
               ) : history.map(r => (
                 <tr key={r.id} className="hover:bg-(--color-neutral-50) transition">
                   <td className="px-5 py-3.5 font-semibold text-(--color-neutral-800)">{r.year}</td>
-                  <td className="px-5 py-3.5 text-(--color-neutral-700)">₦{r.amount.toLocaleString()}</td>
+                  <td className="px-5 py-3.5 text-(--color-neutral-900)">${r.amount.toLocaleString("en-US")}</td>
                   <td className="px-5 py-3.5">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[r.status]}`}>
                       {STATUS_LABEL[r.status]}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-(--color-neutral-500) hidden sm:table-cell">
+                  <td className="px-5 py-3.5 text-(--color-neutral-900) hidden sm:table-cell">
                     {r.paidDate ? new Date(r.paidDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                   </td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-(--color-neutral-500) hidden md:table-cell">
+                  <td className="px-5 py-3.5 font-mono text-xs text-(--color-neutral-900) hidden md:table-cell">
                     {r.reference ?? r.paystackRef ?? r.zelleRef ?? "—"}
                   </td>
-                  <td className="px-5 py-3.5 text-(--color-neutral-500) hidden sm:table-cell">
+                  <td className="px-5 py-3.5 text-(--color-neutral-900) hidden sm:table-cell">
                     {r.paymentMethod ?? "—"}
                   </td>
                 </tr>

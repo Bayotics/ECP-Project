@@ -9,8 +9,8 @@ import { useProducts } from "@/context/ProductsContext";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/lib/models/product";
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 /* ─── Related card ────────────────────────────────── */
@@ -26,7 +26,7 @@ function RelatedCard({ product }: { product: Product }) {
       </div>
       <div className="p-3">
         <p className="text-xs font-semibold text-(--color-neutral-800) line-clamp-2 group-hover:text-(--color-green-700) transition-colors">{product.name}</p>
-        <p className="text-sm font-bold text-(--color-green-700) mt-1">{formatNaira(product.price)}</p>
+        <p className="text-sm font-bold text-(--color-green-700) mt-1">{formatUSD(product.price)}</p>
       </div>
     </Link>
   );
@@ -116,13 +116,13 @@ export default function ProductPage() {
 
             {/* Price */}
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl font-bold text-(--color-green-700)">{formatNaira(product.price)}</span>
+              <span className="text-3xl font-bold text-(--color-green-700)">{formatUSD(product.price)}</span>
               {product.compareAtPrice && (
-                <span className="text-lg text-(--color-neutral-400) line-through">{formatNaira(product.compareAtPrice)}</span>
+                <span className="text-lg text-(--color-neutral-400) line-through">{formatUSD(product.compareAtPrice)}</span>
               )}
               {product.compareAtPrice && (
                 <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                  Save {formatNaira(product.compareAtPrice - product.price)}
+                  Save {formatUSD(product.compareAtPrice - product.price)}
                 </span>
               )}
             </div>

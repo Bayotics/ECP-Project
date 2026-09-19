@@ -147,16 +147,16 @@ function FieldError({ msg }: { msg?: string }) {
 
 function Label({ htmlFor, children, optional }: { htmlFor: string; children: React.ReactNode; optional?: boolean }) {
   return (
-    <label htmlFor={htmlFor} className="block text-sm font-semibold text-(--color-neutral-700) mb-1">
+    <label htmlFor={htmlFor} className="block text-sm font-semibold text-(--color-neutral-900) mb-1">
       {children}
-      {optional && <span className="font-normal text-(--color-neutral-400) text-xs ml-1">(optional)</span>}
+      {optional && <span className="font-normal text-(--color-neutral-800) text-xs ml-1">(optional)</span>}
     </label>
   );
 }
 
 function inputCls(hasError: boolean) {
   return cn(
-    "w-full px-3 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 transition-colors text-gray-600",
+    "w-full px-3 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 transition-colors text-gray-900",
     hasError
       ? "border-red-400 focus:ring-red-200 bg-red-50"
       : "border-(--color-neutral-300) focus:ring-(--color-green-200) focus:border-(--color-green-500)"
@@ -177,7 +177,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
                   ? "bg-(--color-green-600) border-(--color-green-600) text-white"
                   : i === current
                   ? "bg-white border-(--color-green-600) text-(--color-green-700)"
-                  : "bg-white border-(--color-neutral-300) text-(--color-neutral-400)"
+                  : "bg-white border-(--color-neutral-300) text-(--color-neutral-800)"
               )}
             >
               {i < current ? (
@@ -195,7 +195,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
                   ? "text-(--color-green-700)"
                   : i < current
                   ? "text-(--color-green-600)"
-                  : "text-(--color-neutral-400)"
+                  : "text-(--color-neutral-800)"
               )}
             >
               {label}
@@ -211,7 +211,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
-      <p className="text-xs text-(--color-neutral-500) text-right mt-2">
+      <p className="text-xs text-(--color-neutral-900) text-right mt-2">
         Step {current + 1} of {total}
       </p>
     </div>
@@ -227,7 +227,7 @@ function Step1({ draft, onChange, errors }: {
   return (
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-(--color-neutral-800)">Personal Information</h2>
-      <p className="text-sm text-(--color-neutral-500)">Tell us about yourself. Fields marked * are required.</p>
+      <p className="text-sm text-(--color-neutral-900)">Tell us about yourself. Fields marked * are required.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
@@ -369,7 +369,7 @@ function Step2({ draft, onChange, errors }: {
   return (
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-(--color-neutral-800)">Background & Experience</h2>
-      <p className="text-sm text-(--color-neutral-500)">Tell us about your professional background and civic interests.</p>
+      <p className="text-sm text-(--color-neutral-900)">Tell us about your professional background and civic interests.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -409,13 +409,13 @@ function Step2({ draft, onChange, errors }: {
             className={cn(inputCls(!!errors.reasonForJoining), "resize-none")} />
           <div className="flex justify-between">
             <FieldError msg={errors.reasonForJoining} />
-            <span className="text-xs text-(--color-neutral-400) ml-auto mt-1">{draft.reasonForJoining.length} chars</span>
+            <span className="text-xs text-(--color-neutral-800) ml-auto mt-1">{draft.reasonForJoining.length} chars</span>
           </div>
         </div>
 
         <div className="sm:col-span-2">
           <Label htmlFor="areasOfInterest">Areas of Interest *</Label>
-          <p className="text-xs text-(--color-neutral-500) mb-2">Select all that apply.</p>
+          <p className="text-xs text-(--color-neutral-900) mb-2">Select all that apply.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {INTEREST_OPTIONS.map((opt) => (
               <button
@@ -426,7 +426,7 @@ function Step2({ draft, onChange, errors }: {
                   "text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all",
                   draft.areasOfInterest.includes(opt.value)
                     ? "bg-(--color-green-600) border-(--color-green-600) text-white"
-                    : "bg-white border-(--color-neutral-300) text-(--color-neutral-700) hover:border-(--color-green-400)"
+                    : "bg-white border-(--color-neutral-300) text-(--color-neutral-900) hover:border-(--color-green-400)"
                 )}
               >
                 {opt.label}
@@ -444,7 +444,7 @@ function Step2({ draft, onChange, errors }: {
               onChange={(e) => onChange("hasVolunteered", e.target.checked)}
               className="h-4 w-4 rounded border-(--color-neutral-400) accent-(--color-green-600)"
             />
-            <label htmlFor="hasVolunteered" className="text-sm text-(--color-neutral-700) cursor-pointer">
+            <label htmlFor="hasVolunteered" className="text-sm text-(--color-neutral-900) cursor-pointer">
               I have previously volunteered with a civic, NGO, or community organisation.
             </label>
           </div>
@@ -489,7 +489,7 @@ function Step3({ draft, onChange }: {
   return (
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-(--color-neutral-800)">Document Upload</h2>
-      <p className="text-sm text-(--color-neutral-500)">
+      <p className="text-sm text-(--color-neutral-900)">
         Upload supporting documents. The first two are recommended; the rest are optional.
         Files are simulated — no data is sent to any server.
       </p>
@@ -515,7 +515,7 @@ function Step3({ draft, onChange }: {
                 <p className="text-sm font-medium text-(--color-neutral-800)">
                   {label}
                   {isOptional && (
-                    <span className="ml-1.5 text-xs text-(--color-neutral-400) font-normal">Optional</span>
+                    <span className="ml-1.5 text-xs text-(--color-neutral-800) font-normal">Optional</span>
                   )}
                 </p>
                 {uploaded ? (
@@ -523,7 +523,7 @@ function Step3({ draft, onChange }: {
                     {uploaded.name} · {uploaded.size}
                   </p>
                 ) : (
-                  <p className="text-xs text-(--color-neutral-400)">No file selected</p>
+                  <p className="text-xs text-(--color-neutral-800)">No file selected</p>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -552,10 +552,10 @@ function Step3({ draft, onChange }: {
         })}
       </div>
 
-      <div className="rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200) p-4 text-sm text-(--color-neutral-600)">
-        <p className="font-semibold mb-1 text-(--color-neutral-700)">📎 Accepted formats</p>
+      <div className="rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200) p-4 text-sm text-(--color-neutral-900)">
+        <p className="font-semibold mb-1 text-(--color-neutral-900)">📎 Accepted formats</p>
         <p>PDF, JPG, PNG, DOC, DOCX — max 5 MB per file</p>
-        <p className="text-xs text-(--color-neutral-400) mt-1">
+        <p className="text-xs text-(--color-neutral-800) mt-1">
           Files are stored locally in your browser for demo purposes.
         </p>
       </div>
@@ -587,17 +587,17 @@ function Step4({ draft, consentChecked, onConsentChange }: {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-(--color-neutral-800)">Review Your Application</h2>
-      <p className="text-sm text-(--color-neutral-500)">Please review all details before submitting. Go back to edit anything.</p>
+      <p className="text-sm text-(--color-neutral-900)">Please review all details before submitting. Go back to edit anything.</p>
 
       {/* Personal / Professional */}
       <div className="rounded-xl border border-(--color-neutral-200) overflow-hidden">
         <div className="bg-(--color-neutral-50) px-4 py-2.5 border-b border-(--color-neutral-200)">
-          <p className="text-xs font-semibold text-(--color-neutral-600) uppercase tracking-wide">Application Details</p>
+          <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide">Application Details</p>
         </div>
         <div className="divide-y divide-(--color-neutral-100)">
           {rows.map(([label, value]) => (
             <div key={label} className="flex px-4 py-2.5 gap-4">
-              <span className="text-xs text-(--color-neutral-500) w-36 shrink-0">{label}</span>
+              <span className="text-xs text-(--color-neutral-900) w-36 shrink-0">{label}</span>
               <span className="text-xs font-medium text-(--color-neutral-800) wrap-break-word">{value}</span>
             </div>
           ))}
@@ -606,13 +606,13 @@ function Step4({ draft, consentChecked, onConsentChange }: {
 
       {/* Reason */}
       <div className="rounded-xl border border-(--color-neutral-200) p-4">
-        <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-2">Reason for Joining</p>
-        <p className="text-sm text-(--color-neutral-700) leading-relaxed whitespace-pre-wrap">{draft.reasonForJoining}</p>
+        <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide mb-2">Reason for Joining</p>
+        <p className="text-sm text-(--color-neutral-900) leading-relaxed whitespace-pre-wrap">{draft.reasonForJoining}</p>
       </div>
 
       {/* Interests */}
       <div className="rounded-xl border border-(--color-neutral-200) p-4">
-        <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-2">Areas of Interest</p>
+        <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide mb-2">Areas of Interest</p>
         <div className="flex flex-wrap gap-2">
           {draft.areasOfInterest.map((v) => (
             <span key={v} className="text-xs bg-(--color-green-50) text-(--color-green-700) border border-(--color-green-200) rounded-full px-2.5 py-1 font-medium">
@@ -625,13 +625,13 @@ function Step4({ draft, consentChecked, onConsentChange }: {
       {/* Docs */}
       {draft.documents.length > 0 && (
         <div className="rounded-xl border border-(--color-neutral-200) p-4">
-          <p className="text-xs font-semibold text-(--color-neutral-500) uppercase tracking-wide mb-2">Documents</p>
+          <p className="text-xs font-semibold text-(--color-neutral-900) uppercase tracking-wide mb-2">Documents</p>
           <ul className="space-y-1.5">
             {draft.documents.map((d) => (
               <li key={d.label} className="flex items-center gap-2 text-sm">
                 <span className="text-green-600 text-base" aria-hidden="true">✅</span>
                 <span className="font-medium">{d.label}</span>
-                <span className="text-(--color-neutral-400) text-xs">— {d.name} ({d.size})</span>
+                <span className="text-(--color-neutral-800) text-xs">— {d.name} ({d.size})</span>
               </li>
             ))}
           </ul>
@@ -673,14 +673,14 @@ function SuccessScreen({ applicationId, email }: { applicationId: string; email:
       </div>
       <div>
         <h2 className="text-2xl font-bold text-(--color-green-800) mb-2">Application Submitted!</h2>
-        <p className="text-(--color-neutral-600) text-sm max-w-md mx-auto">
+        <p className="text-(--color-neutral-900) text-sm max-w-md mx-auto">
           Your membership application has been received. You will be notified at <strong>{email}</strong> as your application progresses.
         </p>
       </div>
       <div className="inline-block rounded-xl bg-white border border-(--color-green-200) px-6 py-4 text-left">
-        <p className="text-xs text-(--color-neutral-500) mb-1">Application ID</p>
+        <p className="text-xs text-(--color-neutral-900) mb-1">Application ID</p>
         <p className="text-lg font-mono font-bold text-(--color-green-700)">{applicationId}</p>
-        <p className="text-xs text-(--color-neutral-400) mt-1">Save this ID to check your application status.</p>
+        <p className="text-xs text-(--color-neutral-800) mt-1">Save this ID to check your application status.</p>
       </div>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         <Link
@@ -691,7 +691,7 @@ function SuccessScreen({ applicationId, email }: { applicationId: string; email:
         </Link>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-(--color-neutral-300) text-(--color-neutral-700) text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-(--color-neutral-300) text-(--color-neutral-900) text-sm font-semibold hover:bg-(--color-neutral-50) transition-colors"
         >
           Back to Home
         </Link>
@@ -941,7 +941,7 @@ export default function ApplicationWizard() {
 
         <div className="flex items-center gap-3">
           {/* Auto-save indicator */}
-          <span className="text-xs text-(--color-neutral-400) hidden sm:block">
+          <span className="text-xs text-(--color-neutral-800) hidden sm:block">
             💾 Draft saved automatically
           </span>
           {currentStep < STEPS.length - 1 ? (

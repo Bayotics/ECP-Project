@@ -6,7 +6,8 @@ import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/serv
 import { getSessionUser } from "@/lib/server/session";
 import { sendZellePendingNotification } from "@/lib/server/notifications";
 
-const DUES_AMOUNT = 5000;
+/* Annual membership dues, in US dollars. */
+const DUES_AMOUNT = 20;
 
 export async function GET(request: NextRequest) {
   const { deny } = requireSession(request);

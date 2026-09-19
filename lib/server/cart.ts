@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import type { Filter } from "mongodb";
 import type { Cart, CartItem } from "@/lib/models";
 import { getCollection, serializeDocument } from "@/lib/server/collections";
+import { calculateCartShipping } from "@/lib/models/cart";
 
 interface CartOwner {
   userId?: string;
@@ -12,11 +13,10 @@ function now(): string {
   return new Date().toISOString();
 }
 
-export function calculateCartShipping(subtotal: number): number {
-  if (subtotal === 0) return 0;
-  if (subtotal >= 15000) return 0;
-  return 1500;
-}
+/* Shipping rules live in lib/models/cart so the browser can read the
+   threshold without pulling this file's MongoDB imports along. Re-exported
+   here because existing callers import them from this module. */
+export { FREE_SHIPPING_OVER_USD, FLAT_SHIPPING_USD, calculateCartShipping } from "@/lib/models/cart";
 
 function normalizeCartItems(items: CartItem[]): CartItem[] {
   const map = new Map<string, CartItem>();

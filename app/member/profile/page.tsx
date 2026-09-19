@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useUsers } from "@/context/UsersContext";
+import ImageUploader from "@/components/media/ImageUploader";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 
 const LAGOS_LGAS = [
@@ -128,8 +129,8 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-500">My Profile</h1>
-        <p className="text-sm text-(--color-neutral-500) mt-1">Manage your personal information and privacy settings</p>
+        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <p className="text-sm text-(--color-neutral-900) mt-1">Manage your personal information and privacy settings</p>
       </div>
 
       {/* Avatar + name header */}
@@ -143,8 +144,8 @@ export default function ProfilePage() {
           </div>
         )}
         <div>
-          <p className="text-xl font-bold text-gray-500">{form.firstName} {form.lastName}</p>
-          <p className="text-sm text-(--color-neutral-500)">{currentUser?.email}</p>
+          <p className="text-xl font-bold text-gray-900">{form.firstName} {form.lastName}</p>
+          <p className="text-sm text-(--color-neutral-900)">{currentUser?.email}</p>
           <span className="inline-block mt-1 rounded-full bg-(--color-green-100) text-(--color-green-700) px-2.5 py-0.5 text-xs font-medium capitalize">
             {currentUser?.role}
           </span>
@@ -159,8 +160,8 @@ export default function ProfilePage() {
             onClick={() => setActiveTab(tab)}
             className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
               activeTab === tab
-                ? "bg-white text-gray-500 shadow-sm"
-                : "text-(--color-neutral-500) hover:text-gray-500"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-(--color-neutral-900) hover:text-gray-900"
             }`}
           >
             {tab === "privacy" ? "Privacy Settings" : "Edit Profile"}
@@ -173,7 +174,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* First Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">First name</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">First name</label>
               <input
                 type="text" required value={form.firstName} onChange={set("firstName")}
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
@@ -181,7 +182,7 @@ export default function ProfilePage() {
             </div>
             {/* Last Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">Last name</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Last name</label>
               <input
                 type="text" required value={form.lastName} onChange={set("lastName")}
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
@@ -189,7 +190,7 @@ export default function ProfilePage() {
             </div>
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">Phone</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Phone</label>
               <input
                 type="tel" value={form.phone} onChange={set("phone")} placeholder="08012345678"
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
@@ -197,7 +198,7 @@ export default function ProfilePage() {
             </div>
             {/* LGA */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">Local Government Area</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Local Government Area</label>
               <select
                 value={form.lga} onChange={set("lga")}
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
@@ -208,7 +209,7 @@ export default function ProfilePage() {
             </div>
             {/* Ward */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">Ward</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Ward</label>
               <input
                 type="text" value={form.ward} onChange={set("ward")} placeholder="e.g. Ward 3"
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
@@ -216,24 +217,25 @@ export default function ProfilePage() {
             </div>
             {/* Occupation */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1.5">Occupation</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Occupation</label>
               <input
                 type="text" value={form.occupation} onChange={set("occupation")} placeholder="e.g. Software Engineer"
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
           </div>
-          {/* Avatar URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1.5">Avatar URL <span className="text-(--color-neutral-400)">(optional)</span></label>
-            <input
-              type="url" value={form.avatarUrl} onChange={set("avatarUrl")} placeholder="https://…"
-              className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
-            />
-          </div>
+          {/* Photo. Uploads to Cloudinary through /api/uploads; the URL it
+              returns is what gets saved with the rest of the form. */}
+          <ImageUploader
+            label="Profile photo"
+            folder="avatars"
+            value={form.avatarUrl}
+            onChange={(url) => setForm((prev) => ({ ...prev, avatarUrl: url }))}
+            hint="A square headshot works best. JPEG, PNG, WebP or AVIF, up to 8 MB. Remember to save below."
+          />
           {/* Bio */}
           <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1.5">Bio <span className="text-(--color-neutral-400)">(optional)</span></label>
+            <label className="block text-sm font-medium text-gray-900 mb-1.5">Bio <span className="text-(--color-neutral-800)">(optional)</span></label>
             <textarea
               rows={3} value={form.bio} onChange={set("bio")} placeholder="Tell the community about yourself…"
               className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition resize-none"
@@ -241,10 +243,10 @@ export default function ProfilePage() {
           </div>
           {/* Email (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1.5">Email <span className="text-(--color-neutral-400)">(cannot be changed)</span></label>
+            <label className="block text-sm font-medium text-gray-900 mb-1.5">Email <span className="text-(--color-neutral-800)">(cannot be changed)</span></label>
             <input
               type="email" value={currentUser?.email ?? ""} readOnly
-              className="w-full rounded-lg border border-(--color-neutral-200) bg-(--color-neutral-50) px-3.5 py-2.5 text-sm text-(--color-neutral-400) cursor-not-allowed"
+              className="w-full rounded-lg border border-(--color-neutral-200) bg-(--color-neutral-50) px-3.5 py-2.5 text-sm text-(--color-neutral-800) cursor-not-allowed"
             />
           </div>
 
@@ -262,7 +264,7 @@ export default function ProfilePage() {
 
       {activeTab === "privacy" && (
         <div className="bg-white rounded-2xl border border-(--color-neutral-200) p-6 space-y-5">
-          <p className="text-sm text-(--color-neutral-500)">
+          <p className="text-sm text-(--color-neutral-900)">
             Control what other members can see when they view your profile in the directory.
           </p>
           <div className="space-y-4 divide-y divide-(--color-neutral-100)">
@@ -275,8 +277,8 @@ export default function ProfilePage() {
             ] as { key: keyof PrivacySettings; label: string; desc: string }[]).map(({ key, label, desc }) => (
               <div key={key} className="flex items-center justify-between pt-4 first:pt-0">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">{label}</p>
-                  <p className="text-xs text-(--color-neutral-400) mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-gray-900">{label}</p>
+                  <p className="text-xs text-(--color-neutral-800) mt-0.5">{desc}</p>
                 </div>
                 <button
                   type="button"

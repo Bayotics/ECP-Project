@@ -213,7 +213,7 @@ export default function AdminEventsPage() {
     `px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
       activeTab === tab
         ? "border-(--color-gold-500) text-(--color-gold-700) bg-(--color-gold-50)"
-        : "border-transparent text-(--color-neutral-500) hover:text-(--color-neutral-800)"
+        : "border-transparent text-(--color-neutral-900) hover:text-(--color-neutral-800)"
     }`;
 
   return (
@@ -238,10 +238,10 @@ export default function AdminEventsPage() {
             <TD>
               {ev.membersOnly
                 ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">🔒 Members Only</span>
-                : <span className="text-xs text-(--color-neutral-500)">Public</span>}
+                : <span className="text-xs text-(--color-neutral-900)">Public</span>}
             </TD>
             <TD><Badge value={ev.status} /></TD>
-            <TD>{ev.isFeatured ? <span className="text-(--color-green-600) font-bold text-xs">Yes</span> : <span className="text-(--color-neutral-400) text-xs">No</span>}</TD>
+            <TD>{ev.isFeatured ? <span className="text-(--color-green-600) font-bold text-xs">Yes</span> : <span className="text-(--color-neutral-800) text-xs">No</span>}</TD>
           </TR>
         ))}
       </AdminTable>
@@ -275,11 +275,11 @@ export default function AdminEventsPage() {
             <div className="flex gap-5 text-sm">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={createForm.membersOnly} onChange={e => setCreateForm(p => ({ ...p, membersOnly: e.target.checked }))} className="accent-purple-600" />
-                <span className="font-medium text-(--color-neutral-700)">🔒 Members Only</span>
+                <span className="font-medium text-(--color-neutral-900)">🔒 Members Only</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={createForm.registrationRequired} onChange={e => setCreateForm(p => ({ ...p, registrationRequired: e.target.checked }))} className="accent-(--color-green-600)" />
-                <span className="font-medium text-(--color-neutral-700)">Registration Required</span>
+                <span className="font-medium text-(--color-neutral-900)">Registration Required</span>
               </label>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
@@ -346,11 +346,11 @@ export default function AdminEventsPage() {
               <div className="flex flex-wrap gap-5 text-sm">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(p => ({ ...p, isFeatured: e.target.checked }))} className="accent-(--color-green-600)" />
-                  <span className="font-medium text-(--color-neutral-700)">Featured</span>
+                  <span className="font-medium text-(--color-neutral-900)">Featured</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form.isPublic} onChange={e => setForm(p => ({ ...p, isPublic: e.target.checked, membersOnly: e.target.checked ? false : form.membersOnly }))} className="accent-(--color-green-600)" />
-                  <span className="font-medium text-(--color-neutral-700)">Publicly Visible</span>
+                  <span className="font-medium text-(--color-neutral-900)">Publicly Visible</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form.membersOnly} onChange={e => setForm(p => ({ ...p, membersOnly: e.target.checked }))} className="accent-purple-600" />
@@ -358,7 +358,7 @@ export default function AdminEventsPage() {
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form.registrationRequired} onChange={e => setForm(p => ({ ...p, registrationRequired: e.target.checked }))} className="accent-(--color-green-600)" />
-                  <span className="font-medium text-(--color-neutral-700)">Registration Required</span>
+                  <span className="font-medium text-(--color-neutral-900)">Registration Required</span>
                 </label>
               </div>
 
@@ -392,20 +392,20 @@ export default function AdminEventsPage() {
           {activeTab === "rsvps" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-(--color-neutral-500)">
+                <p className="text-sm text-(--color-neutral-900)">
                   {rsvpsLoading ? "Loading RSVPs…" : `${confirmedCount} confirmed registrant${confirmedCount !== 1 ? "s" : ""}`}
                 </p>
                 <Btn size="sm" variant="secondary" onClick={() => loadRsvps(selected.id)}>Refresh</Btn>
               </div>
 
               {rsvpsLoading ? (
-                <div className="py-8 text-center text-(--color-neutral-400) text-sm">Loading…</div>
+                <div className="py-8 text-center text-(--color-neutral-800) text-sm">Loading…</div>
               ) : rsvps.length === 0 ? (
-                <div className="py-8 text-center text-(--color-neutral-400) text-sm">No registrations yet.</div>
+                <div className="py-8 text-center text-(--color-neutral-800) text-sm">No registrations yet.</div>
               ) : (
                 <div className="overflow-x-auto rounded-lg border border-(--color-neutral-200)">
                   <table className="w-full text-sm">
-                    <thead className="bg-(--color-neutral-50) text-(--color-neutral-500) text-xs">
+                    <thead className="bg-(--color-neutral-50) text-(--color-neutral-900) text-xs">
                       <tr>
                         <th className="text-left px-3 py-2">Name</th>
                         <th className="text-left px-3 py-2">Email</th>
@@ -419,11 +419,11 @@ export default function AdminEventsPage() {
                       {rsvps.map(r => (
                         <tr key={r.id} className="hover:bg-(--color-neutral-50)">
                           <td className="px-3 py-2 font-medium">{r.name}</td>
-                          <td className="px-3 py-2 text-(--color-neutral-500)">{r.email}</td>
-                          <td className="px-3 py-2 text-(--color-neutral-500)">{r.phone ?? "—"}</td>
+                          <td className="px-3 py-2 text-(--color-neutral-900)">{r.email}</td>
+                          <td className="px-3 py-2 text-(--color-neutral-900)">{r.phone ?? "—"}</td>
                           <td className="px-3 py-2 text-center">{(r.guestCount ?? 0) + 1}</td>
                           <td className="px-3 py-2"><Badge value={r.status} /></td>
-                          <td className="px-3 py-2 text-(--color-neutral-400) text-xs">{new Date(r.registeredAt).toLocaleDateString()}</td>
+                          <td className="px-3 py-2 text-(--color-neutral-800) text-xs">{new Date(r.registeredAt).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -436,7 +436,7 @@ export default function AdminEventsPage() {
           {/* ── Notify Tab ── */}
           {activeTab === "notify" && (
             <div className="space-y-4">
-              <p className="text-sm text-(--color-neutral-500)">
+              <p className="text-sm text-(--color-neutral-900)">
                 Send email/SMS notifications about this event to your members and subscribers.
               </p>
 
@@ -484,7 +484,7 @@ export default function AdminEventsPage() {
                 </div>
               )}
 
-              <div className="bg-(--color-neutral-50) rounded-lg p-3 text-xs text-(--color-neutral-500)">
+              <div className="bg-(--color-neutral-50) rounded-lg p-3 text-xs text-(--color-neutral-900)">
                 <p className="font-medium mb-1">What happens when you send:</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li><strong>Announcement</strong> — tells people about this event and links to registration</li>

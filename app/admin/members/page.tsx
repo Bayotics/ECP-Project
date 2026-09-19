@@ -141,7 +141,7 @@ export default function AdminMembersPage() {
             <TD><Badge value={user.role} /></TD>
             <TD><Badge value={user.status} /></TD>
             <TD>{user.lga ?? "Not given"}</TD>
-            <TD>{user.joinedAt ? new Date(user.joinedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—"}</TD>
+            <TD>{user.joinedAt ? new Date(user.joinedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "N/A"}</TD>
           </TR>
         ))}
       </AdminTable>

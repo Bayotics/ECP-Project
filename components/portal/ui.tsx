@@ -38,9 +38,9 @@ export function PageHeader({
     <header className="flex flex-col gap-5 border-b border-neutral-200 pb-7 lg:flex-row lg:items-end lg:justify-between">
       <div className="max-w-2xl">
         <QuadBar />
-        <p className="mt-4 text-[11px] font-normal uppercase tracking-[0.22em] text-neutral-500">{eyebrow}</p>
+        <p className="mt-4 text-[11px] font-normal uppercase tracking-[0.22em] text-neutral-900">{eyebrow}</p>
         <h1 className="mt-2 text-3xl font-medium tracking-[-0.03em] text-neutral-950 sm:text-4xl">{title}</h1>
-        {lede && <p className="mt-3 text-sm leading-7 text-neutral-700">{lede}</p>}
+        {lede && <p className="mt-3 text-sm leading-7 text-neutral-900">{lede}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
     </header>
@@ -76,7 +76,7 @@ export function PanelHeading({
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 className="text-lg font-normal tracking-[-0.02em] text-neutral-950">{title}</h2>
-        {note && <p className="mt-1 text-sm text-neutral-600">{note}</p>}
+        {note && <p className="mt-1 text-sm text-neutral-900">{note}</p>}
       </div>
       {action}
     </div>
@@ -99,8 +99,8 @@ export function StatTile({
       <p className="text-3xl font-normal tracking-[-0.04em]" style={{ color }}>
         {value}
       </p>
-      <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-600">{label}</p>
-      {note && <p className="mt-2 text-xs leading-5 text-neutral-500">{note}</p>}
+      <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">{label}</p>
+      {note && <p className="mt-2 text-xs leading-5 text-neutral-900">{note}</p>}
     </div>
   );
 }
@@ -129,7 +129,7 @@ export function SearchInput({
   return (
     <div className={cn("relative", className)}>
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-neutral-400" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-neutral-800" aria-hidden="true">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
@@ -171,12 +171,14 @@ export function Chip({
       style={{
         borderColor: active ? color : "#e5e5e5",
         background: active ? `${color}14` : "#ffffff",
-        color: active ? "#0a0a0a" : "#525252",
+        /* neutral-900 rather than neutral-600, matching the darkened grey
+           text elsewhere in the portals. */
+        color: active ? "#0a0a0a" : "#171717",
       }}
     >
       <span className="h-2 w-2 rounded-full" style={{ background: color }} aria-hidden="true" />
       {children}
-      {typeof count === "number" && count > 0 && <span className="text-neutral-400">{count}</span>}
+      {typeof count === "number" && count > 0 && <span className="text-neutral-800">{count}</span>}
     </button>
   );
 }
@@ -186,7 +188,7 @@ const TONE: Record<string, string> = {
   red: "bg-red-50 text-red-800 border-red-200",
   blue: "bg-blue-50 text-blue-800 border-blue-200",
   yellow: "bg-amber-50 text-amber-800 border-amber-200",
-  neutral: "bg-neutral-100 text-neutral-700 border-neutral-200",
+  neutral: "bg-neutral-100 text-neutral-900 border-neutral-200",
 };
 
 export function Pill({
@@ -284,7 +286,7 @@ export function EmptyPanel({
   return (
     <div className="rounded-[1.5rem] border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
       <p className="text-lg font-normal text-neutral-900">{title}</p>
-      {body && <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-neutral-600">{body}</p>}
+      {body && <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-neutral-900">{body}</p>}
       {action && <div className="mt-6 flex flex-wrap justify-center gap-3">{action}</div>}
     </div>
   );

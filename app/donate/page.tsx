@@ -241,7 +241,7 @@ export default function DonatePage() {
                   <span className="text-[11px] font-normal uppercase tracking-[0.24em] text-white">Support the club</span>
                 </div>
                 <h1 className="mt-7 text-5xl font-medium leading-tight tracking-tight text-white sm:text-6xl">
-                  Twenty five dollars is a <span style={{ color: EKO.yellow }}>turkey</span> on someone&apos;s table.
+                  Support the <span style={{ color: EKO.yellow }}>cause</span>.
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-white sm:text-lg">
                   Every gift funds the programs our members run with their own hands, across the United States and in

@@ -139,16 +139,16 @@ export default function AdminNewsletterPage() {
         {filtered.map(sub => (
           <TR key={sub.id} onClick={() => setSelected(sub)}>
             <TD className="font-medium text-(--color-neutral-900)">{sub.email}</TD>
-            <TD>{sub.name ?? <span className="text-(--color-neutral-400)">—</span>}</TD>
-            <TD>{sub.phone ?? <span className="text-(--color-neutral-400)">—</span>}</TD>
+            <TD>{sub.name ?? <span className="text-(--color-neutral-800)">—</span>}</TD>
+            <TD>{sub.phone ?? <span className="text-(--color-neutral-800)">—</span>}</TD>
             <TD><Badge value={sub.source} /></TD>
             <TD>
               {sub.tags.length > 0
                 ? sub.tags.map(t => <span key={t} className="inline-block text-xs bg-(--color-neutral-100) px-2 py-0.5 rounded mr-1">{t}</span>)
-                : <span className="text-(--color-neutral-400) text-xs">—</span>}
+                : <span className="text-(--color-neutral-800) text-xs">—</span>}
             </TD>
             <TD><Badge value={sub.status} /></TD>
-            <TD className="text-(--color-neutral-400) text-xs">{new Date(sub.subscribedAt).toLocaleDateString()}</TD>
+            <TD className="text-(--color-neutral-800) text-xs">{new Date(sub.subscribedAt).toLocaleDateString()}</TD>
           </TR>
         ))}
       </AdminTable>
@@ -188,14 +188,14 @@ export default function AdminNewsletterPage() {
         <AdminModal title={selected.email} open={!!selected} onClose={() => setSelected(null)}>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-(--color-neutral-400)">Email</span><p className="font-medium mt-0.5">{selected.email}</p></div>
-              <div><span className="text-(--color-neutral-400)">Name</span><p className="font-medium mt-0.5">{selected.name ?? "—"}</p></div>
-              <div><span className="text-(--color-neutral-400)">Phone</span><p className="font-medium mt-0.5">{selected.phone ?? "—"}</p></div>
-              <div><span className="text-(--color-neutral-400)">Source</span><p className="font-medium mt-0.5 capitalize">{selected.source}</p></div>
-              <div><span className="text-(--color-neutral-400)">Status</span><div className="mt-0.5"><Badge value={selected.status} /></div></div>
-              <div><span className="text-(--color-neutral-400)">Subscribed</span><p className="font-medium mt-0.5">{new Date(selected.subscribedAt).toLocaleDateString()}</p></div>
+              <div><span className="text-(--color-neutral-800)">Email</span><p className="font-medium mt-0.5">{selected.email}</p></div>
+              <div><span className="text-(--color-neutral-800)">Name</span><p className="font-medium mt-0.5">{selected.name ?? "—"}</p></div>
+              <div><span className="text-(--color-neutral-800)">Phone</span><p className="font-medium mt-0.5">{selected.phone ?? "—"}</p></div>
+              <div><span className="text-(--color-neutral-800)">Source</span><p className="font-medium mt-0.5 capitalize">{selected.source}</p></div>
+              <div><span className="text-(--color-neutral-800)">Status</span><div className="mt-0.5"><Badge value={selected.status} /></div></div>
+              <div><span className="text-(--color-neutral-800)">Subscribed</span><p className="font-medium mt-0.5">{new Date(selected.subscribedAt).toLocaleDateString()}</p></div>
               {selected.unsubscribedAt && (
-                <div className="col-span-2"><span className="text-(--color-neutral-400)">Unsubscribed</span><p className="font-medium mt-0.5">{new Date(selected.unsubscribedAt).toLocaleDateString()}</p></div>
+                <div className="col-span-2"><span className="text-(--color-neutral-800)">Unsubscribed</span><p className="font-medium mt-0.5">{new Date(selected.unsubscribedAt).toLocaleDateString()}</p></div>
               )}
             </div>
             <SectionDivider label="Actions" />

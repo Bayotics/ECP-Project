@@ -140,8 +140,8 @@ export default function AdminNewsPage() {
             <TD><Badge value={post.category} /></TD>
             <TD>{post.authorName ?? "—"}</TD>
             <TD><Badge value={post.status} /></TD>
-            <TD>{post.isFeatured ? <span className="text-(--color-green-600) text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-400) text-xs">No</span>}</TD>
-            <TD>{post.isBreaking ? <span className="text-red-600 text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-400) text-xs">No</span>}</TD>
+            <TD>{post.isFeatured ? <span className="text-(--color-green-600) text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-800) text-xs">No</span>}</TD>
+            <TD>{post.isBreaking ? <span className="text-red-600 text-xs font-bold">Yes</span> : <span className="text-(--color-neutral-800) text-xs">No</span>}</TD>
             <TD>{post.viewCount ?? 0}</TD>
             <TD>{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—"}</TD>
           </TR>
@@ -211,7 +211,7 @@ export default function AdminNewsPage() {
               {(["isFeatured", "isBreaking", "isPinned"] as const).map(key => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.checked }))} className="accent-(--color-green-600)" />
-                  <span className="font-medium text-(--color-neutral-700)">{key.replace("is", "")}</span>
+                  <span className="font-medium text-(--color-neutral-900)">{key.replace("is", "")}</span>
                 </label>
               ))}
             </div>

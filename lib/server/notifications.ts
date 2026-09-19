@@ -259,8 +259,9 @@ function adminEmail() {
   return process.env.ADMIN_EMAIL ?? process.env.SMTP_USER ?? "";
 }
 
-function fmtAmount(amount: number, currency = "₦") {
-  return `${currency}${amount.toLocaleString("en-NG")}`;
+/* The club charges in US dollars. */
+function fmtAmount(amount: number, currency = "$") {
+  return `${currency}${amount.toLocaleString("en-US")}`;
 }
 
 // ─── Donation receipt ─────────────────────────────────────────────────────────
@@ -449,7 +450,7 @@ export async function sendZellePendingNotification(params: {
       <p style="font-weight:600;margin-bottom:4px">Send your Zelle payment to:</p>
       <p><strong>Email/Phone:</strong> ${process.env.ZELLE_RECIPIENT ?? process.env.ADMIN_EMAIL ?? "payments@ecp.org"}</p>
       <p><strong>Name:</strong> Eko Club Philadelphia</p>
-      <p><strong>Amount:</strong> $${(params.amount / (Number(process.env.USD_TO_NGN_RATE) || 1600)).toFixed(2)} USD</p>
+      <p><strong>Amount:</strong> ${fmtAmount(params.amount)} USD</p>
       <p style="font-size:13px;color:#6b7280">Please include your reference number <strong>${params.reference}</strong> in the Zelle memo.</p>
     </div>
   `);

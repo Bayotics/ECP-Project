@@ -129,10 +129,10 @@ export default function AdminDocumentsPage() {
             <TD className="font-medium text-(--color-neutral-900)">{doc.label}</TD>
             <TD><Badge value={doc.category} /></TD>
             <TD><Badge value={doc.access} /></TD>
-            <TD className="uppercase text-xs font-bold text-(--color-neutral-500)">{doc.fileType}</TD>
-            <TD className="text-(--color-neutral-500)">{doc.simulatedSize}</TD>
+            <TD className="uppercase text-xs font-bold text-(--color-neutral-900)">{doc.fileType}</TD>
+            <TD className="text-(--color-neutral-900)">{doc.simulatedSize}</TD>
             <TD>{new Date(doc.uploadedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</TD>
-            <TD className="text-(--color-neutral-500) text-xs">{doc.uploadedBy}</TD>
+            <TD className="text-(--color-neutral-900) text-xs">{doc.uploadedBy}</TD>
           </TR>
         ))}
       </AdminTable>

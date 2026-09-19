@@ -41,10 +41,10 @@ export default function StatCard({
         c.bg
       )}
     >
-      <p className="text-xs font-semibold uppercase tracking-widest text-(--color-neutral-400)">
+      <p className="text-xs font-semibold uppercase tracking-widest text-(--color-neutral-800)">
         {label}
       </p>
-      <p className="mt-2 text-3xl font-extrabold text-gray-500">
+      <p className="mt-2 text-3xl font-extrabold text-gray-900">
         {value}
       </p>
       {delta && (

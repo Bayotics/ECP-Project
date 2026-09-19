@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+/* Payment methods for dues, donations and store orders.
+ *
+ * Everything is in US dollars. Paystack used to sit at the top of this list
+ * but it settles in naira and is charged in kobo, so it cannot take a dollar
+ * payment; it was removed. "paystack" survives in PaymentMethodKey only so
+ * records written before the change still read back. */
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { useState } from "react";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { cn } from "@/utils/cn";
+import { EKO } from "@/lib/content/programs";
 
 export type PaymentMethodKey = "paystack" | "paypal" | "zelle" | "bank-transfer";
 
@@ -15,7 +22,7 @@ export interface PaymentResult {
 }
 
 interface PaymentWidgetProps {
-  amountNGN: number;
+  amountUSD: number;
   email: string;
   name: string;
   phone?: string;
@@ -28,102 +35,37 @@ interface PaymentWidgetProps {
   onError?: (error: string) => void;
 }
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString("en-NG")}`;
+export function formatUSD(n: number) {
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: n % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
-const USD_RATE = 1600;
+type Selectable = Exclude<PaymentMethodKey, "paystack">;
 
-const METHODS: { key: PaymentMethodKey; label: string; icon: string; desc: string }[] = [
-  { key: "paystack", label: "Paystack", icon: "💳", desc: "Card, Bank Transfer, USSD — Nigerian payments" },
-  { key: "paypal",   label: "PayPal",   icon: "🅿️", desc: "International payments in USD" },
-  { key: "zelle",    label: "Zelle",    icon: "🏦", desc: "US bank transfer (manual confirmation)" },
-  { key: "bank-transfer", label: "Bank Transfer", icon: "🏛️", desc: "Direct transfer to ECP account" },
+const METHODS: { key: Selectable; label: string; desc: string }[] = [
+  { key: "paypal", label: "PayPal", desc: "Card or PayPal balance, in US dollars" },
+  { key: "zelle", label: "Zelle", desc: "US bank transfer, confirmed by the treasurer" },
+  { key: "bank-transfer", label: "Bank transfer", desc: "Direct transfer to the club account" },
 ];
 
-// ─── Paystack Inline ──────────────────────────────────────────────────────────
-
-function usePaystackScript() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ((window as unknown as Record<string, unknown>).PaystackPop) { setReady(true); return; }
-    const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
-    script.onload = () => setReady(true);
-    document.head.appendChild(script);
-  }, []);
-  return ready;
-}
-
-// ─── Main Widget ──────────────────────────────────────────────────────────────
-
+/* `email`, `name` and `phone` stay on the props because callers already
+   pass them and a future method will want them; only Paystack read them,
+   so nothing destructures them today. */
 export default function PaymentWidget({
-  amountNGN, email, name, phone, description, context, recordId,
-  enableAutoRenew, defaultAutoRenew, onSuccess, onError,
+  amountUSD,
+  description,
+  context,
+  recordId,
+  enableAutoRenew,
+  defaultAutoRenew,
+  onSuccess,
+  onError,
 }: PaymentWidgetProps) {
-  const [method, setMethod] = useState<PaymentMethodKey>("paystack");
+  const [method, setMethod] = useState<Selectable>("paypal");
   const [autoRenew, setAutoRenew] = useState(defaultAutoRenew ?? false);
   const [busy, setBusy] = useState(false);
   const [zelleRef, setZelleRef] = useState("");
   const [zelleSubmitted, setZelleSubmitted] = useState(false);
-  const paystackReady = usePaystackScript();
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? "";
-
-  // ── Paystack ────────────────────────────────────────────────────────────────
-
-  async function handlePaystack() {
-    setBusy(true);
-    try {
-      const initRes = await fetch("/api/payments/paystack/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, amountNGN, context, metadata: { recordId } }),
-      });
-      const init = await initRes.json() as { ok: boolean; data?: { access_code: string; reference: string }; error?: string };
-      if (!init.ok || !init.data) throw new Error(init.error ?? "Failed to initialize Paystack");
-
-      const { access_code, reference } = init.data;
-
-      // Open Paystack popup
-      const PaystackPop = (window as unknown as Record<string, unknown>).PaystackPop as {
-        setup: (opts: Record<string, unknown>) => { openIframe: () => void };
-      };
-
-      const handler = PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email,
-        amount: Math.round(amountNGN * 100),
-        ref: reference,
-        access_code,
-        metadata: { name, phone, recordId, context },
-        onSuccess: async (trx: { reference: string }) => {
-          setBusy(true);
-          const verRes = await fetch("/api/payments/paystack/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ reference: trx.reference, context, recordId }),
-          });
-          const ver = await verRes.json() as { ok: boolean; error?: string };
-          setBusy(false);
-          if (ver.ok) {
-            onSuccess({ method: "paystack", reference: trx.reference }, autoRenew);
-          } else {
-            onError?.(ver.error ?? "Verification failed");
-          }
-        },
-        onClose: () => { setBusy(false); },
-      });
-
-      handler.openIframe();
-    } catch (err) {
-      setBusy(false);
-      onError?.(err instanceof Error ? err.message : "Paystack error");
-    }
-  }
-
-  // ── Zelle ────────────────────────────────────────────────────────────────────
 
   async function handleZelleSubmit() {
     setBusy(true);
@@ -133,7 +75,7 @@ export default function PaymentWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentMethod: "zelle" }),
       });
-      const json = await res.json() as { ok: boolean; data?: { zelleRef?: string; id?: string }; error?: string };
+      const json = (await res.json()) as { ok: boolean; data?: { zelleRef?: string; id?: string }; error?: string };
       if (!json.ok) throw new Error(json.error ?? "Failed");
       const ref = json.data?.zelleRef ?? `ECP-ZELLE-${Date.now()}`;
       setZelleRef(ref);
@@ -148,59 +90,52 @@ export default function PaymentWidget({
 
   return (
     <div className="space-y-4">
-      {/* Method selector */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Select Payment Method</p>
-        <div className="grid grid-cols-2 gap-2">
-          {METHODS.map(m => (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => setMethod(m.key)}
-              className={`flex items-start gap-2 p-3 rounded-xl border text-left transition-all ${
-                method === m.key
-                  ? "border-green-500 bg-green-50 shadow-sm"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <span className="text-xl shrink-0">{m.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{m.label}</p>
-                <p className="text-xs text-gray-400 leading-tight">{m.desc}</p>
-              </div>
-            </button>
-          ))}
+        <p className="mb-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">Choose how to pay</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {METHODS.map((m) => {
+            const on = method === m.key;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => setMethod(m.key)}
+                aria-pressed={on}
+                className={cn(
+                  "rounded-2xl border p-3 text-left transition-colors",
+                  on ? "border-green-600 bg-green-50" : "border-neutral-200 hover:border-neutral-400",
+                )}
+              >
+                <span className="block text-sm font-normal text-neutral-950">{m.label}</span>
+                <span className="mt-0.5 block text-xs leading-5 text-neutral-900">{m.desc}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Auto-renew option */}
       {enableAutoRenew && (
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-green-300 transition-colors">
-          <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} className="mt-0.5 accent-green-600" />
-          <div>
-            <p className="text-sm font-semibold text-gray-700">Enable Auto-Renewal</p>
-            <p className="text-xs text-gray-400">Your payment will be automatically renewed. You can cancel at any time from your portal.</p>
-          </div>
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 p-3 transition-colors hover:border-neutral-400">
+          <input
+            type="checkbox"
+            checked={autoRenew}
+            onChange={(e) => setAutoRenew(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-neutral-300 accent-[#059669]"
+          />
+          <span>
+            <span className="block text-sm font-normal text-neutral-950">Renew automatically</span>
+            <span className="mt-0.5 block text-xs leading-5 text-neutral-900">
+              You can cancel at any time from your portal.
+            </span>
+          </span>
         </label>
-      )}
-
-      {/* ── Paystack ── */}
-      {method === "paystack" && (
-        <button
-          type="button"
-          onClick={handlePaystack}
-          disabled={busy || !paystackReady}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-colors"
-        >
-          {busy ? "Processing…" : `Pay ${formatNaira(amountNGN)} with Paystack`}
-        </button>
       )}
 
       {/* ── PayPal ── */}
       {method === "paypal" && paypalClientId && (
         <div>
-          <p className="text-xs text-gray-500 mb-2">
-            Paying <strong>${(amountNGN / USD_RATE).toFixed(2)} USD</strong> (≈ {formatNaira(amountNGN)})
+          <p className="mb-2 text-xs text-neutral-900">
+            Paying <strong className="font-normal text-neutral-950">{formatUSD(amountUSD)}</strong>
           </p>
           <PayPalScriptProvider options={{ clientId: paypalClientId, currency: "USD" }}>
             <PayPalButtons
@@ -209,9 +144,9 @@ export default function PaymentWidget({
                 const res = await fetch("/api/payments/paypal/create-order", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amountNGN, description, invoiceId: recordId }),
+                  body: JSON.stringify({ amountUSD, description, invoiceId: recordId }),
                 });
-                const json = await res.json() as { ok: boolean; data?: { orderId: string }; error?: string };
+                const json = (await res.json()) as { ok: boolean; data?: { orderId: string }; error?: string };
                 if (!json.ok) throw new Error(json.error ?? "Failed to create PayPal order");
                 return json.data!.orderId;
               }}
@@ -222,7 +157,7 @@ export default function PaymentWidget({
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ paypalOrderId: data.orderID, context, recordId }),
                 });
-                const json = await res.json() as { ok: boolean; data?: { captureId: string }; error?: string };
+                const json = (await res.json()) as { ok: boolean; data?: { captureId: string }; error?: string };
                 setBusy(false);
                 if (json.ok) {
                   onSuccess({ method: "paypal", reference: data.orderID, captureId: json.data?.captureId }, autoRenew);
@@ -230,37 +165,37 @@ export default function PaymentWidget({
                   onError?.(json.error ?? "PayPal capture failed");
                 }
               }}
-              onError={() => { onError?.("PayPal payment failed. Please try again."); }}
+              onError={() => {
+                onError?.("PayPal payment failed. Please try again.");
+              }}
             />
           </PayPalScriptProvider>
         </div>
       )}
 
       {method === "paypal" && !paypalClientId && (
-        <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
-          PayPal is not configured on this site. Please use Paystack or contact admin.
-        </div>
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          PayPal is not configured on this site yet. Use Zelle or a bank transfer, or contact the treasurer.
+        </p>
       )}
 
       {/* ── Zelle ── */}
       {method === "zelle" && (
         <div className="space-y-4">
-          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-2">
-            <p className="text-sm font-bold text-blue-800">Send via Zelle</p>
-            <p className="text-sm text-blue-700">
-              <span className="font-semibold">Zelle recipient:</span>{" "}
-              {process.env.NEXT_PUBLIC_ZELLE_EMAIL ?? "payments@ecp.org"}
+          <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm font-normal text-blue-900">Send with Zelle</p>
+            <p className="text-sm text-blue-900">
+              <span className="text-blue-950">Recipient:</span> {process.env.NEXT_PUBLIC_ZELLE_EMAIL ?? "the club treasurer"}
             </p>
-            <p className="text-sm text-blue-700">
-              <span className="font-semibold">Name:</span> Eko Club Philadelphia
+            <p className="text-sm text-blue-900">
+              <span className="text-blue-950">Name:</span> Eko Club Philadelphia
             </p>
-            <p className="text-sm text-blue-700">
-              <span className="font-semibold">Amount:</span>{" "}
-              ${(amountNGN / USD_RATE).toFixed(2)} USD (≈ {formatNaira(amountNGN)})
+            <p className="text-sm text-blue-900">
+              <span className="text-blue-950">Amount:</span> {formatUSD(amountUSD)}
             </p>
-            <p className="text-xs text-blue-600 bg-blue-100 rounded-lg px-3 py-2 mt-2">
-              📝 Include your name and email in the Zelle memo so we can identify your payment.
-              Your payment will be confirmed within 1–2 business days.
+            <p className="mt-2 rounded-xl bg-blue-100 px-3 py-2 text-xs leading-6 text-blue-900">
+              Put your name and email in the Zelle memo so we can match the payment. The treasurer confirms within one
+              or two business days.
             </p>
           </div>
           {!zelleSubmitted ? (
@@ -268,34 +203,46 @@ export default function PaymentWidget({
               type="button"
               onClick={handleZelleSubmit}
               disabled={busy}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-colors"
+              className="w-full rounded-full py-3 text-sm font-normal text-white transition-opacity disabled:opacity-60"
+              style={{ background: EKO.blue }}
             >
-              {busy ? "Submitting…" : "I've sent the Zelle payment →"}
+              {busy ? "Submitting…" : "I have sent the Zelle payment"}
             </button>
           ) : (
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
-              ✅ Zelle submission recorded. Reference: <strong>{zelleRef}</strong>. We'll confirm within 1–2 business days.
-            </div>
+            <p className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-900">
+              Recorded. Your reference is <strong className="font-normal">{zelleRef}</strong>. We will confirm within one
+              or two business days.
+            </p>
           )}
         </div>
       )}
 
-      {/* ── Bank Transfer ── */}
+      {/* ── Bank transfer ── */}
       {method === "bank-transfer" && (
-        <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm">
-          <p className="font-bold text-gray-800">Bank Transfer Details</p>
-          <p className="text-gray-700"><span className="font-semibold">Bank:</span> {process.env.NEXT_PUBLIC_BANK_NAME ?? "First Bank"}</p>
-          <p className="text-gray-700"><span className="font-semibold">Account:</span> {process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789"}</p>
-          <p className="text-gray-700"><span className="font-semibold">Name:</span> Eko Club Philadelphia</p>
-          <p className="text-gray-700"><span className="font-semibold">Amount:</span> {formatNaira(amountNGN)}</p>
-          <p className="text-xs text-gray-500 mt-2 bg-gray-100 rounded-lg px-3 py-2">
-            Use your name as narration. Forward your transfer receipt to{" "}
-            {process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "admin@ecp.org"} for confirmation.
+        <div className="space-y-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+          <p className="font-normal text-neutral-950">Bank transfer details</p>
+          <p className="text-neutral-900">
+            <span className="text-neutral-950">Bank:</span> {process.env.NEXT_PUBLIC_BANK_NAME ?? "Contact the treasurer"}
+          </p>
+          <p className="text-neutral-900">
+            <span className="text-neutral-950">Account:</span> {process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "Contact the treasurer"}
+          </p>
+          <p className="text-neutral-900">
+            <span className="text-neutral-950">Name:</span> Eko Club Philadelphia
+          </p>
+          <p className="text-neutral-900">
+            <span className="text-neutral-950">Amount:</span> {formatUSD(amountUSD)}
+          </p>
+          <p className="mt-2 rounded-xl bg-neutral-100 px-3 py-2 text-xs leading-6 text-neutral-900">
+            Use your name as the narration, and forward the receipt to{" "}
+            {process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "the club"} so it can be matched.
           </p>
         </div>
       )}
 
-      <p className="text-xs text-gray-400 text-center">🔒 Secure payment. Eko Club Philadelphia is a registered non-profit organisation.</p>
+      <p className="text-center text-xs text-neutral-900">
+        Payments are handled by PayPal or your own bank. The club never sees your card details.
+      </p>
     </div>
   );
 }

@@ -44,10 +44,9 @@ const SORT_OPTIONS = [
 
 type Sort = (typeof SORT_OPTIONS)[number]["value"];
 
-/* Prices are stored in naira by the ordering and payment side of the site,
-   so that is what the storefront shows. */
-const priceFormat = new Intl.NumberFormat("en-NG");
-const formatPrice = (n: number) => `₦${priceFormat.format(n)}`;
+/* Prices are stored and charged in US dollars. */
+const priceFormat = new Intl.NumberFormat("en-US");
+const formatPrice = (n: number) => `$${priceFormat.format(n)}`;
 
 function QuadBar({ className }: { className?: string }) {
   return (

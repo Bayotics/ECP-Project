@@ -267,7 +267,7 @@ export default function AdminCommitteesPage() {
               <TD><Badge value={c.type} /></TD>
               <TD><Badge value={c.status} /></TD>
               <TD>{c.members.length}</TD>
-              <TD>{chair?.name ?? <span className="text-(--color-neutral-400) text-xs">Unassigned</span>}</TD>
+              <TD>{chair?.name ?? <span className="text-(--color-neutral-800) text-xs">Unassigned</span>}</TD>
               <TD>{new Date(c.establishedAt).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}</TD>
             </TR>
           );
@@ -294,7 +294,7 @@ export default function AdminCommitteesPage() {
               <button
                 key={t}
                 onClick={() => handleTabChange(t)}
-                className={`px-4 py-2 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${tab === t ? "border-(--color-green-600) text-(--color-green-700)" : "border-transparent text-(--color-neutral-500) hover:text-gray-500"}`}
+                className={`px-4 py-2 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${tab === t ? "border-(--color-green-600) text-(--color-green-700)" : "border-transparent text-(--color-neutral-900) hover:text-gray-900"}`}
               >
                 {t === "requests" ? "Join Requests" : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -318,14 +318,14 @@ export default function AdminCommitteesPage() {
             <div className="space-y-4">
               {/* Member list */}
               {selected.members.length === 0 ? (
-                <p className="text-sm text-(--color-neutral-400) text-center py-4">No members yet.</p>
+                <p className="text-sm text-(--color-neutral-800) text-center py-4">No members yet.</p>
               ) : (
                 <div className="space-y-2 max-h-52 overflow-y-auto">
                   {selected.members.map(m => (
                     <div key={m.name} className="flex items-center justify-between gap-3 rounded-lg border border-(--color-neutral-200) px-3 py-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-500 truncate">{m.name}</p>
-                        <p className="text-xs text-(--color-neutral-400)">{m.role}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{m.name}</p>
+                        <p className="text-xs text-(--color-neutral-800)">{m.role}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {m.isChairperson && <Badge value="chairperson" className="text-[10px]" />}
@@ -369,24 +369,24 @@ export default function AdminCommitteesPage() {
           {tab === "requests" && (
             <div className="space-y-3">
               {loadingRequests ? (
-                <p className="text-sm text-(--color-neutral-400) text-center py-4">Loading…</p>
+                <p className="text-sm text-(--color-neutral-800) text-center py-4">Loading…</p>
               ) : joinRequests.length === 0 ? (
-                <p className="text-sm text-(--color-neutral-400) text-center py-4">No join requests.</p>
+                <p className="text-sm text-(--color-neutral-800) text-center py-4">No join requests.</p>
               ) : (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
                   {joinRequests.map(req => (
                     <div key={req.id} className="rounded-lg border border-(--color-neutral-200) p-3 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="text-sm font-medium text-gray-500">{req.userName}</p>
-                          <p className="text-xs text-(--color-neutral-400)">{req.userEmail}</p>
+                          <p className="text-sm font-medium text-gray-900">{req.userName}</p>
+                          <p className="text-xs text-(--color-neutral-800)">{req.userEmail}</p>
                         </div>
                         <Badge value={req.status} />
                       </div>
                       {req.message && (
-                        <p className="text-xs text-(--color-neutral-600) bg-(--color-neutral-50) rounded p-2">{req.message}</p>
+                        <p className="text-xs text-(--color-neutral-900) bg-(--color-neutral-50) rounded p-2">{req.message}</p>
                       )}
-                      <p className="text-xs text-(--color-neutral-400)">{new Date(req.requestedAt).toLocaleDateString("en-NG")}</p>
+                      <p className="text-xs text-(--color-neutral-800)">{new Date(req.requestedAt).toLocaleDateString("en-NG")}</p>
                       {req.status === "pending" && (
                         <div className="flex gap-2 pt-1">
                           <Btn size="sm" variant="success" onClick={() => void handleReviewRequest(req.id, "approved")}>Approve</Btn>

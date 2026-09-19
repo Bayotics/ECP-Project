@@ -19,13 +19,13 @@ function locationOf(app: MembershipApplication) {
   return parts.length ? parts.join(", ") : app.lga ?? "—";
 }
 
-const money = (n: number) => `₦${n.toLocaleString("en-NG")}`;
+const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 function MiniPanel({ title, href, hrefLabel, children }: { title: string; href: string; hrefLabel: string; children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white">
       <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-        <h2 className="text-sm font-normal uppercase tracking-[0.16em] text-neutral-600">{title}</h2>
+        <h2 className="text-sm font-normal uppercase tracking-[0.16em] text-neutral-900">{title}</h2>
         <Link href={href} className="text-xs font-normal text-green-700 hover:underline">
           {hrefLabel}
         </Link>
@@ -35,8 +35,8 @@ function MiniPanel({ title, href, hrefLabel, children }: { title: string; href: 
   );
 }
 
-const th = "px-5 py-3 text-left text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-500";
-const td = "px-5 py-3 font-normal text-neutral-700";
+const th = "px-5 py-3 text-left text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900";
+const td = "px-5 py-3 font-normal text-neutral-900";
 
 export default function AdminDashboardPage() {
   const { users } = useUsers();
@@ -114,7 +114,7 @@ export default function AdminDashboardPage() {
               ))}
               {recentApplications.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-5 py-10 text-center text-sm text-neutral-500">
+                  <td colSpan={3} className="px-5 py-10 text-center text-sm text-neutral-900">
                     No applications have come in yet.
                   </td>
                 </tr>
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
               ))}
               {recentOrders.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-neutral-500">
+                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-neutral-900">
                     No orders yet.
                   </td>
                 </tr>
@@ -167,7 +167,7 @@ export default function AdminDashboardPage() {
             <span className="mt-1 block text-sm font-normal text-neutral-900 transition-colors group-hover:text-green-700">
               {item.label}
             </span>
-            <span className="mt-1 block text-xs leading-5 text-neutral-500">{item.note}</span>
+            <span className="mt-1 block text-xs leading-5 text-neutral-900">{item.note}</span>
           </Link>
         ))}
       </div>
