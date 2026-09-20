@@ -33,6 +33,14 @@ export interface Event {
   maxAttendees?: number;
   registrationRequired: boolean;
   registrationDeadline?: string;
+  /** Where registration happens, when it is handled off site. */
+  registrationUrl?: string;
+  /** Alt text for `imageUrl`, so the picture is not invisible to a screen reader. */
+  imageAlt?: string;
+  /** The programme this event is an occurrence of, where there is one. */
+  programId?: string;
+  /** True when the club gave the month but not the day. */
+  dayIsProvisional?: boolean;
   // Organizer
   organizerId: string; // user id
   organizerName: string;

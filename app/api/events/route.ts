@@ -8,6 +8,22 @@ function badRequest(message: string) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
 }
 
+/* A registration link is only useful if a browser can open it, and a bare
+   "example.com" silently resolves against our own domain. */
+export function validateHttpUrl(value: string | undefined, field: string): string | null {
+  if (!value?.trim()) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(value.trim());
+  } catch {
+    return `${field} must be a full URL, including https://`;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return `${field} must start with http:// or https://`;
+  }
+  return null;
+}
+
 function validateCreateEvent(input: Partial<CreateEventInput>): string | null {
   if (!input.title?.trim()) return "Event title is required";
   if (!input.slug?.trim()) return "Event slug is required";
@@ -24,6 +40,12 @@ function validateCreateEvent(input: Partial<CreateEventInput>): string | null {
   if (typeof input.isPublic !== "boolean") return "isPublic must be a boolean";
   if (typeof input.isOnline !== "boolean") return "isOnline must be a boolean";
   if (typeof input.membersOnly !== "boolean") return "membersOnly must be a boolean";
+
+  const urlError =
+    validateHttpUrl(input.registrationUrl, "Registration link") ??
+    validateHttpUrl(input.meetingUrl, "Meeting link");
+  if (urlError) return urlError;
+
   return null;
 }
 
@@ -95,8 +117,12 @@ export async function POST(request: NextRequest) {
       status: payload.status!,
       imageUrl: payload.imageUrl,
       maxAttendees: payload.maxAttendees,
+      imageAlt: payload.imageAlt?.trim(),
       registrationRequired: payload.registrationRequired!,
       registrationDeadline: payload.registrationDeadline,
+      registrationUrl: payload.registrationUrl?.trim(),
+      programId: payload.programId,
+      dayIsProvisional: payload.dayIsProvisional,
       organizerId: payload.organizerId!.trim(),
       organizerName: payload.organizerName!.trim(),
       tags: payload.tags!,

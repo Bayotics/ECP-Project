@@ -230,6 +230,9 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   const isMember = currentUser && (currentUser.role === "member" || currentUser.role === "admin" || currentUser.role === "super-admin");
   const membersOnlyBlocked = event.membersOnly && !isMember;
   const showRSVP = event.registrationRequired && event.status === "published";
+  /* When the club runs sign-ups somewhere else, that link is the real
+     registration and the on-site RSVP form would compete with it. */
+  const externalRegistration = showRSVP ? event.registrationUrl?.trim() : undefined;
   const pageUrl = typeof window !== "undefined" ? window.location.href : `https://ekoclubphiladelphia.org/events/${event.slug}`;
 
   const statCards = [
@@ -342,10 +345,11 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                 </a>
                 {showRSVP && (
                   <a
-                    href="#rsvp-panel"
+                    href={externalRegistration ?? "#rsvp-panel"}
+                    {...(externalRegistration ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/12"
                   >
-                    RSVP now
+                    {externalRegistration ? "Register" : "RSVP now"}
                   </a>
                 )}
               </motion.div>
@@ -530,6 +534,20 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                     </Link>
                     <p className="text-xs text-purple-500">Not a member? <Link href="/membership/apply" className="underline hover:no-underline">Apply for membership</Link></p>
                   </div>
+                ) : externalRegistration ? (
+                  <>
+                    <p className="mt-2 text-sm leading-7 text-neutral-600">
+                      Registration for this event is handled on the organiser&apos;s own page.
+                    </p>
+                    <a
+                      href={externalRegistration}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-normal text-white transition-opacity hover:opacity-90"
+                    >
+                      Register for this event ↗
+                    </a>
+                  </>
                 ) : (
                   <>
                     <p className="mt-2 text-sm leading-7 text-neutral-600">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { UpdateEventInput } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
+import { validateHttpUrl } from "@/app/api/events/route";
 
 export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -25,6 +26,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     await ensureCoreIndexes();
     const { id } = await context.params;
     const payload = (await request.json()) as UpdateEventInput;
+
+    const urlError =
+      validateHttpUrl(payload.registrationUrl, "Registration link") ??
+      validateHttpUrl(payload.meetingUrl, "Meeting link");
+    if (urlError) return NextResponse.json({ ok: false, error: urlError }, { status: 400 });
 
     const collection = await getCollection("events");
     const patch: UpdateEventInput = {

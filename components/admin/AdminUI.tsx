@@ -119,24 +119,33 @@ export function AdminModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-neutral-950/60 p-4 backdrop-blur-sm [animation:viewer-in_220ms_ease-out]"
+      /* data-lenis-prevent: Lenis listens for wheel events on the window and
+         preventDefaults them, so without this opt-out a long form here never
+         scrolls and only moves if you drag the scrollbar. */
+      data-lenis-prevent
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-neutral-950/60 p-4 backdrop-blur-sm [animation:viewer-in_220ms_ease-out] sm:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         ref={ref}
-        className={cn("relative my-8 w-full overflow-hidden rounded-[1.5rem] bg-white shadow-2xl", widths[size])}
+        /* Capped height with the body scrolling inside it, so the title and
+           the close button stay put however long the form is. */
+        className={cn(
+          "relative my-8 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[1.5rem] bg-white shadow-2xl",
+          widths[size],
+        )}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="flex h-1 w-full" aria-hidden="true">
+        <div className="flex h-1 w-full shrink-0" aria-hidden="true">
           {QUAD.map((c) => (
             <div key={c} className="flex-1" style={{ background: c }} />
           ))}
         </div>
-        <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 px-6 py-4">
           <h2 className="text-lg font-normal tracking-[-0.02em] text-neutral-950">{title}</h2>
           <button
             onClick={onClose}
@@ -148,7 +157,9 @@ export function AdminModal({
             </svg>
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+          {children}
+        </div>
       </div>
     </div>,
     document.body,

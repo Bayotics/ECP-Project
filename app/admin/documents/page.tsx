@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminAction } from "@/hooks/useAdminAction";
 import { useState, useMemo } from "react";
 import { useDocuments } from "@/context/DocumentsContext";
 import { useAuth } from "@/context/AuthContext";
@@ -47,6 +48,7 @@ export default function AdminDocumentsPage() {
   });
   const [editFile, setEditFile] = useState<Pick<OrgDocument, "url" | "publicId" | "sizeBytes" | "name"> | null>(null);
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   const filtered = useMemo(() => {
     let list = documents;
@@ -77,48 +79,58 @@ export default function AdminDocumentsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, {
-        label: form.label,
-        name: form.name,
-        category: form.category as OrgDocument["category"],
-        access: form.access as OrgDocument["access"],
-        fileType: form.fileType as OrgDocument["fileType"],
-        url: editFile?.url,
-        publicId: editFile?.publicId,
-        sizeBytes: editFile?.sizeBytes,
-        simulatedSize: formatFileSize(editFile?.sizeBytes) ?? "N/A",
-        description: form.description || undefined,
-      });
-      closeModal();
-    } finally {
-      setSaving(false);
-    }
+    /* The modal stays open when this fails, so the edits are not lost. */
+    const result = await run(
+      () =>
+        update(selected.id, {
+          label: form.label,
+          name: form.name,
+          category: form.category as OrgDocument["category"],
+          access: form.access as OrgDocument["access"],
+          fileType: form.fileType as OrgDocument["fileType"],
+          url: editFile?.url,
+          publicId: editFile?.publicId,
+          sizeBytes: editFile?.sizeBytes,
+          simulatedSize: formatFileSize(editFile?.sizeBytes) ?? "N/A",
+          description: form.description || undefined,
+        }),
+      { success: "Document saved.", errorTitle: "Could not save the document" },
+    );
+    setSaving(false);
+    if (result.ok) closeModal();
   }
 
   async function handleDelete() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.label}"? This cannot be undone.`)) return;
-    await remove(selected.id);
-    closeModal();
+    const result = await run(() => remove(selected.id), {
+      success: "Document deleted.",
+      errorTitle: "Could not delete the document",
+    });
+    if (result.ok) closeModal();
   }
 
   async function handleCreate() {
     if (!createForm.label.trim() || !createFile) return;
     const ext = (createFile.originalName.split(".").pop() ?? "").toLowerCase();
-    await add({
-      label: createForm.label.trim(),
-      name: createFile.originalName,
-      category: createForm.category as OrgDocument["category"],
-      access: createForm.access as OrgDocument["access"],
-      fileType: EXT_TO_TYPE[ext] ?? "other",
-      url: createFile.url,
-      publicId: createFile.publicId,
-      sizeBytes: createFile.bytes,
-      simulatedSize: formatFileSize(createFile.bytes) ?? "N/A",
-      description: createForm.description || undefined,
-      uploadedBy: currentUser?.id ?? "admin",
-    });
+    const result = await run(
+      () =>
+        add({
+          label: createForm.label.trim(),
+          name: createFile.originalName,
+          category: createForm.category as OrgDocument["category"],
+          access: createForm.access as OrgDocument["access"],
+          fileType: EXT_TO_TYPE[ext] ?? "other",
+          url: createFile.url,
+          publicId: createFile.publicId,
+          sizeBytes: createFile.bytes,
+          simulatedSize: formatFileSize(createFile.bytes) ?? "N/A",
+          description: createForm.description || undefined,
+          uploadedBy: currentUser?.id ?? "admin",
+        }),
+      { success: "Document added.", errorTitle: "Could not add the document" },
+    );
+    if (!result.ok) return;
     setCreating(false);
     setCreateFile(null);
     setCreateForm({ label: "", category: "policy", access: "members-only", description: "" });

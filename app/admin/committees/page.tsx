@@ -1,5 +1,6 @@
 "use client";
 
+import { errorMessage } from "@/hooks/useAdminAction";
 import { useState, useMemo, useCallback } from "react";
 import { useCommittees } from "@/context/CommitteesContext";
 import { useAuth } from "@/context/AuthContext";
@@ -61,6 +62,7 @@ export default function AdminCommitteesPage() {
   // join requests state
   const [joinRequests, setJoinRequests] = useState<CommitteeJoinRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestsError, setRequestsError] = useState("");
 
   const filtered = useMemo(() => {
     let list = committees;
@@ -97,9 +99,16 @@ export default function AdminCommitteesPage() {
 
   async function loadJoinRequests(committeeId: string) {
     setLoadingRequests(true);
+    setRequestsError("");
     try {
       const data = await getJoinRequests(committeeId);
       setJoinRequests(data);
+    } catch (caught) {
+      /* Without this the failure was an unhandled rejection and the tab just
+         said "No join requests", which is the opposite of the truth when
+         somebody is waiting to be let in. */
+      setJoinRequests([]);
+      setRequestsError(errorMessage(caught));
     } finally {
       setLoadingRequests(false);
     }
@@ -132,8 +141,10 @@ export default function AdminCommitteesPage() {
       });
       setCreateOpen(false);
       success("Committee created successfully.", "Created");
-    } catch {
-      error("Failed to create committee.", "Error");
+    } catch (caught) {
+      /* The server says why, e.g. a duplicate slug. Repeating its message
+         beats a generic failure the administrator cannot act on. */
+      error(errorMessage(caught), "Could not create the committee");
     } finally {
       setSaving(false);
     }
@@ -155,8 +166,8 @@ export default function AdminCommitteesPage() {
       });
       setSelected(null);
       success("Committee updated.", "Saved");
-    } catch {
-      error("Failed to update committee.", "Error");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not update the committee");
     } finally {
       setSaving(false);
     }
@@ -168,8 +179,8 @@ export default function AdminCommitteesPage() {
       await remove(id);
       if (selected?.id === id) setSelected(null);
       success("Committee deleted.", "Deleted");
-    } catch {
-      error("Failed to delete committee.", "Error");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not delete the committee");
     }
   }
 
@@ -190,8 +201,8 @@ export default function AdminCommitteesPage() {
       if (updated) setSelected(updated);
       setMemberForm({ ...BLANK_MEMBER });
       success("Member added.", "Added");
-    } catch {
-      error("Failed to add member.", "Error");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not add the member");
     } finally {
       setSaving(false);
     }
@@ -204,8 +215,8 @@ export default function AdminCommitteesPage() {
       const updated = await removeMember(selected.id, name);
       if (updated) setSelected(updated);
       success("Member removed.", "Removed");
-    } catch {
-      error("Failed to remove member.", "Error");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not remove the member");
     }
   }
 
@@ -215,8 +226,8 @@ export default function AdminCommitteesPage() {
       await reviewJoinRequest(requestId, status, reviewedBy);
       setJoinRequests(prev => prev.map(r => r.id === requestId ? { ...r, status, reviewedAt: new Date().toISOString(), reviewedBy } : r));
       success(`Request ${status}.`, status === "approved" ? "Approved" : "Rejected");
-    } catch {
-      error("Failed to update request.", "Error");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not update the request");
     }
   }, [currentUser, reviewJoinRequest, success, error]);
 
@@ -370,6 +381,17 @@ export default function AdminCommitteesPage() {
             <div className="space-y-3">
               {loadingRequests ? (
                 <p className="text-sm text-(--color-neutral-800) text-center py-4">Loading…</p>
+              ) : requestsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">
+                  <p>The join requests could not be loaded. {requestsError}</p>
+                  <button
+                    type="button"
+                    onClick={() => selected && void loadJoinRequests(selected.id)}
+                    className="mt-2 rounded-full border border-red-300 px-4 py-1.5 text-sm font-normal text-red-800 transition-colors hover:bg-red-100"
+                  >
+                    Try again
+                  </button>
+                </div>
               ) : joinRequests.length === 0 ? (
                 <p className="text-sm text-(--color-neutral-800) text-center py-4">No join requests.</p>
               ) : (

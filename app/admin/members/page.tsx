@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/AdminUI";
 import type { User } from "@/lib/models/user";
 import { IBILE_DIVISIONS } from "@/lib/constants";
+import { useAdminAction } from "@/hooks/useAdminAction";
 
 const ROLES = ["all", "guest", "applicant", "member", "admin", "super-admin"];
 const STATUSES = ["all", "active", "inactive", "suspended", "pending"];
@@ -27,6 +28,7 @@ export default function AdminMembersPage() {
   // local edit state
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lagosOrigin: "", occupation: "", role: "", status: "" });
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   const filtered = useMemo(() => {
     let list = users;
@@ -61,20 +63,25 @@ export default function AdminMembersPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        phone: form.phone || undefined,
-        lagosOrigin: form.lagosOrigin || undefined,
-        occupation: form.occupation || undefined,
-      });
-      if (form.role !== selected.role) await setRole(selected.id, form.role as User["role"]);
-      if (form.status !== selected.status) await setStatus(selected.id, form.status as User["status"]);
-      closeModal();
-    } finally {
-      setSaving(false);
-    }
+    /* Role and status are separate endpoints, so all three go in one action:
+       if any of them fails the administrator is told, and the modal stays
+       open with the edits still in it. */
+    const result = await run(
+      async () => {
+        await update(selected.id, {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          phone: form.phone || undefined,
+          lagosOrigin: form.lagosOrigin || undefined,
+          occupation: form.occupation || undefined,
+        });
+        if (form.role !== selected.role) await setRole(selected.id, form.role as User["role"]);
+        if (form.status !== selected.status) await setStatus(selected.id, form.status as User["status"]);
+      },
+      { success: "Member saved.", errorTitle: "Could not save the member" },
+    );
+    setSaving(false);
+    if (result.ok) closeModal();
   }
 
   async function handleCreateMember() {
@@ -87,24 +94,29 @@ export default function AdminMembersPage() {
       setCreateError("An account with this email already exists.");
       return;
     }
-    try {
-      await add({
-        firstName: createForm.firstName.trim(),
-        lastName: createForm.lastName.trim(),
-        displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`.trim(),
-        email: createForm.email.trim().toLowerCase(),
-        phone: createForm.phone || undefined,
-        lagosOrigin: createForm.lagosOrigin || undefined,
-        role: createForm.role as User["role"],
-        status: "active",
-        password: createForm.password || "ecp2024",
-      });
-      setCreating(false);
-      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lagosOrigin: "", role: "member", password: "ecp2024" });
-      setCreateError("");
-    } catch (error) {
-      setCreateError(error instanceof Error ? error.message : "Failed to create member.");
+    const result = await run(
+      () =>
+        add({
+          firstName: createForm.firstName.trim(),
+          lastName: createForm.lastName.trim(),
+          displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`.trim(),
+          email: createForm.email.trim().toLowerCase(),
+          phone: createForm.phone || undefined,
+          lagosOrigin: createForm.lagosOrigin || undefined,
+          role: createForm.role as User["role"],
+          status: "active",
+          password: createForm.password || "ecp2024",
+        }),
+      { success: "Member created.", errorTitle: "Could not create the member" },
+    );
+    if (!result.ok) {
+      /* Also shown inline, beside the fields it refers to. */
+      setCreateError(result.error);
+      return;
     }
+    setCreating(false);
+    setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lagosOrigin: "", role: "member", password: "ecp2024" });
+    setCreateError("");
   }
 
   const headers = ["Name", "Email", "Role", "Status", "Lagos origin", "Joined"];

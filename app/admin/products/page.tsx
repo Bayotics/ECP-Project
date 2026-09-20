@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminAction } from "@/hooks/useAdminAction";
 import { useState, useMemo } from "react";
 import { useProducts } from "@/context/ProductsContext";
 import {
@@ -33,6 +34,7 @@ export default function AdminProductsPage() {
   });
   const [stockDelta, setStockDelta] = useState("");
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   const filtered = useMemo(() => {
     let list = products;
@@ -67,32 +69,37 @@ export default function AdminProductsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, {
-        name: form.name,
-        category: form.category as Product["category"],
-        status: form.status as Product["status"],
-        price: Number(form.price),
-        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
-        description: form.description || undefined,
-        shortDescription: form.shortDescription || undefined,
-        isFeatured: form.isFeatured,
-        isMemberOnly: form.isMemberOnly,
-      });
-      closeModal();
-    } finally {
-      setSaving(false);
-    }
+    /* The modal stays open when this fails, so the edits are not lost. */
+    const result = await run(
+      () =>
+        update(selected.id, {
+          name: form.name,
+          category: form.category as Product["category"],
+          status: form.status as Product["status"],
+          price: Number(form.price),
+          compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
+          description: form.description || undefined,
+          shortDescription: form.shortDescription || undefined,
+          isFeatured: form.isFeatured,
+          isMemberOnly: form.isMemberOnly,
+        }),
+      { success: "Product saved.", errorTitle: "Could not save the product" },
+    );
+    setSaving(false);
+    if (result.ok) closeModal();
   }
 
   async function applyStockAdjust() {
     if (!selected || !stockDelta.trim()) return;
     const delta = parseInt(stockDelta, 10);
     if (isNaN(delta)) return;
-    const updated = await adjustStock(selected.id, delta);
-    if (updated) {
-      setSelected(updated);
-      setForm(p => ({ ...p, stock: String(updated.stock ?? 0), status: updated.status }));
+    const result = await run(() => adjustStock(selected.id, delta), {
+      success: `Stock adjusted by ${delta > 0 ? "+" : ""}${delta}.`,
+      errorTitle: "Could not adjust the stock",
+    });
+    if (result.ok && result.data) {
+      setSelected(result.data);
+      setForm(p => ({ ...p, stock: String(result.data?.stock ?? 0), status: result.data?.status ?? p.status }));
     }
     setStockDelta("");
   }
@@ -100,8 +107,11 @@ export default function AdminProductsPage() {
   async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.name}"? This cannot be undone.`)) return;
-    await remove(selected.id);
-    closeModal();
+    const result = await run(() => remove(selected.id), {
+      success: "Product deleted.",
+      errorTitle: "Could not delete the product",
+    });
+    if (result.ok) closeModal();
   }
 
   function slugify(str: string) {
@@ -110,19 +120,24 @@ export default function AdminProductsPage() {
 
   async function handleCreate() {
     if (!createForm.name.trim()) return;
-    await add({
-      name: createForm.name.trim(),
-      slug: slugify(createForm.name),
-      category: createForm.category as Product["category"],
-      status: createForm.status as Product["status"],
-      price: Number(createForm.price) || 0,
-      stock: Number(createForm.stock) || 0,
-      description: createForm.description || createForm.name,
-      shortDescription: createForm.shortDescription || undefined,
-      isFeatured: createForm.isFeatured,
-      isMemberOnly: createForm.isMemberOnly,
-      tags: [],
-    });
+    const result = await run(
+      () =>
+        add({
+          name: createForm.name.trim(),
+          slug: slugify(createForm.name),
+          category: createForm.category as Product["category"],
+          status: createForm.status as Product["status"],
+          price: Number(createForm.price) || 0,
+          stock: Number(createForm.stock) || 0,
+          description: createForm.description || createForm.name,
+          shortDescription: createForm.shortDescription || undefined,
+          isFeatured: createForm.isFeatured,
+          isMemberOnly: createForm.isMemberOnly,
+          tags: [],
+        }),
+      { success: "Product created.", errorTitle: "Could not create the product" },
+    );
+    if (!result.ok) return;
     setCreating(false);
     setCreateForm({ name: "", category: "other", status: "draft", price: "", stock: "0", description: "", shortDescription: "", isFeatured: false, isMemberOnly: false });
   }

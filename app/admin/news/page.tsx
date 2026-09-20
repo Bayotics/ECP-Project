@@ -8,6 +8,8 @@ import {
   AdminTable, TR, TD, Badge, AdminModal,
   FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
+import ImageUploader from "@/components/media/ImageUploader";
+import { useAdminAction } from "@/hooks/useAdminAction";
 import type { NewsPost } from "@/lib/models/news";
 
 const CATEGORIES = ["all", "news", "announcement", "report", "opinion", "press-release", "blog"];
@@ -22,13 +24,15 @@ export default function AdminNewsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<NewsPost | null>(null);
   const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({ title: "", category: "news", excerpt: "", content: "" });
+  const [createForm, setCreateForm] = useState({ title: "", category: "news", excerpt: "", content: "", imageUrl: "", imageAlt: "" });
   const [form, setForm] = useState({
     title: "", category: "", status: "", authorName: "",
     excerpt: "", content: "",
     isFeatured: false, isBreaking: false, isPinned: false,
+    imageUrl: "", imageAlt: "",
   });
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   const filtered = useMemo(() => {
     let list = posts;
@@ -56,6 +60,8 @@ export default function AdminNewsPage() {
       isFeatured: post.isFeatured ?? false,
       isBreaking: post.isBreaking ?? false,
       isPinned: post.isPinned ?? false,
+      imageUrl: post.imageUrl ?? "",
+      imageAlt: post.imageAlt ?? "",
     });
   }
 
@@ -64,58 +70,75 @@ export default function AdminNewsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, {
-        title: form.title,
-        category: form.category as NewsPost["category"],
-        status: form.status as NewsPost["status"],
-        authorName: form.authorName || undefined,
-        excerpt: form.excerpt || undefined,
-        content: form.content || undefined,
-        isFeatured: form.isFeatured,
-        isBreaking: form.isBreaking,
-        isPinned: form.isPinned,
-      });
-      closeModal();
-    } finally {
-      setSaving(false);
-    }
+    /* The modal stays open when this fails, so the edits are not lost. */
+    const result = await run(
+      () =>
+        update(selected.id, {
+          title: form.title,
+          category: form.category as NewsPost["category"],
+          status: form.status as NewsPost["status"],
+          authorName: form.authorName || undefined,
+          excerpt: form.excerpt || undefined,
+          content: form.content || undefined,
+          isFeatured: form.isFeatured,
+          isBreaking: form.isBreaking,
+          isPinned: form.isPinned,
+          imageUrl: form.imageUrl || undefined,
+          imageAlt: form.imageAlt || undefined,
+        }),
+      { success: "Post saved.", errorTitle: "Could not save the post" },
+    );
+    setSaving(false);
+    if (result.ok) closeModal();
   }
 
   async function handlePublish() {
     if (!selected) return;
-    await publish(selected.id);
-    setForm(p => ({ ...p, status: "published" }));
+    const result = await run(() => publish(selected.id), {
+      success: "Post published.",
+      errorTitle: "Could not publish the post",
+    });
+    if (result.ok) setForm(p => ({ ...p, status: "published" }));
   }
 
   async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.title}"? This cannot be undone.`)) return;
-    await remove(selected.id);
-    closeModal();
+    const result = await run(() => remove(selected.id), {
+      success: "Post deleted.",
+      errorTitle: "Could not delete the post",
+    });
+    if (result.ok) closeModal();
   }
 
   function slugify(str: string) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").trim(); }
 
   async function handleCreate() {
     if (!createForm.title.trim()) return;
-    await add({
-      title: createForm.title.trim(),
-      slug: slugify(createForm.title),
-      category: createForm.category as NewsPost["category"],
-      status: "draft",
-      excerpt: createForm.excerpt || createForm.title,
-      content: createForm.content || "",
-      authorId: currentUser?.id ?? "admin",
-      authorName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
-      isFeatured: false,
-      isBreaking: false,
-      isPinned: false,
-      tags: [],
-      readingTimeMinutes: Math.max(1, Math.ceil((createForm.content.split(" ").length || 1) / 200)),
-    });
+    const result = await run(
+      () =>
+        add({
+          title: createForm.title.trim(),
+          slug: slugify(createForm.title),
+          category: createForm.category as NewsPost["category"],
+          status: "draft",
+          excerpt: createForm.excerpt || createForm.title,
+          content: createForm.content || "",
+          authorId: currentUser?.id ?? "admin",
+          authorName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
+          isFeatured: false,
+          isBreaking: false,
+          isPinned: false,
+          tags: [],
+          imageUrl: createForm.imageUrl || undefined,
+          imageAlt: createForm.imageAlt || undefined,
+          readingTimeMinutes: Math.max(1, Math.ceil((createForm.content.split(" ").length || 1) / 200)),
+        }),
+      { success: "Post created as a draft.", errorTitle: "Could not create the post" },
+    );
+    if (!result.ok) return;
     setCreating(false);
-    setCreateForm({ title: "", category: "news", excerpt: "", content: "" });
+    setCreateForm({ title: "", category: "news", excerpt: "", content: "", imageUrl: "", imageAlt: "" });
   }
 
   const headers = ["Title", "Category", "Author", "Status", "Featured", "Breaking", "Views", "Published"];
@@ -165,6 +188,24 @@ export default function AdminNewsPage() {
             <FormField label="Content">
               <FormTextarea rows={5} value={createForm.content} onChange={e => setCreateForm(p => ({ ...p, content: e.target.value }))} placeholder="Full post content…" />
             </FormField>
+
+            <ImageUploader
+              value={createForm.imageUrl}
+              onChange={url => setCreateForm(p => ({ ...p, imageUrl: url }))}
+              folder="news"
+              label="Cover image"
+              shape="wide"
+              hint="Shown on the news card and at the top of the post. JPEG, PNG or WebP, up to 8 MB."
+            />
+            {createForm.imageUrl && (
+              <FormField label="Image description">
+                <FormInput
+                  value={createForm.imageAlt}
+                  onChange={e => setCreateForm(p => ({ ...p, imageAlt: e.target.value }))}
+                  placeholder="What the picture shows, for screen readers"
+                />
+              </FormField>
+            )}
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
               <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim()}>Create Post</Btn>
@@ -206,6 +247,24 @@ export default function AdminNewsPage() {
             <FormField label="Content">
               <FormTextarea rows={6} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} />
             </FormField>
+
+            <ImageUploader
+              value={form.imageUrl}
+              onChange={url => setForm(p => ({ ...p, imageUrl: url }))}
+              folder="news"
+              label="Cover image"
+              shape="wide"
+              hint="Shown on the news card and at the top of the post. JPEG, PNG or WebP, up to 8 MB."
+            />
+            {form.imageUrl && (
+              <FormField label="Image description">
+                <FormInput
+                  value={form.imageAlt}
+                  onChange={e => setForm(p => ({ ...p, imageAlt: e.target.value }))}
+                  placeholder="What the picture shows, for screen readers"
+                />
+              </FormField>
+            )}
 
             <div className="flex gap-5 text-sm">
               {(["isFeatured", "isBreaking", "isPinned"] as const).map(key => (

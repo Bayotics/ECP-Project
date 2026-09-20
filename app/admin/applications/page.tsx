@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useAdminAction, errorMessage } from "@/hooks/useAdminAction";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/useToast";
 import { useMembership } from "@/context/MembershipContext";
@@ -37,6 +38,7 @@ export default function AdminApplicationsPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [msgContent, setMsgContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   const filtered = useMemo(() => {
     let list = applications;
@@ -62,11 +64,11 @@ export default function AdminApplicationsPage() {
   async function saveNotes() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, { reviewNotes });
-    } finally {
-      setSaving(false);
-    }
+    await run(() => update(selected.id, { reviewNotes }), {
+      success: "Notes saved.",
+      errorTitle: "Could not save the notes",
+    });
+    setSaving(false);
   }
 
   async function sendMessage() {
@@ -76,8 +78,8 @@ export default function AdminApplicationsPage() {
       await addAdminMessage(selected.id, name, msgContent.trim());
       closeModal();
       success("Message sent to applicant successfully.", "Message Sent");
-    } catch {
-      error("Failed to send message. Please try again.", "Send Failed");
+    } catch (caught) {
+      error(errorMessage(caught), "Could not send the message");
     }
   }
 
@@ -91,7 +93,11 @@ export default function AdminApplicationsPage() {
       rejected: reject,
     } as const;
 
-    await actions[status](selected.id, reviewedBy);
+    const result = await run(() => actions[status](selected.id, reviewedBy), {
+      success: `Application marked ${status.replace("-", " ")}.`,
+      errorTitle: "Could not update the application",
+    });
+    if (!result.ok) return;
     setSelected((prev) => prev ? { ...prev, status } as MembershipApplication : null);
   }
 

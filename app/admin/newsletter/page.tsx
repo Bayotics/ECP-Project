@@ -1,5 +1,6 @@
 "use client";
 
+import { errorMessage } from "@/hooks/useAdminAction";
 import { useState, useEffect, useMemo } from "react";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
@@ -23,14 +24,19 @@ export default function AdminNewsletterPage() {
   const [addForm, setAddForm] = useState({ email: "", name: "", phone: "", source: "admin" as NewsletterSource });
   const [addError, setAddError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
     setIsLoading(true);
+    setLoadError("");
     try {
       const data = await apiRequest<NewsletterSubscriber[]>("/api/newsletter");
       setSubscribers(data);
-    } catch {
+    } catch (caught) {
+      /* An empty list and a failed request look identical on screen, so say
+         which one this is rather than implying nobody has subscribed. */
       setSubscribers([]);
+      setLoadError(errorMessage(caught));
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +141,25 @@ export default function AdminNewsletterPage() {
         </>
       } />
 
-      <AdminTable headers={headers} empty={isLoading ? "Loading…" : "No subscribers found."}>
+      {loadError && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+          <p className="text-sm text-red-800">
+            The subscriber list could not be loaded. {loadError}
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="rounded-full border border-red-300 px-4 py-1.5 text-sm font-normal text-red-800 transition-colors hover:bg-red-100"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      <AdminTable
+        headers={headers}
+        empty={isLoading ? "Loading…" : loadError ? "Could not load subscribers." : "No subscribers found."}
+      >
         {filtered.map(sub => (
           <TR key={sub.id} onClick={() => setSelected(sub)}>
             <TD className="font-medium text-(--color-neutral-900)">{sub.email}</TD>

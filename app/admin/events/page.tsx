@@ -8,6 +8,8 @@ import {
   AdminTable, TR, TD, Badge, AdminModal,
   FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
+import ImageUploader from "@/components/media/ImageUploader";
+import { useAdminAction, errorMessage } from "@/hooks/useAdminAction";
 import type { Event } from "@/lib/models/event";
 import type { RSVP } from "@/lib/models/rsvp";
 import { apiRequest } from "@/lib/client/api";
@@ -39,18 +41,22 @@ export default function AdminEventsPage() {
   const [createForm, setCreateForm] = useState({
     title: "", type: "meetup", date: "", time: "", location: "", description: "",
     membersOnly: false, registrationRequired: false,
+    imageUrl: "", imageAlt: "", registrationUrl: "",
   });
   const [form, setForm] = useState({
     title: "", type: "", date: "", time: "", location: "", venue: "",
     status: "", maxAttendees: "", isFeatured: false, isPublic: false,
     membersOnly: false, registrationRequired: false,
     description: "", organizerName: "",
+    imageUrl: "", imageAlt: "", registrationUrl: "",
   });
   const [saving, setSaving] = useState(false);
+  const { run } = useAdminAction();
 
   // RSVPs for selected event
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
   const [rsvpsLoading, setRsvpsLoading] = useState(false);
+  const [rsvpsError, setRsvpsError] = useState("");
   const [activeTab, setActiveTab] = useState<"details" | "rsvps" | "notify">("details");
 
   // Notification state
@@ -74,11 +80,16 @@ export default function AdminEventsPage() {
 
   const loadRsvps = useCallback(async (eventId: string) => {
     setRsvpsLoading(true);
+    setRsvpsError("");
     try {
       const data = await apiRequest<RSVP[]>(`/api/rsvps?eventId=${eventId}`);
       setRsvps(data);
-    } catch {
+    } catch (caught) {
+      /* "No registrations yet" and "the request failed" look identical on
+         screen, and one of them would have an administrator believe nobody
+         signed up. Say which it is. */
       setRsvps([]);
+      setRsvpsError(errorMessage(caught));
     } finally {
       setRsvpsLoading(false);
     }
@@ -104,6 +115,9 @@ export default function AdminEventsPage() {
       registrationRequired: ev.registrationRequired ?? false,
       description: ev.description ?? "",
       organizerName: ev.organizerName ?? "",
+      imageUrl: ev.imageUrl ?? "",
+      imageAlt: ev.imageAlt ?? "",
+      registrationUrl: ev.registrationUrl ?? "",
     });
     loadRsvps(ev.id);
   }
@@ -118,39 +132,54 @@ export default function AdminEventsPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    try {
-      await update(selected.id, {
-        title: form.title,
-        type: form.type as Event["type"],
-        date: form.date,
-        time: form.time || undefined,
-        location: form.location || undefined,
-        venue: form.venue || undefined,
-        status: form.status as Event["status"],
-        maxAttendees: form.maxAttendees ? Number(form.maxAttendees) : undefined,
-        isFeatured: form.isFeatured,
-        isPublic: form.isPublic,
-        membersOnly: form.membersOnly,
-        registrationRequired: form.registrationRequired,
-        description: form.description || undefined,
-        organizerName: form.organizerName || undefined,
-      });
-      closeModal();
-    } finally {
-      setSaving(false);
-    }
+    /* The modal stays open when this fails, so the edits are not lost. */
+    const result = await run(
+      () =>
+        update(selected.id, {
+          title: form.title,
+          type: form.type as Event["type"],
+          date: form.date,
+          time: form.time || undefined,
+          location: form.location || undefined,
+          venue: form.venue || undefined,
+          status: form.status as Event["status"],
+          maxAttendees: form.maxAttendees ? Number(form.maxAttendees) : undefined,
+          isFeatured: form.isFeatured,
+          isPublic: form.isPublic,
+          membersOnly: form.membersOnly,
+          registrationRequired: form.registrationRequired,
+          description: form.description || undefined,
+          organizerName: form.organizerName || undefined,
+          imageUrl: form.imageUrl || undefined,
+          imageAlt: form.imageAlt || undefined,
+          /* Clearing the checkbox clears the link, so a stale URL cannot
+             linger on an event that no longer takes registrations. */
+          registrationUrl: form.registrationRequired ? form.registrationUrl || undefined : undefined,
+        }),
+      { success: "Event saved.", errorTitle: "Could not save the event" },
+    );
+    setSaving(false);
+    if (result.ok) closeModal();
   }
 
   async function handlePublish() {
     if (!selected) return;
-    await publish(selected.id);
+    const result = await run(() => publish(selected.id), {
+      success: "Event published.",
+      errorTitle: "Could not publish the event",
+    });
+    if (!result.ok) return;
     setSelected(prev => prev ? { ...prev, status: "published" } : prev);
     setForm(prev => ({ ...prev, status: "published" }));
   }
 
   async function handleCancel() {
     if (!selected) return;
-    await cancel(selected.id);
+    const result = await run(() => cancel(selected.id), {
+      success: "Event cancelled.",
+      errorTitle: "Could not cancel the event",
+    });
+    if (!result.ok) return;
     setSelected(prev => prev ? { ...prev, status: "cancelled" } : prev);
     setForm(prev => ({ ...prev, status: "cancelled" }));
   }
@@ -158,8 +187,11 @@ export default function AdminEventsPage() {
   async function handleRemove() {
     if (!selected) return;
     if (!confirm(`Delete "${selected.title}"? This cannot be undone.`)) return;
-    await remove(selected.id);
-    closeModal();
+    const result = await run(() => remove(selected.id), {
+      success: "Event deleted.",
+      errorTitle: "Could not delete the event",
+    });
+    if (result.ok) closeModal();
   }
 
   async function handleSendNotification() {
@@ -184,26 +216,38 @@ export default function AdminEventsPage() {
 
   async function handleCreate() {
     if (!createForm.title.trim() || !createForm.date) return;
-    await add({
-      title: createForm.title.trim(),
-      slug: slugify(createForm.title),
-      description: createForm.description || createForm.title,
-      date: createForm.date,
-      time: createForm.time || undefined,
-      location: createForm.location || "TBD",
-      type: createForm.type as Event["type"],
-      status: "draft",
-      organizerId: currentUser?.id ?? "admin",
-      organizerName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
-      tags: [],
-      isFeatured: false,
-      isPublic: !createForm.membersOnly,
-      membersOnly: createForm.membersOnly,
-      registrationRequired: createForm.registrationRequired,
-      isOnline: false,
-    });
+    const result = await run(
+      () =>
+        add({
+          title: createForm.title.trim(),
+          slug: slugify(createForm.title),
+          description: createForm.description || createForm.title,
+          date: createForm.date,
+          time: createForm.time || undefined,
+          location: createForm.location || "TBD",
+          type: createForm.type as Event["type"],
+          status: "draft",
+          organizerId: currentUser?.id ?? "admin",
+          organizerName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin",
+          tags: [],
+          isFeatured: false,
+          isPublic: !createForm.membersOnly,
+          membersOnly: createForm.membersOnly,
+          registrationRequired: createForm.registrationRequired,
+          registrationUrl: createForm.registrationRequired ? createForm.registrationUrl || undefined : undefined,
+          imageUrl: createForm.imageUrl || undefined,
+          imageAlt: createForm.imageAlt || undefined,
+          isOnline: false,
+        }),
+      { success: "Event created as a draft.", errorTitle: "Could not create the event" },
+    );
+    if (!result.ok) return;
     setCreating(false);
-    setCreateForm({ title: "", type: "meetup", date: "", time: "", location: "", description: "", membersOnly: false, registrationRequired: false });
+    setCreateForm({
+      title: "", type: "meetup", date: "", time: "", location: "", description: "",
+      membersOnly: false, registrationRequired: false,
+      imageUrl: "", imageAlt: "", registrationUrl: "",
+    });
   }
 
   const confirmedCount = rsvps.filter(r => r.status === "confirmed").length;
@@ -272,6 +316,25 @@ export default function AdminEventsPage() {
             <FormField label="Description">
               <FormTextarea rows={3} value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} />
             </FormField>
+
+            <ImageUploader
+              value={createForm.imageUrl}
+              onChange={url => setCreateForm(p => ({ ...p, imageUrl: url }))}
+              folder="events"
+              label="Event image"
+              shape="wide"
+              hint="Shown on the event card and the event page. JPEG, PNG or WebP, up to 8 MB."
+            />
+            {createForm.imageUrl && (
+              <FormField label="Image description">
+                <FormInput
+                  value={createForm.imageAlt}
+                  onChange={e => setCreateForm(p => ({ ...p, imageAlt: e.target.value }))}
+                  placeholder="What the picture shows, for screen readers"
+                />
+              </FormField>
+            )}
+
             <div className="flex gap-5 text-sm">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={createForm.membersOnly} onChange={e => setCreateForm(p => ({ ...p, membersOnly: e.target.checked }))} className="accent-purple-600" />
@@ -282,6 +345,21 @@ export default function AdminEventsPage() {
                 <span className="font-medium text-(--color-neutral-900)">Registration Required</span>
               </label>
             </div>
+            {/* Only worth asking for once registration is actually required. */}
+            {createForm.registrationRequired && (
+              <FormField label="Registration link">
+                <FormInput
+                  type="url"
+                  value={createForm.registrationUrl}
+                  onChange={e => setCreateForm(p => ({ ...p, registrationUrl: e.target.value }))}
+                  placeholder="https://…"
+                />
+                <p className="mt-1.5 text-xs leading-5 text-neutral-700">
+                  Where members sign up, if it is handled off site. Leave empty to use the
+                  RSVP form on the event page.
+                </p>
+              </FormField>
+            )}
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
               <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim() || !createForm.date}>Create Event</Btn>
@@ -362,10 +440,44 @@ export default function AdminEventsPage() {
                 </label>
               </div>
 
+              {/* Only worth asking for once registration is actually required. */}
+              {form.registrationRequired && (
+                <FormField label="Registration link">
+                  <FormInput
+                    type="url"
+                    value={form.registrationUrl}
+                    onChange={e => setForm(p => ({ ...p, registrationUrl: e.target.value }))}
+                    placeholder="https://…"
+                  />
+                  <p className="mt-1.5 text-xs leading-5 text-neutral-700">
+                    Where members sign up, if it is handled off site. Leave empty to use the
+                    RSVP form on the event page.
+                  </p>
+                </FormField>
+              )}
+
               {form.membersOnly && (
                 <div className="rounded-lg bg-purple-50 border border-purple-200 px-4 py-3 text-sm text-purple-700">
                   🔒 <strong>Members Only:</strong> Only authenticated members can register for this event. Non-members will see the event but cannot RSVP.
                 </div>
+              )}
+
+              <ImageUploader
+                value={form.imageUrl}
+                onChange={url => setForm(p => ({ ...p, imageUrl: url }))}
+                folder="events"
+                label="Event image"
+                shape="wide"
+                hint="Shown on the event card and the event page. JPEG, PNG or WebP, up to 8 MB."
+              />
+              {form.imageUrl && (
+                <FormField label="Image description">
+                  <FormInput
+                    value={form.imageAlt}
+                    onChange={e => setForm(p => ({ ...p, imageAlt: e.target.value }))}
+                    placeholder="What the picture shows, for screen readers"
+                  />
+                </FormField>
               )}
 
               <FormField label="Description">
@@ -393,13 +505,28 @@ export default function AdminEventsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-(--color-neutral-900)">
-                  {rsvpsLoading ? "Loading RSVPs…" : `${confirmedCount} confirmed registrant${confirmedCount !== 1 ? "s" : ""}`}
+                  {rsvpsLoading
+                    ? "Loading RSVPs…"
+                    : rsvpsError
+                      ? "Registrations unavailable"
+                      : `${confirmedCount} confirmed registrant${confirmedCount !== 1 ? "s" : ""}`}
                 </p>
                 <Btn size="sm" variant="secondary" onClick={() => loadRsvps(selected.id)}>Refresh</Btn>
               </div>
 
               {rsvpsLoading ? (
                 <div className="py-8 text-center text-(--color-neutral-800) text-sm">Loading…</div>
+              ) : rsvpsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">
+                  <p>The registrations could not be loaded. {rsvpsError}</p>
+                  <button
+                    type="button"
+                    onClick={() => loadRsvps(selected.id)}
+                    className="mt-2 rounded-full border border-red-300 px-4 py-1.5 text-sm font-normal text-red-800 transition-colors hover:bg-red-100"
+                  >
+                    Try again
+                  </button>
+                </div>
               ) : rsvps.length === 0 ? (
                 <div className="py-8 text-center text-(--color-neutral-800) text-sm">No registrations yet.</div>
               ) : (
