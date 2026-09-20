@@ -207,7 +207,11 @@ export default function Sidebar({ role = "member" }: SidebarProps) {
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      {/* data-lenis-prevent: Lenis listens for wheel events on the window and
+          calls preventDefault on them, so without this opt-out the nav never
+          scrolls on the wheel and only moves if you drag its scrollbar. It
+          also tells PortalScrollHandler to leave this subtree alone. */}
+      <nav data-lenis-prevent className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {links.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (

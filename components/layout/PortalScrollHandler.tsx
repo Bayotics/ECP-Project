@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Wheel scrolling for the portal's nested scroll container.
+ * Wheel scrolling for the portal's nested scroll container. Both the member
+ * and the admin portal use it: without it their `#main-content` never moves
+ * on the wheel, and the portal is unusable on a short window.
  *
  * Lenis runs site wide and swallows wheel events at the window level, so the
  * portal's `#main-content` never scrolls on its own. This forwards the wheel
@@ -34,7 +36,7 @@ function nearestScrollable(start: Element | null, deltaY: number): Element | nul
   return null;
 }
 
-export default function MemberScrollHandler({ children }: { children: React.ReactNode }) {
+export default function PortalScrollHandler({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
