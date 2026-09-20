@@ -1,5 +1,6 @@
 "use client";
 
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { useState, useMemo } from "react";
 import { useEvents } from "@/context/EventsContext";
 import { useRSVP } from "@/context";
@@ -248,6 +249,8 @@ export default function MemberEventsPage() {
               <p className="text-xs text-gray-800 mb-1">About this event</p>
               <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">{selected.description}</p>
             </div>
+
+            <AddToCalendarButton event={selected} />
 
             {/* Registration */}
             {selected.status !== "cancelled" && new Date(selected.date) > new Date() && (

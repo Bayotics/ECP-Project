@@ -5,7 +5,7 @@
    Every value on this page is read from the API and nothing is invented.
    Where a record exists but a field is empty, the page prints N/A rather
    than substituting a plausible looking default: the old version filled in
-   "Lagos" for a missing Lagos connection, the current year for a missing
+   "Lagos" for a missing Lagos origin, the current year for a missing
    join date, "TBD" for a missing event time and "Member" for a missing
    committee role, none of which the database actually said.
 
@@ -153,7 +153,7 @@ export default function MemberDashboardPage() {
       <PageHeader
         eyebrow="Member portal"
         title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
-        lede="Everything here is read from the club database. Anything the database does not hold is marked N/A."
+        lede=""
         actions={
           <>
             <GhostButton href="/member/profile">Edit my profile</GhostButton>
@@ -183,7 +183,7 @@ export default function MemberDashboardPage() {
             <dl className="mt-5 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
               <Row label="Member since">{joinYear}</Row>
               <Row label="Occupation">{currentUser?.occupation}</Row>
-              <Row label="Lagos connection">{currentUser?.lga}</Row>
+              <Row label="Lagos origin">{currentUser?.lagosOrigin}</Row>
               <Row label="Phone">{currentUser?.phone}</Row>
               <Row label="Email">{currentUser?.email}</Row>
               <Row label="Last signed in">{lastLogin ? dayFormat.format(new Date(lastLogin)) : undefined}</Row>
@@ -461,7 +461,7 @@ export default function MemberDashboardPage() {
       </Panel>
 
       {/* ─── Documents filed with the application ─── */}
-      <Panel>
+      {/* <Panel>
         <PanelHeading
           title="My documents"
           note="Files attached to your membership application."
@@ -498,7 +498,7 @@ export default function MemberDashboardPage() {
             {application && <GhostButton href="/membership/status">Upload from your application</GhostButton>}
           </div>
         )}
-      </Panel>
+      </Panel> */}
     </div>
   );
 }

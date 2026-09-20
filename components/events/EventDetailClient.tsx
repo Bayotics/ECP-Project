@@ -11,6 +11,7 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import RSVPForm from "@/components/events/RSVPForm";
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { formatDate } from "@/utils/formatters";
 import type { BadgeColor } from "@/components/ui/Badge";
 import type { Event, EventType as ModelEventType } from "@/lib/models";
@@ -184,30 +185,6 @@ function TagIcon() {
   );
 }
 
-function AddToCalendarButton({ event }: { event: Event }) {
-  function handleClick() {
-    const startDate = new Date(event.date);
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    const fmt = (d: Date) =>
-      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
-
-    const endDate = event.endDate ? new Date(event.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-
-    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${fmt(startDate)}/${fmt(endDate)}&details=${encodeURIComponent(event.shortDescription ?? event.description.slice(0, 200))}&location=${encodeURIComponent(event.location)}`;
-    window.open(googleUrl, "_blank", "noopener,noreferrer");
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      className="flex w-full items-center gap-3 rounded-full border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-700 transition-colors hover:bg-neutral-50"
-    >
-      <span className="text-neutral-950"><CalendarIcon /></span>
-      <span className="flex-1 text-left">Add to Calendar</span>
-      <span className="text-xs text-neutral-400">Google ↗</span>
-    </button>
-  );
-}
 
 export default function EventDetailClient({ slug }: { slug: string }) {
   const { events, isLoading, getBySlug } = useEvents();

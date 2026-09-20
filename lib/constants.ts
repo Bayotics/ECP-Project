@@ -40,10 +40,46 @@ export const ROLES = {
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
-/** Lagos LGAs helper list */
-export const LAGOS_LGAS = [
-  "Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Badagry",
-  "Epe", "Eti-Osa", "Ibeju-Lekki", "Ifako-Ijaiye", "Ikeja",
-  "Ikorodu", "Kosofe", "Lagos Island", "Lagos Mainland", "Mushin",
-  "Ojo", "Oshodi-Isolo", "Shomolu", "Surulere",
+/* Where in Lagos a member traces their roots to, recorded as one of the
+   five administrative divisions rather than one of the twenty LGAs. The
+   divisions spell IBILE, which is how Lagosians name them:
+
+     I  Ikeja        B  Badagry      I  Ikorodu
+     L  Lagos Island E  Epe
+
+   A division is the thing people actually identify with, and it does not
+   churn the way LGA boundaries and names do. */
+export const IBILE_DIVISIONS = [
+  "Ikeja",
+  "Badagry",
+  "Ikorodu",
+  "Lagos Island",
+  "Epe",
 ] as const;
+
+export type IbileDivision = (typeof IBILE_DIVISIONS)[number];
+
+/** Which division each Lagos LGA sits in, for reading older records. */
+export const LGA_TO_DIVISION: Record<string, IbileDivision> = {
+  Agege: "Ikeja",
+  Alimosho: "Ikeja",
+  "Ifako-Ijaiye": "Ikeja",
+  Ikeja: "Ikeja",
+  Kosofe: "Ikeja",
+  Mushin: "Ikeja",
+  "Oshodi-Isolo": "Ikeja",
+  Shomolu: "Ikeja",
+  "Ajeromi-Ifelodun": "Badagry",
+  Ajegunle: "Badagry",
+  "Amuwo-Odofin": "Badagry",
+  Badagry: "Badagry",
+  Ojo: "Badagry",
+  Ikorodu: "Ikorodu",
+  Apapa: "Lagos Island",
+  "Eti-Osa": "Lagos Island",
+  "Lagos Island": "Lagos Island",
+  "Lagos Mainland": "Lagos Island",
+  Surulere: "Lagos Island",
+  Epe: "Epe",
+  "Ibeju-Lekki": "Epe",
+};

@@ -24,7 +24,8 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   /** Where in Lagos the member's family is from. Not an address. */
-  lga?: string;
+  /** One of the five IBILE divisions, as the member's roots in Lagos. */
+  lagosOrigin?: string;
   ward?: string;
   occupation?: string;
   bio?: string;

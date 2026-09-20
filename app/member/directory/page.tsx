@@ -177,7 +177,7 @@ function MemberDrawer({ user, onClose }: { user: User; onClose: () => void }) {
   const facts = [
     { label: "Member since", value: year ? String(year) : null },
     { label: "Profession", value: user.occupation ?? null },
-    { label: "Lagos connection", value: user.lga ?? null },
+    { label: "Lagos origin", value: user.lagosOrigin ?? null },
     { label: "Portal role", value: user.role.replace("-", " ") },
   ];
 
@@ -305,7 +305,7 @@ export default function DirectoryPage() {
     const list = roster.filter((u) => {
       if (group !== "all" && groupOf(u) !== group) return false;
       if (!q) return true;
-      return [u.displayName, u.title ?? "", u.occupation ?? "", u.lga ?? "", String(joinYearOf(u) ?? "")]
+      return [u.displayName, u.title ?? "", u.occupation ?? "", u.lagosOrigin ?? "", String(joinYearOf(u) ?? "")]
         .join(" ")
         .toLowerCase()
         .includes(q);

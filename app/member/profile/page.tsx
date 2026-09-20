@@ -1,17 +1,13 @@
 "use client";
 
+import { IBILE_DIVISIONS } from "@/lib/constants";
+
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useUsers } from "@/context/UsersContext";
 import ImageUploader from "@/components/media/ImageUploader";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 
-const LAGOS_LGAS = [
-  "Agege","Ajeromi-Ifelodun","Alimosho","Amuwo-Odofin","Apapa",
-  "Badagry","Epe","Eti-Osa","Ibeju-Lekki","Ifako-Ijaiye",
-  "Ikeja","Ikorodu","Kosofe","Lagos Island","Lagos Mainland",
-  "Mushin","Ojo","Oshodi-Isolo","Shomolu","Surulere",
-];
 
 const PRIVACY_KEY = STORAGE_KEYS.USERS + "_privacy";
 
@@ -51,7 +47,7 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     phone: "",
-    lga: "",
+    lagosOrigin: "",
     ward: "",
     occupation: "",
     bio: "",
@@ -71,7 +67,7 @@ export default function ProfilePage() {
         firstName:  currentUser.firstName  ?? "",
         lastName:   currentUser.lastName   ?? "",
         phone:      currentUser.phone      ?? "",
-        lga:        currentUser.lga        ?? "",
+        lagosOrigin: currentUser.lagosOrigin ?? "",
         ward:       currentUser.ward       ?? "",
         occupation: currentUser.occupation ?? "",
         bio:        currentUser.bio        ?? "",
@@ -196,15 +192,15 @@ export default function ProfilePage() {
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               />
             </div>
-            {/* LGA */}
+            {/* Lagos Origin */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">Local Government Area</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Lagos Origin</label>
               <select
-                value={form.lga} onChange={set("lga")}
+                value={form.lagosOrigin} onChange={set("lagosOrigin")}
                 className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
               >
-                <option value="">Select LGA…</option>
-                {LAGOS_LGAS.map((l) => <option key={l} value={l}>{l}</option>)}
+                <option value="">Select a division…</option>
+                {IBILE_DIVISIONS.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
             {/* Ward */}

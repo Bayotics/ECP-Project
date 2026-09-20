@@ -1,5 +1,6 @@
 "use client";
 
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -32,6 +33,9 @@ export interface EventCardProps {
   tags?: string[];
   /** "card" (default) or "list" row layout */
   layout?: "card" | "list";
+  /** Clock time the event ends, for the calendar link. */
+  endTime?: string;
+  slug?: string;
 }
 
 /* ─── Helpers ────────────────────────────────────────── */
@@ -54,6 +58,7 @@ export default function EventCard({
   date,
   endDate,
   time,
+  endTime,
   location,
   isOnline = false,
   type,
@@ -245,6 +250,12 @@ export default function EventCard({
           >
             {isFull ? "Event Full" : "Register Now"}
           </Link>
+          {/* Open to everyone, member or not. */}
+          <AddToCalendarButton
+            event={{ title, date, endDate, time, endTime, location, description }}
+            variant="compact"
+            className="mt-2 w-full justify-center"
+          />
         </div>
       </div>
     </motion.article>

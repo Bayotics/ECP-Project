@@ -8,6 +8,7 @@ import {
   FormField, FormInput, FormSelect, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
 import type { User } from "@/lib/models/user";
+import { IBILE_DIVISIONS } from "@/lib/constants";
 
 const ROLES = ["all", "guest", "applicant", "member", "admin", "super-admin"];
 const STATUSES = ["all", "active", "inactive", "suspended", "pending"];
@@ -20,11 +21,11 @@ export default function AdminMembersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
+  const [createForm, setCreateForm] = useState({ firstName: "", lastName: "", email: "", phone: "", lagosOrigin: "", role: "member", password: "ecp2024" });
   const [createError, setCreateError] = useState("");
 
   // local edit state
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lga: "", occupation: "", role: "", status: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lagosOrigin: "", occupation: "", role: "", status: "" });
   const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
@@ -36,7 +37,7 @@ export default function AdminMembersPage() {
       list = list.filter(u =>
         `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        (u.lga ?? "").toLowerCase().includes(q)
+        (u.lagosOrigin ?? "").toLowerCase().includes(q)
       );
     }
     return [...list].sort((a, b) => (b.joinedAt ?? "").localeCompare(a.joinedAt ?? ""));
@@ -48,7 +49,7 @@ export default function AdminMembersPage() {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone ?? "",
-      lga: user.lga ?? "",
+      lagosOrigin: user.lagosOrigin ?? "",
       occupation: user.occupation ?? "",
       role: user.role,
       status: user.status,
@@ -65,7 +66,7 @@ export default function AdminMembersPage() {
         firstName: form.firstName,
         lastName: form.lastName,
         phone: form.phone || undefined,
-        lga: form.lga || undefined,
+        lagosOrigin: form.lagosOrigin || undefined,
         occupation: form.occupation || undefined,
       });
       if (form.role !== selected.role) await setRole(selected.id, form.role as User["role"]);
@@ -93,20 +94,20 @@ export default function AdminMembersPage() {
         displayName: `${createForm.firstName.trim()} ${createForm.lastName.trim()}`.trim(),
         email: createForm.email.trim().toLowerCase(),
         phone: createForm.phone || undefined,
-        lga: createForm.lga || undefined,
+        lagosOrigin: createForm.lagosOrigin || undefined,
         role: createForm.role as User["role"],
         status: "active",
         password: createForm.password || "ecp2024",
       });
       setCreating(false);
-      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lga: "", role: "member", password: "ecp2024" });
+      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", lagosOrigin: "", role: "member", password: "ecp2024" });
       setCreateError("");
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : "Failed to create member.");
     }
   }
 
-  const headers = ["Name", "Email", "Role", "Status", "Lagos connection", "Joined"];
+  const headers = ["Name", "Email", "Role", "Status", "Lagos origin", "Joined"];
 
   return (
     <div className="space-y-6">
@@ -140,7 +141,7 @@ export default function AdminMembersPage() {
             <TD>{user.email}</TD>
             <TD><Badge value={user.role} /></TD>
             <TD><Badge value={user.status} /></TD>
-            <TD>{user.lga ?? "Not given"}</TD>
+            <TD>{user.lagosOrigin ?? "Not given"}</TD>
             <TD>{user.joinedAt ? new Date(user.joinedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "N/A"}</TD>
           </TR>
         ))}
@@ -163,8 +164,11 @@ export default function AdminMembersPage() {
               <FormField label="Phone">
                 <FormInput value={createForm.phone} onChange={e => setCreateForm(p => ({ ...p, phone: e.target.value }))} />
               </FormField>
-              <FormField label="Lagos connection">
-                <FormInput value={createForm.lga} onChange={e => setCreateForm(p => ({ ...p, lga: e.target.value }))} />
+              <FormField label="Lagos origin">
+                <FormSelect value={createForm.lagosOrigin} onChange={e => setCreateForm(p => ({ ...p, lagosOrigin: e.target.value }))}>
+                  <option value="">Not given</option>
+                  {IBILE_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </FormSelect>
               </FormField>
               <FormField label="Role">
                 <FormSelect value={createForm.role} onChange={e => setCreateForm(p => ({ ...p, role: e.target.value }))}>
@@ -196,8 +200,11 @@ export default function AdminMembersPage() {
               <FormField label="Phone">
                 <FormInput value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
               </FormField>
-              <FormField label="Lagos connection">
-                <FormInput value={form.lga} onChange={e => setForm(p => ({ ...p, lga: e.target.value }))} />
+              <FormField label="Lagos origin">
+                <FormSelect value={form.lagosOrigin} onChange={e => setForm(p => ({ ...p, lagosOrigin: e.target.value }))}>
+                  <option value="">Not given</option>
+                  {IBILE_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </FormSelect>
               </FormField>
               <div className="col-span-2"><FormField label="Occupation">
                 <FormInput value={form.occupation} onChange={e => setForm(p => ({ ...p, occupation: e.target.value }))} />

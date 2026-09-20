@@ -116,6 +116,13 @@ function Icon({ name, className }: { name: string; className?: string }) {
           <path d="m3.5 7 8.5 6 8.5-6" />
         </svg>
       );
+    case "places":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="10" r="2.6" />
+          <path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8z" />
+        </svg>
+      );
     case "logout":
       return (
         <svg {...common}>
@@ -138,6 +145,7 @@ const memberLinks = [
   { href: "/member/committees", label: "Committees", icon: "committees" },
   { href: "/member/events", label: "Events", icon: "calendar" },
   { href: "/member/documents", label: "Documents", icon: "documents" },
+  { href: "/member/places", label: "Around Philadelphia", icon: "places" },
   { href: "/member/dues", label: "Dues and payments", icon: "money" },
   { href: "/membership/status", label: "Application status", icon: "status" },
 ];

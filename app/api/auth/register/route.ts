@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       displayName?: string;
       email?: string;
       phone?: string;
-      lga?: string;
+      lagosOrigin?: string;
       ward?: string;
       occupation?: string;
       bio?: string;
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       status: "pending",
       avatarUrl: payload.avatarUrl,
       phone: payload.phone,
-      lga: payload.lga,
+      lagosOrigin: payload.lagosOrigin,
       ward: payload.ward,
       occupation: payload.occupation,
       bio: payload.bio,

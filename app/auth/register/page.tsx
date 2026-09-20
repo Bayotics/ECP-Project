@@ -1,16 +1,12 @@
 "use client";
 
+import { IBILE_DIVISIONS } from "@/lib/constants";
+
 import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-const LAGOS_LGAS = [
-  "Agege","Ajeromi-Ifelodun","Alimosho","Amuwo-Odofin","Apapa",
-  "Badagry","Epe","Eti-Osa","Ibeju-Lekki","Ifako-Ijaiye",
-  "Ikeja","Ikorodu","Kosofe","Lagos Island","Lagos Mainland",
-  "Mushin","Ojo","Oshodi-Isolo","Shomolu","Surulere",
-];
 
 export default function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
@@ -21,7 +17,7 @@ export default function RegisterPage() {
     lastName: "",
     email: "",
     phone: "",
-    lga: "",
+    lagosOrigin: "",
     password: "",
     confirmPassword: "",
   });
@@ -60,7 +56,7 @@ export default function RegisterPage() {
       displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       email: form.email.trim(),
       phone: form.phone.trim() || undefined,
-      lga: form.lga || undefined,
+      lagosOrigin: form.lagosOrigin || undefined,
       password: form.password,
     });
     setIsSubmitting(false);
@@ -152,17 +148,17 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label htmlFor="lga" className="block text-sm font-medium text-gray-500 mb-1.5">
-              LGA <span className="text-(--color-neutral-400)">(optional)</span>
+            <label htmlFor="lagosOrigin" className="block text-sm font-medium text-gray-500 mb-1.5">
+              Lagos Origin <span className="text-(--color-neutral-400)">(optional)</span>
             </label>
             <select
-              id="lga"
-              value={form.lga}
-              onChange={set("lga")}
+              id="lagosOrigin"
+              value={form.lagosOrigin}
+              onChange={set("lagosOrigin")}
               className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             >
               <option value="">Select…</option>
-              {LAGOS_LGAS.map((l) => (
+              {IBILE_DIVISIONS.map((l) => (
                 <option key={l} value={l}>{l}</option>
               ))}
             </select>

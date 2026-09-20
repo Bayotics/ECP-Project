@@ -51,13 +51,18 @@ export function Panel({
   children,
   className,
   padded = true,
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
   padded?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
-    <section className={cn("rounded-[1.5rem] border border-neutral-200 bg-white", padded && "p-6", className)}>
+    <section
+      className={cn("rounded-[1.5rem] border border-neutral-200 bg-white", padded && "p-6", className)}
+      style={style}
+    >
       {children}
     </section>
   );

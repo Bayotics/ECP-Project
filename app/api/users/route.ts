@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       office: payload.office,
       avatarUrl: payload.avatarUrl,
       phone: payload.phone,
-      lga: payload.lga,
+      lagosOrigin: payload.lagosOrigin,
       ward: payload.ward,
       occupation: payload.occupation,
       bio: payload.bio,

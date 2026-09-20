@@ -62,8 +62,8 @@ const MOCK_RESPONSES: { pattern: RegExp; reply: string }[] = [
     reply: "Check out our **Gallery** for photos from past events, community activities, and ECP milestones. New images are added after every major event.",
   },
   {
-    pattern: /\b(lga|local\s*gov|district|area)\b/i,
-    reply: "ECP is active across all 20 Local Government Areas of Lagos State. When filling your membership application, select your LGA — it helps us connect you with local chapter activities.",
+    pattern: /\b(lga|ibile|division|local\s*gov|district|area)\b/i,
+    reply: "Members record where in Lagos they trace their roots to, given as one of the five IBILE divisions: Ikeja, Badagry, Ikorodu, Lagos Island and Epe. You can set yours as your Lagos origin on your profile.",
   },
   {
     pattern: /\b(thank|thanks|great|awesome|perfect)\b/i,

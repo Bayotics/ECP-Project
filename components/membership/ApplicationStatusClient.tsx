@@ -330,10 +330,10 @@ export default function ApplicationStatusClient({ initialId }: { initialId?: str
     <div className="max-w-2xl mx-auto px-4 py-12">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-600) font-display mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-300) font-display mb-2">
           Application Status
         </h1>
-        <p className="text-sm text-(--color-neutral-900)">
+        <p className="text-sm text-white">
           Enter your application ID or registered email address to check your status.
         </p>
       </div>

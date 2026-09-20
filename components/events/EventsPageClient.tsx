@@ -1,5 +1,6 @@
 "use client";
 
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -213,6 +214,8 @@ function EventTile({ event, attending }: { event: Event; attending: number }) {
           <span className="text-neutral-500">
             {attending} going{event.maxAttendees ? ` of ${event.maxAttendees}` : ""}
           </span>
+          {/* Anyone can take the date away, signed in or not. */}
+          <AddToCalendarButton event={event} variant="compact" className="w-full justify-center" />
         </div>
       </div>
     </article>
@@ -256,15 +259,18 @@ function EventRow({ event, attending }: { event: Event; attending: number }) {
         </p>
       </div>
 
-      <Link
-        href={`/events/${event.slug}`}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 px-5 py-2.5 text-sm font-normal text-neutral-900 transition-colors hover:border-neutral-400"
-      >
-        Details
-        <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">
-          →
-        </span>
-      </Link>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <AddToCalendarButton event={event} variant="compact" className="py-2.5" />
+        <Link
+          href={`/events/${event.slug}`}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 px-5 py-2.5 text-sm font-normal text-neutral-900 transition-colors hover:border-neutral-400"
+        >
+          Details
+          <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">
+            →
+          </span>
+        </Link>
+      </div>
     </article>
   );
 }
