@@ -103,6 +103,7 @@ export default function MemberCommitteesPage() {
             const isMember = myCommitteeIds.has(c.id);
             const hasRequested = submitted.has(c.id);
             const typeColor = TYPE_COLORS[c.type] ?? "bg-gray-50 text-gray-900 border-gray-200";
+            const chair = c.members.find(m => m.isChairperson) ?? c.members[0];
 
             return (
               <div key={c.id} className={`rounded-2xl border bg-white flex flex-col overflow-hidden transition hover:shadow-md ${isMember ? "border-(--color-green-300) ring-1 ring-(--color-green-200)" : "border-(--color-neutral-200)"}`}>
@@ -126,7 +127,6 @@ export default function MemberCommitteesPage() {
                       )}
                     </div>
                   </div>
-                  <span className="text-xs text-(--color-neutral-800) flex-shrink-0">{c.members.length} member{c.members.length !== 1 ? "s" : ""}</span>
                 </div>
 
                 {/* Description */}
@@ -137,32 +137,20 @@ export default function MemberCommitteesPage() {
                   )}
                 </div>
 
-                {/* Who put their name down. The club's poll recorded
-                    volunteers, not offices, so a chair only shows when one
-                    has actually been set. */}
+                {/* Who chairs it. One name, nothing else. */}
                 <div className="mx-5 mb-3 rounded-lg bg-(--color-neutral-50) border border-(--color-neutral-200) px-3 py-2.5">
                   <p className="text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">
-                    Volunteers
-                    {typeof c.votes === "number" && typeof c.pollSize === "number" && (
-                      <span className="ml-2 normal-case tracking-normal text-neutral-900">
-                        {c.votes} of {c.pollSize} voted
-                      </span>
-                    )}
+                    Chairperson
                   </p>
-                  {c.members.length === 0 ? (
-                    <p className="mt-1.5 text-xs text-neutral-900">Nobody has signed up yet.</p>
+                  {chair ? (
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-neutral-900">
+                      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-(--color-green-100) text-[10px] text-(--color-green-800)">
+                        {chair.name.replace(/^Hon\.\s*/, "").split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                      </span>
+                      <span className="truncate">{chair.name}</span>
+                    </div>
                   ) : (
-                    <ul className="mt-1.5 space-y-1">
-                      {c.members.map(m => (
-                        <li key={m.name} className="flex items-center gap-2 text-xs text-neutral-900">
-                          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-(--color-green-100) text-[10px] text-(--color-green-800)">
-                            {m.name.replace(/^Hon\.\s*/, "").split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-                          </span>
-                          <span className="truncate">{m.name}</span>
-                          {m.isChairperson && <span className="text-neutral-900">· Chair</span>}
-                        </li>
-                      ))}
-                    </ul>
+                    <p className="mt-1.5 text-xs text-neutral-900">N/A</p>
                   )}
                 </div>
 

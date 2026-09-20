@@ -73,7 +73,22 @@ export function isUploadFolder(value: string): value is UploadFolder {
 }
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+/** Documents can be bigger than a photo; scanned minutes often are. */
+export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+
 export const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
+/* Documents go up as Cloudinary "raw" resources: no transformation, served
+   back byte for byte. Browsers are inconsistent about the Office types, so
+   the extension is checked as well as the reported MIME. */
+export const ALLOWED_DOCUMENT_MIME = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+];
+export const ALLOWED_DOCUMENT_EXT = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
 
 export type UploadedImage = {
   url: string;
@@ -121,9 +136,46 @@ export async function uploadImage(
   };
 }
 
+/** Uploads a document untouched, as a Cloudinary raw resource. */
+export async function uploadDocument(
+  buffer: Buffer,
+  filename: string,
+  options: { publicId?: string } = {},
+): Promise<UploadedImage> {
+  if (!cloudinaryConfigured) throw new Error("Cloudinary is not configured");
+
+  const stem = filename.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").toLowerCase();
+  const publicId = options.publicId ?? `${UPLOAD_FOLDERS.documents}/${stem}-${Date.now().toString(36)}`;
+
+  const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { public_id: publicId, resource_type: "raw", overwrite: true },
+      (error, uploaded) => {
+        if (error || !uploaded) return reject(error ?? new Error("Upload failed"));
+        resolve(uploaded as unknown as Record<string, unknown>);
+      },
+    );
+    stream.end(buffer);
+  });
+
+  return {
+    url: String(result.secure_url),
+    publicId: String(result.public_id),
+    width: 0,
+    height: 0,
+    format: String(result.format ?? filename.split(".").pop() ?? ""),
+    bytes: Number(result.bytes),
+  };
+}
+
 export async function deleteImage(publicId: string): Promise<void> {
   if (!cloudinaryConfigured) throw new Error("Cloudinary is not configured");
   await cloudinary.uploader.destroy(publicId);
+}
+
+export async function deleteDocument(publicId: string): Promise<void> {
+  if (!cloudinaryConfigured) throw new Error("Cloudinary is not configured");
+  await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
 }
 
 export { cloudinary };

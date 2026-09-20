@@ -37,15 +37,19 @@ const FILE_COLORS: Record<string, string> = {
 };
 
 /* A real download. The old version animated a fake progress bar and
-   fetched nothing; records now carry the Cloudinary URL of the actual
-   file, and a record without one says so rather than pretending. */
-function DownloadButton({ url, name }: { url?: string; name: string }) {
+   fetched nothing; records now carry a real file, and a record without
+   one says so rather than pretending.
+
+   The link goes to our own route rather than straight to the file host,
+   so the document's members-only setting is actually enforced and the
+   file arrives under its club filename. */
+function DownloadButton({ id, url, name }: { id: string; url?: string; name: string }) {
   if (!url) {
     return <span className="text-xs text-neutral-900">No file attached</span>;
   }
   return (
     <a
-      href={url}
+      href={`/api/documents/${id}/download`}
       download={name}
       target="_blank"
       rel="noopener noreferrer"
@@ -206,7 +210,7 @@ export default function DocumentsPage() {
               </div>
               {/* Download */}
               <div className="shrink-0">
-                <DownloadButton url={doc.url} name={doc.name} />
+                <DownloadButton id={doc.id} url={doc.url} name={doc.name} />
               </div>
             </div>
           ))}

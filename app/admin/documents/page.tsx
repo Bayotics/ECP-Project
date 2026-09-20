@@ -8,11 +8,17 @@ import {
   AdminTable, TR, TD, Badge, AdminModal,
   FormField, FormInput, FormSelect, FormTextarea, Btn, SectionDivider,
 } from "@/components/admin/AdminUI";
-import type { OrgDocument } from "@/lib/models/document";
+import FileUploader, { type UploadedFile } from "@/components/media/FileUploader";
+import { formatFileSize, type OrgDocument } from "@/lib/models/document";
 
 const CATEGORIES = ["all", "constitution", "minutes", "report", "handbook", "newsletter", "budget", "policy", "form", "other"];
 const ACCESS_LEVELS = ["all", "public", "members-only", "admin-only"];
-const FILE_TYPES = ["pdf", "docx", "xlsx", "img", "other"];
+const FILE_TYPES = ["pdf", "doc", "docx", "xlsx", "img", "other"];
+
+/* Cloudinary reports the extension; map it to the stored fileType. */
+const EXT_TO_TYPE: Record<string, OrgDocument["fileType"]> = {
+  pdf: "pdf", doc: "doc", docx: "docx", xls: "xlsx", xlsx: "xlsx",
+};
 
 const FILE_ICONS: Record<string, string> = {
   pdf: "📄", docx: "📝", xlsx: "📊", img: "🖼️", other: "📁",
@@ -29,14 +35,17 @@ export default function AdminDocumentsPage() {
   const [creating, setCreating] = useState(false);
 
   const [createForm, setCreateForm] = useState({
-    label: "", name: "", category: "policy", access: "members-only",
-    fileType: "pdf", simulatedSize: "", description: "",
+    label: "", category: "policy", access: "members-only", description: "",
   });
+  /* The real file, from /api/uploads. Name, type and size all come from it
+     rather than being typed in. */
+  const [createFile, setCreateFile] = useState<UploadedFile | null>(null);
 
   const [form, setForm] = useState({
     label: "", name: "", category: "", access: "",
-    fileType: "", simulatedSize: "", description: "",
+    fileType: "", description: "",
   });
+  const [editFile, setEditFile] = useState<Pick<OrgDocument, "url" | "publicId" | "sizeBytes" | "name"> | null>(null);
   const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
@@ -58,9 +67,9 @@ export default function AdminDocumentsPage() {
       category: doc.category,
       access: doc.access,
       fileType: doc.fileType,
-      simulatedSize: doc.simulatedSize,
       description: doc.description ?? "",
     });
+    setEditFile({ url: doc.url, publicId: doc.publicId, sizeBytes: doc.sizeBytes, name: doc.name });
   }
 
   function closeModal() { setSelected(null); }
@@ -75,7 +84,10 @@ export default function AdminDocumentsPage() {
         category: form.category as OrgDocument["category"],
         access: form.access as OrgDocument["access"],
         fileType: form.fileType as OrgDocument["fileType"],
-        simulatedSize: form.simulatedSize,
+        url: editFile?.url,
+        publicId: editFile?.publicId,
+        sizeBytes: editFile?.sizeBytes,
+        simulatedSize: formatFileSize(editFile?.sizeBytes) ?? "N/A",
         description: form.description || undefined,
       });
       closeModal();
@@ -92,19 +104,24 @@ export default function AdminDocumentsPage() {
   }
 
   async function handleCreate() {
-    if (!createForm.label.trim()) return;
+    if (!createForm.label.trim() || !createFile) return;
+    const ext = (createFile.originalName.split(".").pop() ?? "").toLowerCase();
     await add({
       label: createForm.label.trim(),
-      name: createForm.name.trim() || `${createForm.label.trim().replace(/\s+/g, "_")}.${createForm.fileType}`,
+      name: createFile.originalName,
       category: createForm.category as OrgDocument["category"],
       access: createForm.access as OrgDocument["access"],
-      fileType: createForm.fileType as OrgDocument["fileType"],
-      simulatedSize: createForm.simulatedSize || "—",
+      fileType: EXT_TO_TYPE[ext] ?? "other",
+      url: createFile.url,
+      publicId: createFile.publicId,
+      sizeBytes: createFile.bytes,
+      simulatedSize: formatFileSize(createFile.bytes) ?? "N/A",
       description: createForm.description || undefined,
       uploadedBy: currentUser?.id ?? "admin",
     });
     setCreating(false);
-    setCreateForm({ label: "", name: "", category: "policy", access: "members-only", fileType: "pdf", simulatedSize: "", description: "" });
+    setCreateFile(null);
+    setCreateForm({ label: "", category: "policy", access: "members-only", description: "" });
   }
 
   const headers = ["", "Label", "Category", "Access", "Type", "Size", "Uploaded", "Uploaded By"];
@@ -130,8 +147,8 @@ export default function AdminDocumentsPage() {
             <TD><Badge value={doc.category} /></TD>
             <TD><Badge value={doc.access} /></TD>
             <TD className="uppercase text-xs font-bold text-(--color-neutral-900)">{doc.fileType}</TD>
-            <TD className="text-(--color-neutral-900)">{doc.simulatedSize}</TD>
-            <TD>{new Date(doc.uploadedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</TD>
+            <TD className="text-(--color-neutral-900)">{formatFileSize(doc.sizeBytes) ?? doc.simulatedSize ?? "N/A"}</TD>
+            <TD>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "N/A"}</TD>
             <TD className="text-(--color-neutral-900) text-xs">{doc.uploadedBy}</TD>
           </TR>
         ))}
@@ -142,11 +159,15 @@ export default function AdminDocumentsPage() {
         <AdminModal title="Upload Document" open={creating} onClose={() => setCreating(false)}>
           <div className="space-y-4">
             <FormField label="Document Label *">
-              <FormInput value={createForm.label} onChange={e => setCreateForm(p => ({ ...p, label: e.target.value }))} placeholder="e.g. Meeting Minutes Q2 2026" />
+              <FormInput value={createForm.label} onChange={e => setCreateForm(p => ({ ...p, label: e.target.value }))} placeholder="e.g. April 2026 meeting minutes" />
             </FormField>
-            <FormField label="File Name">
-              <FormInput value={createForm.name} onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. meeting_minutes_q2_2026.pdf (auto-generated if blank)" />
-            </FormField>
+            <FileUploader
+              label="File *"
+              value={createFile?.url}
+              fileName={createFile?.originalName}
+              sizeBytes={createFile?.bytes}
+              onChange={setCreateFile}
+            />
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Category">
                 <FormSelect value={createForm.category} onChange={e => setCreateForm(p => ({ ...p, category: e.target.value }))}>
@@ -158,21 +179,13 @@ export default function AdminDocumentsPage() {
                   {ACCESS_LEVELS.filter(a => a !== "all").map(a => <option key={a} value={a}>{a.replace(/-/g, " ").replace(/\b\w/g, x => x.toUpperCase())}</option>)}
                 </FormSelect>
               </FormField>
-              <FormField label="File Type">
-                <FormSelect value={createForm.fileType} onChange={e => setCreateForm(p => ({ ...p, fileType: e.target.value }))}>
-                  {FILE_TYPES.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
-                </FormSelect>
-              </FormField>
-              <FormField label="File Size">
-                <FormInput value={createForm.simulatedSize} onChange={e => setCreateForm(p => ({ ...p, simulatedSize: e.target.value }))} placeholder="e.g. 1.4 MB" />
-              </FormField>
             </div>
             <FormField label="Description">
               <FormTextarea rows={2} value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} placeholder="What is this document about?" />
             </FormField>
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
-              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.label.trim()}>Add Document</Btn>
+              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.label.trim() || !createFile}>Add document</Btn>
             </div>
           </div>
         </AdminModal>
@@ -185,9 +198,27 @@ export default function AdminDocumentsPage() {
             <FormField label="Label">
               <FormInput value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} />
             </FormField>
-            <FormField label="File Name">
+            <FormField label="File name">
               <FormInput value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             </FormField>
+            <FileUploader
+              label="File"
+              value={editFile?.url}
+              fileName={editFile?.name}
+              sizeBytes={editFile?.sizeBytes}
+              onChange={(f) => {
+                if (!f) {
+                  setEditFile(null);
+                  return;
+                }
+                setEditFile({ url: f.url, publicId: f.publicId, sizeBytes: f.bytes, name: f.originalName });
+                setForm(p => ({
+                  ...p,
+                  name: f.originalName,
+                  fileType: EXT_TO_TYPE[(f.originalName.split(".").pop() ?? "").toLowerCase()] ?? "other",
+                }));
+              }}
+            />
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Category">
                 <FormSelect value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
@@ -203,9 +234,6 @@ export default function AdminDocumentsPage() {
                 <FormSelect value={form.fileType} onChange={e => setForm(p => ({ ...p, fileType: e.target.value }))}>
                   {FILE_TYPES.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
                 </FormSelect>
-              </FormField>
-              <FormField label="File Size">
-                <FormInput value={form.simulatedSize} onChange={e => setForm(p => ({ ...p, simulatedSize: e.target.value }))} />
               </FormField>
             </div>
             <FormField label="Description">

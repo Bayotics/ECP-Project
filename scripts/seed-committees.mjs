@@ -6,14 +6,15 @@
  * Source: the "ECP Committtee Poll Result 2026" sheet, transcribed in
  * scripts/committees-data.mjs.
  *
- * Volunteer names are matched to seeded member records so a committee can
- * link to a real person; the member's display name and photo are read from
- * the users collection rather than retyped. Any join requests pointing at a
+ * Each committee gets exactly one member: its chairperson. The name is
+ * matched to a seeded member record so the committee can link to a real
+ * person, and the display name and photo are read from the users
+ * collection rather than retyped. Any join requests pointing at a
  * committee that no longer exists are removed too.
  */
 import { MongoClient } from "mongodb";
 import { readFileSync, existsSync } from "fs";
-import { COMMITTEES, VOLUNTEER_IDS, POLL_SIZE } from "./committees-data.mjs";
+import { COMMITTEES, VOLUNTEER_IDS } from "./committees-data.mjs";
 
 const APPLY = process.argv.includes("--apply");
 
@@ -40,7 +41,7 @@ const byId = new Map(roster.map((u) => [u.id, u]));
 const now = new Date().toISOString();
 const unmatched = new Set();
 
-function memberProfile(sheetName) {
+function chairProfile(sheetName) {
   const userId = VOLUNTEER_IDS[sheetName] ?? null;
   const user = userId ? byId.get(userId) : null;
   if (userId && !user) unmatched.add(`${sheetName} (id ${userId} not in users)`);
@@ -50,9 +51,8 @@ function memberProfile(sheetName) {
        can tell a linked member from a name the sheet alone knows. */
     ...(user ? { userId: user.id } : {}),
     name: user ? user.displayName : sheetName,
-    /* The poll recorded volunteers, not offices. No chair is invented. */
-    role: "Volunteer",
-    isChairperson: false,
+    role: "Chairperson",
+    isChairperson: true,
     isViceChair: false,
     joinedCommitteeAt: "",
     ...(user?.avatarUrl ? { imageUrl: user.avatarUrl } : {}),
@@ -66,12 +66,10 @@ const docs = COMMITTEES.map((c) => ({
   description: c.description,
   type: c.type,
   status: "active",
-  members: c.volunteers.map(memberProfile),
+  members: [chairProfile(c.chair)],
   /* The club has not said when any of these were formed. */
   establishedAt: "",
   month: c.month,
-  votes: c.votes,
-  pollSize: POLL_SIZE,
   ...(c.programId ? { programId: c.programId } : {}),
   createdAt: now,
   updatedAt: now,
@@ -87,15 +85,15 @@ for (const c of doomed) console.log(`   ${c.id}  ${c.name}  (${(c.members ?? [])
 
 console.log(`\nSeeding ${docs.length} from the poll sheet:`);
 for (const d of docs) {
-  const linked = d.members.filter((m) => m.userId).length;
+  const chair = d.members[0];
   console.log(
-    `   ${d.month.padEnd(11)} ${d.name.padEnd(28)} ${String(d.votes).padStart(2)}/${POLL_SIZE} votes, ` +
-      `${d.members.length} volunteer${d.members.length === 1 ? "" : "s"} (${linked} linked to a member record)`,
+    `   ${d.month.padEnd(11)} ${d.name.padEnd(28)} chaired by ${chair.name}` +
+      `${chair.userId ? "" : "  (no roster match)"}`,
   );
 }
 
 if (unmatched.size) {
-  console.log("\nVolunteer names with no roster match, seeded as plain names:");
+  console.log("\nChair names with no roster match, seeded as plain names:");
   for (const n of unmatched) console.log(`   ${n}`);
 }
 
@@ -113,7 +111,13 @@ if (!APPLY) {
   }
   for (const d of docs) {
     const { createdAt, ...rest } = d;
-    await committees.updateOne({ id: d.id }, { $set: rest, $setOnInsert: { createdAt } }, { upsert: true });
+    await committees.updateOne(
+      { id: d.id },
+      /* $unset clears the poll fields off records seeded by an earlier
+         run, which $set alone would leave behind. */
+      { $set: rest, $unset: { votes: "", pollSize: "" }, $setOnInsert: { createdAt } },
+      { upsert: true },
+    );
   }
   console.log(`\nDone. committees: ${await committees.countDocuments()}\n`);
 }

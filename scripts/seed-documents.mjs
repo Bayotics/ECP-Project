@@ -130,15 +130,20 @@ const now = new Date().toISOString();
 let done = 0;
 
 for (const p of planned.sort((a, b) => b.sortKey.localeCompare(a.sortKey))) {
-  const publicId = `ecp/documents/${p.file.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").toLowerCase()}`;
+  const requestedId = `ecp/documents/${p.file.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").toLowerCase()}`;
   const uploaded = await cloudinary.uploader.upload(p.full, {
-    public_id: publicId,
+    public_id: requestedId,
     resource_type: "raw",
     overwrite: true,
     /* Keep the original name on the download so members get a sensible
        filename rather than the public id. */
     use_filename: false,
   });
+
+  /* For a raw upload Cloudinary appends the extension, so the id it hands
+     back is the one that actually addresses the file. Storing our own
+     guess would break replace and delete later. */
+  const publicId = uploaded.public_id;
 
   await documents.updateOne(
     { publicId },

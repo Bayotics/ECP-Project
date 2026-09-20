@@ -67,16 +67,16 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        {/* Notification bell */}
-        <button
-          className="relative rounded-full p-2 text-neutral-900 transition-colors hover:bg-neutral-100"
-          aria-label="Notifications"
+        {/* Out of the portal and back to the public site. */}
+        <Link
+          href="/"
+          className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-normal text-neutral-900 transition-colors hover:border-neutral-400 hover:bg-neutral-50 sm:px-4"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10.5 12 3l9 7.5M5.25 9.75V20a1 1 0 0 0 1 1h3.5v-5.5h4.5V21h3.5a1 1 0 0 0 1-1V9.75" />
           </svg>
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-600" />
-        </button>
+          <span className="hidden sm:inline">Go back home</span>
+        </Link>
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={menuRef}>
