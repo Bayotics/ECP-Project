@@ -62,17 +62,15 @@ const QUICK_LINKS = [
   { href: "/about", label: "About Us" },
   { href: "/programs", label: "Programs" },
   { href: "/projects", label: "Our Projects" },
-  { href: "/events", label: "Events & Programmes" },
+  { href: "/events", label: "Events" },
   { href: "/donate", label: "Donate" },
-  { href: "/apply", label: "Apply Now" },
+  { href: "/membership/apply", label: "Apply Now" },
 ];
 
 const COMMUNITY_LINKS = [
-  { href: "/members", label: "Our Members" },
-  { href: "/forums", label: "Community Forums" },
-  { href: "/blog", label: "Blog & News" },
+
+  { href: "/news", label: "Blog & News" },
   { href: "/gallery", label: "Gallery" },
-  { href: "/impact", label: "Impact Reports" },
 ];
 
 const LEGAL_LINKS = [
@@ -357,7 +355,7 @@ export default function Footer() {
             &copy; {year} Eko Club Philadelphia. All rights reserved. A chapter of Eko Club International.
           </p>
           <nav aria-label="Legal links" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            {LEGAL_LINKS.map(({ href, label }) => (
+            {/* {LEGAL_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
@@ -368,7 +366,7 @@ export default function Footer() {
               >
                 {label}
               </Link>
-            ))}
+            ))} */}
             <Link
               href="/donate"
               className="text-xs font-normal text-green-400 hover:underline"

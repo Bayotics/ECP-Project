@@ -17,6 +17,7 @@ import { useIntroDone } from "@/components/layout/HomeIntro";
 import type { Event as AppEvent } from "@/lib/models/event";
 
 import { useEvents } from "@/context/EventsContext";
+import { PROGRAMS } from "@/lib/content/programs";
 import { cn } from "@/utils/cn";
 
 /* ══════════════════════════════════════════════════════
@@ -32,19 +33,23 @@ const QUAD = [EKO_GREEN, EKO_RED, EKO_BLUE, EKO_YELLOW];
    just in green instead of navy). */
 const DEEP_GREEN = "#0c3b28";
 
+/* The club's own photographs, each chosen to match what it sits beside
+   rather than the interchangeable eko-1…6 set that was here before. A
+   volunteer event now shows the highway crew, a seminar shows a health
+   webinar flyer, and so on. */
 const GALLERY = {
-  hero:     "/gallery/hero-bgs/national-theatre_standard.jpg",
+  hero:     "/gallery/hero-bgs/phily.jpg",
   eciLeft:  "/gallery/hero-bgs/lagos-island.jpg",
   eciRight: "/gallery/hero-bgs/eyo-2025.jpg",
   timeline: {
-    volunteer:       "/gallery/eko/eko-1.jpeg",
-    meetup:          "/gallery/eko/eko-2.jpeg",
-    health:          "/gallery/eko/eko-3.jpeg",
-    workshop:        "/gallery/eko/eko-4.jpeg",
-    townHall:        "/gallery/eko/eko-5.jpeg",
-    seminar:         "/gallery/eko/eko-6.jpeg",
-    pressConference: "/gallery/eko/eko-1.jpeg",
-    other:           "/gallery/eko/eko-2.jpeg",
+    volunteer:       "/gallery/projects/highway/group-at-sign.jpg",
+    meetup:          "/gallery/projects/scholarship/2026-awardees.jpg",
+    health:          "/gallery/projects/rmh/team-with-ronald.jpg",
+    workshop:        "/gallery/projects/homefront/homefront-donation.jpg",
+    townHall:        "/gallery/projects/scholarship/2026-members.jpg",
+    seminar:         "/gallery/projects/health/flyer-heart-health-2025-01.jpg",
+    pressConference: "/gallery/projects/parade/contingent.jpg",
+    other:           "/gallery/projects/parade/eyo-procession.jpg",
   },
 } as const;
 
@@ -361,20 +366,25 @@ function EciIntroSection() {
   const missionTextRef = useRef<HTMLDivElement>(null);
   const { events } = useEvents();
 
-  const pastCount = useMemo(() => {
+  /* Events the club has actually run, counted from the calendar. This used
+     to be `40 + pastCount`: a real count with an invented 40 added on top,
+     which is how the page came to claim "64+". The number now rises on its
+     own as events pass, and never says more than the club has done. */
+  const eventsDelivered = useMemo(() => {
     const now = new Date();
-    return events.filter(e =>
-      (e.status === "published" || e.status === "completed") &&
-      new Date(e.date) < now
+    return events.filter(
+      (e) => e.status !== "draft" && new Date(e.endDate ?? e.date) < now,
     ).length;
   }, [events]);
 
-  const totalEvents = 40 + pastCount;
   const stats = [
-    { value: totalEvents, suffix: "+",  label: "Events delivered" },
-    { value: 9,           suffix: "",   label: "Annual programs" },
-    { value: 2,           suffix: "mi", label: "Highway adopted" },
-    { value: 5,           suffix: "",   label: "College scholarships" },
+    { value: eventsDelivered, suffix: "",   label: "Events delivered" },
+    /* Read from the programmes themselves so the two can never disagree. */
+    { value: PROGRAMS.length, suffix: "",   label: "Annual programs" },
+    /* The club's adopted stretch of Big Oak Road, Bucks County. */
+    { value: 2,               suffix: "mi", label: "Highway adopted" },
+    /* Two high school graduates and three college students every year. */
+    { value: 5,               suffix: "",   label: "Scholarships a year" },
   ];
 
   useEffect(() => {
@@ -514,38 +524,43 @@ function EciIntroSection() {
 /* ══════════════════════════════════════════════════════
    4. WHAT WE DO — 4 editorial tiles
    ══════════════════════════════════════════════════════ */
+/* The card these sit in is aspect-[16/11], so a portrait photograph shows
+   barely half its height and `object-cover` takes the missing 48% off the
+   top and bottom, cropping straight through people's faces. Every image
+   here is landscape (4:3 or wider), which loses only about 8%. Keep it
+   that way when swapping any of them. */
 const WHAT_WE_DO = [
   {
     color: "#059669",
     title: "Programs",
-    description: "Nine recurring community programs every year — highway cleanups, scholarship nights, medical missions, and more.",
+    description: "Nine recurring community programs every year: highway cleanups, scholarship nights, back to school drives, the turkey giveaway, and the biennial medical mission.",
     href: "/programs",
     label: "View programs",
-    image: "/gallery/eko/eko-1.jpeg",
+    image: "/gallery/projects/highway/spring-crew.jpg",
   },
   {
     color: "#dc2626",
     title: "Committees",
-    description: "Join the people behind the programs. Our committees are how the work gets done and how members find their place.",
+    description: "Ten committees are how the work gets done, each with a chair and a month in the calendar. Joining one is how members find their place.",
     href: "/member/committees",
     label: "Browse committees",
-    image: "/gallery/eko/eko-2.jpeg",
+    image: "/gallery/about/right-about-hero-4.jpg",
   },
   {
     color: "#2563eb",
     title: "Events",
-    description: "Cultural galas, volunteer drives, town halls, and community gatherings — one authoritative calendar.",
+    description: "The parade, service days, health talks and award nights, all on one calendar you can add straight to your own.",
     href: "/events",
     label: "See all events",
-    image: "/gallery/eko/eko-3.jpeg",
+    image: "/gallery/projects/parade/contingent.jpg",
   },
   {
     color: "#d97706",
     title: "Donate",
-    description: "Every dollar funds programs, scholarships, and outreach. Give once or set up monthly support.",
+    description: "Every dollar funds scholarships, turkeys at Thanksgiving, coats in winter and backpacks in August. Give once or set up monthly support.",
     href: "/donate",
     label: "Make a gift",
-    image: "/gallery/eko/eko-4.jpeg",
+    image: "/gallery/projects/thanksgiving/team-and-turkeys.jpg",
   },
 ] as const;
 
@@ -572,20 +587,35 @@ function CarouselCardFace({ item }: { item: (typeof WHAT_WE_DO)[number] }) {
         sizes="(max-width: 1024px) 100vw, 60vw"
       />
 
-      {/* Overlay: transparent at the vertical midpoint, pitch black by the
-          bottom edge — the text and CTA below sit inside it. */}
+      {/* Overlay. It begins earlier and lands heavier than it used to: the
+          body copy sits around three quarters of the way down, where the
+          old "transparent at 50%" ramp was still too light to read white
+          text against a bright photograph. */}
       <div
         className="absolute inset-0"
-        style={{ background: "linear-gradient(to bottom, transparent 50%, #000000 100%)" }}
+        style={{
+          /* The stops are placed against where the text actually sits: the
+             heading lands around 57% down the card and the body around 72%,
+             so the ramp is already heavy by the midpoint. Measured against a
+             bright photograph this holds white text above the 4.5:1 contrast
+             needed to read it. The top half stays light so the picture still
+             carries the card. */
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.22) 38%, rgba(0,0,0,0.62) 58%, rgba(0,0,0,0.84) 68%, rgba(0,0,0,0.96) 100%)",
+        }}
         aria-hidden="true"
       />
 
-      {/* Text overlay */}
-      <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+      {/* Text overlay. The shadow is insurance for a bright patch of
+          photograph sitting directly behind a letter. */}
+      <div
+        className="absolute inset-x-0 bottom-0 p-6 sm:p-8"
+        style={{ textShadow: "0 1px 12px rgba(0,0,0,0.55)" }}
+      >
         <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">
           {item.title}
         </h3>
-        <p className="text-sm sm:text-base text-white/70 leading-relaxed max-w-md mb-5">
+        <p className="text-sm sm:text-base text-white leading-relaxed max-w-md mb-5">
           {item.description}
         </p>
         <Link
@@ -778,27 +808,39 @@ type TItem = {
    component, unlike a ref or state living inside it. */
 let cachedTimelineEvents: AppEvent[] | null = null;
 
+/* Shown only if the events API cannot be reached, so the section is never
+   empty. These are four of the club's genuine recurring programmes with
+   their real dates, venues and photographs, matching what the seeded
+   calendar holds; nothing here is invented to fill space. */
 const FALLBACK_EVENTS: TItem[] = [
-  { id: "ev-001", slug: "adopt-a-highway-2026", title: "Adopt-a-Highway Cleanup",
-    description: "Members trade weekends for work gloves and clear litter along our adopted stretch of highway — the most visible act of pride in the place we call home.",
-    date: "2026-05-10T08:00:00.000Z", location: "Bucks County, Pennsylvania",
-    type: "volunteer", status: "published", organizerName: "Eko Club Philadelphia",
-    tags: ["environment", "volunteer"], imageUrl: GALLERY.timeline.volunteer, isOnline: false },
-  { id: "ev-002", slug: "scholarship-awards-night-2026", title: "Scholarship Awards Night",
-    description: "Celebrating outstanding students of Nigerian heritage. The evening turns a scholarship into a moment of recognition the whole community shows up for.",
-    date: "2026-05-17T18:00:00.000Z", location: "Philadelphia, PA",
-    type: "meetup", status: "published", organizerName: "Eko Club Philadelphia",
-    tags: ["scholarship", "education"], imageUrl: GALLERY.timeline.meetup, isOnline: false },
-  { id: "ev-003", slug: "ronald-mcdonald-house-meals-2026", title: "Ronald McDonald House Meals",
-    description: "Members fill the Ronald McDonald House kitchen with home-cooked meals for families whose children are receiving medical care.",
-    date: "2026-06-14T10:00:00.000Z", location: "Philadelphia, PA",
-    type: "volunteer", status: "published", organizerName: "Eko Club Philadelphia",
-    tags: ["health", "community"], imageUrl: GALLERY.timeline.health, isOnline: false },
-  { id: "ev-004", slug: "back-to-school-drive-2026", title: "Back-to-School Drive",
-    description: "Hundreds of students across Philadelphia start the year ready and confident as members pack backpacks full of the supplies they need.",
-    date: "2026-08-15T09:00:00.000Z", location: "Philadelphia, PA",
-    type: "volunteer", status: "published", organizerName: "Eko Club Philadelphia",
-    tags: ["education", "youth"], imageUrl: GALLERY.timeline.workshop, isOnline: false },
+  { id: "ecp-evt-thanksgiving-turkey-drive-2026-11", slug: "thanksgiving-turkey-drive-2026-11",
+    title: "Thanksgiving Turkey Giveaway 2026",
+    description: "No table should sit empty in November. Members gather and distribute turkeys and trimmings so families across the area enjoy a full Thanksgiving meal.",
+    date: "2026-11-21T10:00:00.000Z", location: "Philadelphia, Pennsylvania",
+    type: "volunteer", status: "published", organizerName: "Hon. Bola Okoya",
+    tags: ["community service", "food"],
+    imageUrl: "/gallery/projects/thanksgiving/team-and-turkeys.jpg", isOnline: false },
+  { id: "ecp-evt-independence-day-parade-2026-10", slug: "independence-day-parade-2026-10",
+    title: "Nigeria Independence Day Parade 2026",
+    description: "Green-white-green takes over the street as we march in the Nigeria Independence Day Parade: drums, agbada, gele, and an unmistakable sense of who we are.",
+    date: "2026-10-03T11:00:00.000Z", location: "New York City, New York",
+    type: "other", status: "published", organizerName: "Hon. Adebimpe Daniells",
+    tags: ["culture", "heritage", "parade"],
+    imageUrl: "/gallery/projects/parade/eyo-procession.jpg", isOnline: false },
+  { id: "ecp-evt-scholarship-programs-2026-05", slug: "scholarship-programs-2026-05",
+    title: "Scholarship Award Presentation 2026",
+    description: "We close the academic year by celebrating the scholars among us, outstanding students of Nigerian heritage whose drive deserves a runway.",
+    date: "2026-05-09T16:00:00.000Z", location: "Philadelphia, Pennsylvania",
+    type: "other", status: "completed", organizerName: "Hon. Adebimpe Daniells",
+    tags: ["education", "youth", "awards"],
+    imageUrl: "/gallery/projects/scholarship/2026-awardees.jpg", isOnline: false },
+  { id: "ecp-evt-adopt-a-highway-2026-05", slug: "adopt-a-highway-2026-05",
+    title: "Adopt a Highway 2026",
+    description: "Each spring our members trade weekends for work gloves and clear litter along our adopted stretch of Big Oak Road, restoring the roadside our neighbours drive past every day.",
+    date: "2026-05-09T09:00:00.000Z", location: "Big Oak Road, Bucks County, Pennsylvania",
+    type: "volunteer", status: "completed", organizerName: "Hon. Bola Okoya",
+    tags: ["community service", "environment"],
+    imageUrl: "/gallery/projects/highway/group-at-sign.jpg", isOnline: false },
 ];
 
 const T_STYLES: Record<AppEvent["type"], { label: string; color: string; img: string }> = {
@@ -1190,7 +1232,27 @@ function EventTimelineSection() {
           organizerName: e.organizerName, tags: e.tags, imageUrl: e.imageUrl, isOnline: e.isOnline,
         }))
       : FALLBACK_EVENTS;
-    return [...src].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+
+    /* What is coming up next, soonest first.
+
+       This used to sort newest-first and take four, which with a calendar
+       seeded out to 2027 meant the homepage led with events fourteen months
+       away. A visitor wants to know what they could turn up to next.
+
+       If nothing is upcoming, the four most recent past events stand in, so
+       the section still shows the club at work rather than emptying out. */
+    const now = Date.now();
+    const upcoming = src
+      .filter((e) => new Date(e.date).getTime() >= now)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    if (upcoming.length >= 4) return upcoming.slice(0, 4);
+
+    const recent = src
+      .filter((e) => new Date(e.date).getTime() < now)
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return [...upcoming, ...recent].slice(0, 4);
   }, [effectiveEvents]);
 
   const safeIndex = Math.min(activeIndex, Math.max(items.length - 1, 0));

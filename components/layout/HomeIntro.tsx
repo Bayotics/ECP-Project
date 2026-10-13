@@ -1,23 +1,31 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 /**
  * Homepage intro splash: a plain green screen with the club logo gently
  * flickering, which then closes like a camera iris — the circular window
- * shrinks in on itself, revealing the homepage underneath — rather than a
- * plain fade/slide.
+ * shrinks in on itself, revealing the homepage underneath.
  *
  * `introHasPlayed` lives at module scope: it survives client-side navigation
  * (the module isn't re-evaluated) but resets on a full page load/refresh. So
  * the splash plays on a real page load or hard refresh, and NEVER when the
  * user routes back to the homepage from another page within the app.
+ *
+ * Nothing here uses framer-motion, and that is the point. The splash covers
+ * the entire page, so if whatever removes it fails to run the site is simply
+ * unusable. framer-motion drives animation from requestAnimationFrame, which
+ * browsers pause for hidden or backgrounded tabs: an `AnimatePresence` exit
+ * started while the tab was in the background never progressed, so the
+ * overlay was never unmounted and the splash sat there permanently with a
+ * frozen logo. Everything below is driven by plain timers and CSS, which keep
+ * running when the tab is hidden. The animation is decoration; the timers are
+ * what guarantee the splash goes away.
  */
 let introHasPlayed = false;
-const FLICKER_MS = 3800;
-const IRIS_MS = 2500;
-// The explicit total: flicker, THEN the iris fully closes, THEN reveal.
+const FLICKER_MS = 1900;
+const IRIS_MS = 1250;
+/** The explicit total: flicker, THEN the iris fully closes, THEN reveal. */
 const TOTAL_INTRO_MS = FLICKER_MS + IRIS_MS;
 
 /**
@@ -33,33 +41,40 @@ export function useIntroDone() {
 }
 
 export default function HomeIntro({ children }: { children: React.ReactNode }) {
+  /** Drives the iris: true holds it open, false closes it. */
   const [playing, setPlaying] = useState(!introHasPlayed);
-  // `revealed` only flips once the iris has actually finished closing on
-  // screen — NOT the moment `playing` becomes false (that only STARTS the
-  // exit animation; the visual close still takes IRIS_MS more). Gating hero
-  // text on `playing` alone made it animate in *while the overlay was still
-  // shrinking on top of it*, so by the time the green circle vanished the
-  // text had already finished moving — nothing left to see.
-  //
-  // Gated on an explicit calculated total (FLICKER_MS + IRIS_MS = the exact
-  // moment the iris reaches 0%) via a plain timer, rather than an
-  // animation-completion callback — a callback tied to animation-frame
-  // progress can stall indefinitely if the tab loses focus mid-splash
-  // (browsers pause rAF for hidden tabs), whereas a plain timer keeps firing.
+  /**
+   * The splash is unmounted on this alone, from a plain timer. It is never
+   * gated on an animation finishing, because an animation that never runs
+   * would leave the overlay covering the page for good.
+   */
   const [revealed, setRevealed] = useState(introHasPlayed);
 
+  /**
+   * Whether THIS mount is the one that plays the splash, decided on the first
+   * render and held in a ref.
+   *
+   * It deliberately does not re-read `introHasPlayed` inside the effect.
+   * React Strict Mode mounts a component, runs its effects, unmounts it and
+   * mounts it again in development; the first pass would set the flag and arm
+   * the timers, the unmount would clear them, and a flag-based guard would
+   * then take an early return on the second pass, leaving nothing to close
+   * the splash. A ref survives that remount with its original value.
+   */
+  const shouldPlay = useRef(!introHasPlayed);
+
   useEffect(() => {
-    if (introHasPlayed) return; // client-side nav back to home — no splash
+    // Client-side navigation back to the homepage: nothing to play.
+    if (!shouldPlay.current) return;
     introHasPlayed = true;
 
     document.body.style.overflow = "hidden";
-    const closeTimer = setTimeout(() => {
-      setPlaying(false);
-    }, FLICKER_MS);
+    const closeTimer = setTimeout(() => setPlaying(false), FLICKER_MS);
     const revealTimer = setTimeout(() => {
       setRevealed(true);
       document.body.style.overflow = "";
     }, TOTAL_INTRO_MS);
+
     return () => {
       clearTimeout(closeTimer);
       clearTimeout(revealTimer);
@@ -69,65 +84,64 @@ export default function HomeIntro({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Green splash overlay — closes via a circular iris wipe */}
-      <AnimatePresence>
-        {playing && (
-          <motion.div
-            key="home-intro"
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#059669]"
-            style={{ clipPath: "circle(150% at 50% 50%)" }}
-            exit={{
-              clipPath: "circle(0% at 50% 50%)",
-              transition: { duration: IRIS_MS / 1000, ease: [0.76, 0, 0.24, 1] },
+      {/* Green splash overlay, closing via a circular iris wipe.
+          Mounted on `revealed` rather than `playing`: `playing` only starts
+          the close, while `revealed` is the timer that guarantees the end. */}
+      {!revealed && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#059669]"
+          style={{
+            clipPath: playing ? "circle(150% at 50% 50%)" : "circle(0% at 50% 50%)",
+            transition: `clip-path ${IRIS_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`,
+          }}
+          aria-hidden="true"
+        >
+          {/* Rim glow, tracing just inside the shrinking edge for polish. */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.18)" }}
+          />
+
+          <div
+            className="w-40 sm:w-52"
+            style={{
+              animation: `ecp-intro-flicker ${FLICKER_MS}ms ease-in-out both`,
+              transform: playing ? "scale(1)" : "scale(0.85)",
+              transition: `transform ${IRIS_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`,
             }}
-            aria-hidden="true"
           >
-            {/* Rim glow — traces just inside the shrinking edge for polish */}
-            <motion.div
-              className="pointer-events-none absolute inset-0"
-              style={{ boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.18)" }}
-              exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            {/* Plain <img> on purpose: served directly from /public with no
+                image-optimizer round-trip, so the logo is guaranteed to be
+                visible within the splash's short lifetime. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/new-logo.png"
+              alt="Eko Club Philadelphia"
+              width={420}
+              height={420}
+              className="h-auto w-full drop-shadow-[0_0_28px_rgba(0,0,0,0.25)]"
             />
+          </div>
+        </div>
+      )}
 
-            <motion.div
-              className="w-40 sm:w-52"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 1, 0.55, 1, 0.65, 1] }}
-              exit={{ scale: 0.85, transition: { duration: IRIS_MS / 1000, ease: [0.76, 0, 0.24, 1] } }}
-              transition={{
-                duration: FLICKER_MS / 1000,
-                ease: "easeInOut",
-                times: [0, 0.18, 0.4, 0.6, 0.8, 1],
-              }}
-            >
-              {/* Plain <img> on purpose: served directly from /public with no
-                  image-optimizer round-trip, so the logo is guaranteed to be
-                  visible within the splash's short lifetime. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/new-logo.png"
-                alt="Eko Club Philadelphia"
-                width={420}
-                height={420}
-                className="h-auto w-full drop-shadow-[0_0_28px_rgba(0,0,0,0.25)]"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Homepage content — scales up into view as the iris closes.
-          On client-side route-back (introHasPlayed already true) it's
-          simply present with no entrance animation. */}
-      <motion.div
-        initial={introHasPlayed && !playing ? false : { opacity: 0, scale: 1.04 }}
-        animate={playing ? { opacity: 0, scale: 1.04 } : { opacity: 1, scale: 1 }}
-        transition={{ duration: IRIS_MS / 1000, ease: [0.16, 1, 0.3, 1] }}
+      {/* Homepage content, scaling up into view as the iris closes. On a
+          client-side route back it is simply present, with no entrance. */}
+      <div
+        style={
+          shouldPlay.current
+            ? {
+                opacity: playing ? 0 : 1,
+                transform: playing ? "scale(1.04)" : "scale(1)",
+                transition: `opacity ${IRIS_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${IRIS_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+              }
+            : undefined
+        }
       >
         <IntroDoneContext.Provider value={revealed}>
           {children}
         </IntroDoneContext.Provider>
-      </motion.div>
+      </div>
     </>
   );
 }

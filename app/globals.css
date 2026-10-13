@@ -242,3 +242,17 @@ body {
   from { opacity: 0; transform: scale(0.98); }
   to   { opacity: 1; transform: scale(1); }
 }
+
+/* Homepage intro splash: the logo's flicker.
+   A CSS animation rather than a framer-motion one on purpose. The splash
+   must be able to finish while the tab is in the background, and
+   framer-motion drives everything from requestAnimationFrame, which
+   browsers pause for hidden tabs. */
+@keyframes ecp-intro-flicker {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  40%  { opacity: 0.55; }
+  60%  { opacity: 1; }
+  80%  { opacity: 0.65; }
+  100% { opacity: 1; }
+}

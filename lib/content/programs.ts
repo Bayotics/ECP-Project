@@ -171,7 +171,7 @@ export const PROGRAMS: Program[] = [
     blurb:
       "Our flagship. Every two years a team of medical professionals and volunteers travels to deliver free care, screenings, and supplies to communities that need them, the fullest expression of why this club exists.",
     accent: EKO.red,
-    image: { src: "https://i.ytimg.com/vi/9ViSMyqg5_s/hqdefault.jpg", alt: "Eko Club International Medical Mission, Lagos Island" },
+    image: { src: "https://i.ytimg.com/vi/9ViSMyqg5_s/maxresdefault.jpg", alt: "Eko Club International Medical Mission, Lagos Island" },
     projectId: "medical-missions",
     flagship: true,
   },

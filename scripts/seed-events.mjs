@@ -185,7 +185,7 @@ const PROGRAMS = [
     location: "Lagos, Nigeria",
     time: "09:00",
     tags: ["health", "medical mission", "eko club international"],
-    image: "https://i.ytimg.com/vi/9ViSMyqg5_s/hqdefault.jpg",
+    image: "https://i.ytimg.com/vi/9ViSMyqg5_s/maxresdefault.jpg",
     featured: true,
     blurb:
       "Our flagship. Every two years a team of medical professionals and volunteers travels to deliver free care, screenings, and supplies to communities that need them, the fullest expression of why this club exists.",
