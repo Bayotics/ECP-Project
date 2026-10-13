@@ -1,3 +1,4 @@
+import type { EmailVerificationToken } from "@/lib/server/email-verification";
 import type { Collection, IndexDescription } from "mongodb";
 import type {
   Cart,
@@ -34,6 +35,7 @@ export const COLLECTIONS = {
   notificationLogs: "notificationLogs",
   duesPayments: "duesPayments",
   committeeJoinRequests: "committeeJoinRequests",
+  emailVerificationTokens: "emailVerificationTokens",
 } as const;
 
 export interface AppCollections {
@@ -52,6 +54,7 @@ export interface AppCollections {
   notificationLogs: NotificationLog;
   duesPayments: DuesPayment;
   committeeJoinRequests: CommitteeJoinRequest;
+  emailVerificationTokens: EmailVerificationToken;
 }
 
 type CollectionName = keyof AppCollections;
@@ -137,6 +140,16 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { userId: 1, year: 1 }, unique: true },
     { key: { status: 1 } },
     { key: { year: 1 } },
+  ],
+  emailVerificationTokens: [
+    { key: { id: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+    { key: { userId: 1 } },
+    /* MongoDB drops each token an hour past its expiry, so spent and stale
+       rows do not pile up and nothing has to sweep them. It indexes
+       `expiresAtDate` rather than `expiresAt`, because a TTL index only
+       acts on a real BSON date and ignores an ISO string entirely. */
+    { key: { expiresAtDate: 1 }, expireAfterSeconds: 3600 },
   ],
   committeeJoinRequests: [
     { key: { id: 1 }, unique: true },

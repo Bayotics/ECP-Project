@@ -16,8 +16,13 @@ interface ProtectedRouteProps {
  * not authenticated they are redirected to /auth/login.
  */
 export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin, currentUser } = useAuth();
   const router = useRouter();
+
+  /* Explicitly false only. A record predating email verification has no such
+     field, and those accounts were created by the club rather than by self
+     registration, so they are not held at the door. */
+  const unverified = currentUser?.emailVerified === false;
 
   useEffect(() => {
     if (isLoading) return;
@@ -25,10 +30,17 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
       router.replace("/auth/login");
       return;
     }
+    /* The real gate is server side: login refuses an unconfirmed account, so
+       normally no session exists to reach this page with. This is the second
+       lock, for a session issued before verification was introduced. */
+    if (unverified) {
+      router.replace("/auth/verify-email?pending=1");
+      return;
+    }
     if (requireAdmin && !isAdmin) {
       router.replace("/member/dashboard");
     }
-  }, [isLoading, isAuthenticated, isAdmin, requireAdmin, router]);
+  }, [isLoading, isAuthenticated, isAdmin, unverified, requireAdmin, router]);
 
   if (isLoading) {
     return (
@@ -42,6 +54,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   }
 
   if (!isAuthenticated) return null;
+  if (unverified) return null;
   if (requireAdmin && !isAdmin) return null;
 
   return <>{children}</>;

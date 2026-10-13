@@ -37,6 +37,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "This account has been suspended." }, { status: 403 });
     }
 
+    /* The gate. An unconfirmed address gets no session, so the portal is
+       unreachable until the member follows the link. `reason` lets the
+       login page offer to send a new one instead of showing a dead end.
+       Credentials were already checked above, so saying the address is
+       unconfirmed tells the caller nothing they did not already prove. */
+    if (user.emailVerified === false) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: "email-unverified",
+          email: user.email,
+          error: "Confirm your email address before signing in. Check your inbox for the link we sent.",
+        },
+        { status: 403 },
+      );
+    }
+
     await mergeAnonymousCartIntoUser(getCartSessionId(request), user.id);
 
     const response = NextResponse.json({ ok: true, data: user });

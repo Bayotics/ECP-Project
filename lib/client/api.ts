@@ -14,6 +14,27 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return payload.data as T;
 }
 
+/**
+ * Like `apiRequest`, but hands back the whole envelope rather than just
+ * `data`. For the few routes that return a flag alongside the record, such
+ * as registration reporting whether the verification email went out.
+ */
+export async function apiRequestEnvelope<T, E = Record<string, unknown>>(
+  input: string,
+  init?: RequestInit,
+): Promise<ApiEnvelope<T> & E> {
+  const response = await fetch(input, {
+    ...init,
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+  });
+  const payload = (await response.json().catch(() => null)) as (ApiEnvelope<T> & E) | null;
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.error ?? `Request failed with status ${response.status}`);
+  }
+  return payload;
+}
+
 export async function apiRequest<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, {
     ...init,

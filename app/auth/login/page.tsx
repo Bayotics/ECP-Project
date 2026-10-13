@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /* Set when login was refused specifically because the address is not yet
+     confirmed, which turns the error box into an offer of a new link. */
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resend, setResend] = useState<{ busy: boolean; note: string; error: string }>({
+    busy: false, note: "", error: "",
+  });
 
   useEffect(() => {
     if (isAuthenticated && currentUser) {
@@ -27,13 +33,35 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    setNeedsVerification(false);
+    setResend({ busy: false, note: "", error: "" });
     setIsSubmitting(true);
     const result = await loginWithEmail(email, password);
     setIsSubmitting(false);
     if (!result.success) {
       setError(result.error ?? "Login failed. Please try again.");
+      setNeedsVerification(result.reason === "email-unverified");
     }
     // redirect is handled by the isAuthenticated useEffect above
+  }
+
+  async function handleResend() {
+    setResend({ busy: true, note: "", error: "" });
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const json = (await res.json()) as { ok: boolean; message?: string; error?: string };
+      setResend({
+        busy: false,
+        note: json.ok ? (json.message ?? "Sent.") : "",
+        error: json.ok ? "" : (json.error ?? "Could not send the email."),
+      });
+    } catch {
+      setResend({ busy: false, note: "", error: "Could not reach the server. Try again." });
+    }
   }
 
   return (
@@ -66,9 +94,26 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {error && (
+      {error && !needsVerification && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
           {error}
+        </div>
+      )}
+
+      {/* A blocked sign-in is only useful if it says how to get unblocked. */}
+      {needsVerification && (
+        <div className="space-y-3 rounded-lg border border-(--color-gold-300) bg-amber-50 px-4 py-4">
+          <p className="text-sm leading-6 text-amber-900">{error}</p>
+          {resend.note && <p className="text-sm text-green-800">{resend.note}</p>}
+          {resend.error && <p className="text-sm text-red-700">{resend.error}</p>}
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resend.busy}
+            className="rounded-full border border-amber-400 px-4 py-2 text-sm font-normal text-amber-900 transition-colors hover:bg-amber-100 disabled:opacity-60"
+          >
+            {resend.busy ? "Sending…" : "Send the link again"}
+          </button>
         </div>
       )}
 

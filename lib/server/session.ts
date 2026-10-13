@@ -11,6 +11,11 @@ interface SessionPayload {
   sub: string;
   email: string;
   role: User["role"];
+  /* Carried in the token so a guard can refuse an unverified session
+     without a database round trip. A token minted before verification keeps
+     the old value until the member signs in again, which is exactly what
+     happens once they follow the link. */
+  emailVerified: boolean;
   iat: number;
   exp: number;
 }
@@ -44,6 +49,7 @@ export function createSessionToken(user: User): string {
       sub: user.id,
       email: user.email,
       role: user.role,
+      emailVerified: user.emailVerified !== false,
       iat: now,
       exp: now + SESSION_MAX_AGE_SECONDS,
     } satisfies SessionPayload)

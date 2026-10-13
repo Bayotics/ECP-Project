@@ -4,7 +4,8 @@ import type { User } from "@/lib/models";
 import { createUserWithPassword } from "@/lib/server/auth";
 import { mergeAnonymousCartIntoUser } from "@/lib/server/cart";
 import { ensureCoreIndexes, getCollection } from "@/lib/server/collections";
-import { clearCartSessionCookie, getCartSessionId, setAuthSessionCookie } from "@/lib/server/session";
+import { clearCartSessionCookie, getCartSessionId } from "@/lib/server/session";
+import { sendVerificationEmail } from "@/lib/server/email-verification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,8 @@ export async function POST(request: NextRequest) {
       lastName,
       displayName: payload.displayName?.trim() || `${firstName} ${lastName}`,
       role: "applicant",
+      /* Pending until the email is confirmed; verification flips it to
+         active, and login refuses anything still pending. */
       status: "pending",
       avatarUrl: payload.avatarUrl,
       phone: payload.phone,
@@ -59,14 +62,25 @@ export async function POST(request: NextRequest) {
       bio: payload.bio,
       joinedAt: new Date().toISOString(),
       membershipId: payload.membershipId,
+      emailVerified: false,
     };
 
     await collection.insertOne(user);
     await createUserWithPassword(user, password);
     await mergeAnonymousCartIntoUser(getCartSessionId(request), user.id);
 
-    const response = NextResponse.json({ ok: true, data: user }, { status: 201 });
-    setAuthSessionCookie(response, user);
+    /* The account exists from here on. If the email cannot go out, the
+       registration still stands and the page offers to send it again,
+       rather than reporting a failure for an account that was created. */
+    const verification = await sendVerificationEmail(user);
+
+    /* No session cookie is set here. The account stays `pending` and cannot
+       sign in until the address is confirmed, so handing out a session at
+       registration would defeat the gate entirely. */
+    const response = NextResponse.json(
+      { ok: true, data: user, verificationEmailSent: verification.sent },
+      { status: 201 },
+    );
     clearCartSessionCookie(response);
     return response;
   } catch (error) {

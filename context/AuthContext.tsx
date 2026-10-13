@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User } from "@/lib/models";
-import { apiRequest } from "@/lib/client/api";
+import { apiRequestEnvelope, apiRequest } from "@/lib/client/api";
 import type { CreateUserInput } from "@/lib/models/user";
 
 type RegisterInput = Omit<CreateUserInput, "role" | "status"> & { password: string };
@@ -15,8 +15,8 @@ interface AuthContextValue {
   login: (userId: string) => Promise<void>;
   logout: () => void;
   refreshCurrentUser: () => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (input: RegisterInput) => Promise<{ success: boolean; error?: string }>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string; reason?: string }>;
+  register: (input: RegisterInput) => Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean }>;
 }
 
@@ -80,14 +80,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadUser]);
 
   const loginWithEmail = useCallback(
-    async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    async (
+      email: string,
+      password: string,
+    ): Promise<{ success: boolean; error?: string; reason?: string }> => {
       if (!email || !password) return { success: false, error: "Email and password are required." };
       try {
-        const user = await apiRequest<User>("/api/auth/login", {
+        /* The raw response is read rather than apiRequest's unwrapped data,
+           because a refusal carries a `reason` alongside the message and the
+           page offers a new confirmation link when that reason is an
+           unconfirmed address. */
+        const res = await fetch("/api/auth/login", {
           method: "POST",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
-        setCurrentUser(user);
+        const payload = (await res.json().catch(() => null)) as
+          | { ok: boolean; data?: User; error?: string; reason?: string }
+          | null;
+
+        if (!res.ok || !payload?.ok) {
+          return {
+            success: false,
+            error: payload?.error ?? "Invalid email or password.",
+            reason: payload?.reason,
+          };
+        }
+        if (payload.data) setCurrentUser(payload.data);
         return { success: true };
       } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : "Invalid email or password." };
@@ -97,17 +117,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const register = useCallback(
-    async (input: RegisterInput): Promise<{ success: boolean; error?: string }> => {
+    async (input: RegisterInput): Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }> => {
       if (!input.password || input.password.length < 6)
         return { success: false, error: "Password must be at least 6 characters." };
 
       try {
-        const user = await apiRequest<User>("/api/auth/register", {
-          method: "POST",
-          body: JSON.stringify({ ...input, email: input.email.trim().toLowerCase() }),
-        });
-        setCurrentUser(user);
-        return { success: true };
+        const payload = await apiRequestEnvelope<User, { verificationEmailSent?: boolean }>(
+          "/api/auth/register",
+          {
+            method: "POST",
+            body: JSON.stringify({ ...input, email: input.email.trim().toLowerCase() }),
+          },
+        );
+        if (payload.data) setCurrentUser(payload.data);
+        return { success: true, verificationEmailSent: payload.verificationEmailSent };
       } catch (error) {
         return {
           success: false,

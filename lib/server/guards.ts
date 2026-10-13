@@ -13,12 +13,21 @@ export interface RequestSession {
   sub: string;
   email: string;
   role: string;
+  emailVerified: boolean;
 }
 
 export function getRequestSession(request: NextRequest): RequestSession | null {
   const payload = verifySessionToken(request.cookies.get(AUTH_COOKIE_NAME)?.value);
   if (!payload) return null;
-  return { sub: payload.sub, email: payload.email, role: payload.role };
+  return {
+    sub: payload.sub,
+    email: payload.email,
+    role: payload.role,
+    /* Older tokens predate the field. Treating absent as verified keeps
+       existing sessions working; a signed-out unverified user cannot get a
+       new token at all, because login refuses them. */
+    emailVerified: payload.emailVerified !== false,
+  };
 }
 
 export function unauthorized(message = "Authentication required") {

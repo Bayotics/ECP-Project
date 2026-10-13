@@ -24,14 +24,24 @@ export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /* Set once the account exists, which switches the card over to the
+     "check your inbox" panel rather than dropping the member straight into
+     the portal with no idea an email is waiting. */
+  const [registered, setRegistered] = useState<{ email: string; emailSent: boolean } | null>(null);
+  const [resendState, setResendState] = useState<{ busy: boolean; message: string; error: string }>({
+    busy: false, message: "", error: "",
+  });
 
   useEffect(() => {
-    if (isAuthenticated) {
+    /* Registration signs the member in, and without this guard that would
+       immediately redirect them past the message telling them to go and
+       confirm their address. */
+    if (isAuthenticated && !registered) {
       router.replace("/member/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, registered, router]);
 
-  if (isAuthenticated) return null;
+  if (isAuthenticated && !registered) return null;
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -61,10 +71,96 @@ export default function RegisterPage() {
     });
     setIsSubmitting(false);
     if (result.success) {
-      router.push("/member/dashboard");
+      setRegistered({
+        email: form.email.trim().toLowerCase(),
+        emailSent: result.verificationEmailSent !== false,
+      });
     } else {
       setError(result.error ?? "Registration failed. Please try again.");
     }
+  }
+
+  async function handleResend() {
+    if (!registered) return;
+    setResendState({ busy: true, message: "", error: "" });
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: registered.email }),
+      });
+      const json = (await res.json()) as { ok: boolean; message?: string; error?: string };
+      setResendState({
+        busy: false,
+        message: json.ok ? (json.message ?? "Sent.") : "",
+        error: json.ok ? "" : (json.error ?? "Could not send the email."),
+      });
+    } catch {
+      setResendState({ busy: false, message: "", error: "Could not reach the server. Try again." });
+    }
+  }
+
+  if (registered) {
+    return (
+      <div className="w-full space-y-6 rounded-2xl border border-(--color-neutral-200) bg-white p-8 shadow-lg">
+        <div className="text-center">
+          <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-6 w-6" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-medium tracking-[-0.02em] text-neutral-950">Check your inbox</h1>
+          <p className="mt-2 text-sm leading-6 text-neutral-700">
+            {registered.emailSent ? (
+              <>
+                We sent a confirmation link to{" "}
+                <span className="text-neutral-950">{registered.email}</span>. Open it to finish
+                setting up your account. The link expires in 24 hours.
+              </>
+            ) : (
+              <>
+                Your account was created, but the confirmation email could not be sent just now.
+                You can ask for it again below.
+              </>
+            )}
+          </p>
+        </div>
+
+        {resendState.message && (
+          <p className="rounded-lg border border-(--color-green-300) bg-green-50 px-4 py-3 text-sm text-green-800">
+            {resendState.message}
+          </p>
+        )}
+        {resendState.error && (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {resendState.error}
+          </p>
+        )}
+
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendState.busy}
+            className="w-full rounded-full border border-(--color-neutral-300) px-6 py-3 text-sm font-normal text-neutral-900 transition-colors hover:border-(--color-neutral-400) disabled:opacity-60"
+          >
+            {resendState.busy ? "Sending…" : "Send the link again"}
+          </button>
+          <Link
+            href="/auth/login"
+            className="block w-full rounded-full bg-(--color-green-600) px-6 py-3 text-center text-sm font-normal text-white transition-opacity hover:opacity-90"
+          >
+            Go to sign in
+          </Link>
+        </div>
+
+        <p className="text-center text-xs leading-5 text-neutral-700">
+          The portal opens once your address is confirmed. Nothing arrived? Check your spam
+          folder. The message comes from Eko Club Philadelphia.
+        </p>
+      </div>
+    );
   }
 
   return (
