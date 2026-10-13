@@ -28,12 +28,46 @@ export interface ApplicationDocument {
   simulatedSize?: string; // e.g. "1.2 MB"
 }
 
+/** Whose line an applicant's Lagos root runs through (question 12). */
+export const LAGOS_ROOT_OPTIONS = ["Mother", "Father", "Spouse", "Father & Mother"] as const;
+
+/** The IBILE divisions, spelled as the club's own form spells them. */
+export const IBILE_FORM_DIVISIONS = [
+  "Ikorodu",
+  "Badagary",
+  "Ikeja",
+  "Lagos Island",
+  "Epe",
+] as const;
+
+/** The committees an applicant may ask to join (question 16). */
+export const APPLICATION_COMMITTEES = [
+  "Health Education Committee",
+  "Scholarship/Educational Committee",
+  "Professional Network Committee",
+  "Technology/Media Committee",
+  "Thanksgiving/Winter Coat Committee",
+  "Welfare/Wellness",
+  "Lagos Liaison Committee",
+  "Social Committe",
+  "Youth Committee",
+] as const;
+
+/** The non-refundable application fee, in US dollars. */
+export const APPLICATION_FEE_USD = 100;
+
+export type ApplicationFeeStatus = "unpaid" | "pending-confirmation" | "paid";
+
 export interface MembershipApplication {
   id: string;
   // Personal
   fullName: string;
+  /** Question 2: only when applying jointly. */
+  spouseName?: string;
   email: string;
   phone: string;
+  /** Question 9: month and day, e.g. "January 7". The form asks for no year. */
+  birthMonthDay?: string;
   dateOfBirth?: string;
   gender?: "male" | "female" | "other" | "prefer-not-to-say";
   // Location (legacy — kept for backward compat)
@@ -51,6 +85,34 @@ export interface MembershipApplication {
   occupation: string;
   employer?: string;
   highestEducation?: string;
+  /* ── The club's approved form ──────────────────────────────────────── */
+  /** Question 11. More than one may apply, plus a free-text "Other". */
+  ibileDivisions?: string[];
+  ibileOther?: string;
+  /** Question 12. */
+  lagosRoot?: string;
+  lagosRootOther?: string;
+  /** Question 13. */
+  streetAgbole?: string;
+  /** Question 15. */
+  otherOrganizations?: string;
+  /** Question 16, plus a free-text "Other". */
+  committeeInterests?: string[];
+  committeeOther?: string;
+  /** Questions 17 to 20. The first referral is required. */
+  referral1Name?: string;
+  referral1Phone?: string;
+  referral2Name?: string;
+  referral2Phone?: string;
+  /** The declaration at the head of the form, accepted on submission. */
+  agreedToConstitution?: boolean;
+
+  /* ── The $100 non-refundable application fee ───────────────────────── */
+  feeStatus?: ApplicationFeeStatus;
+  feeMethod?: "paypal" | "zelle";
+  feeReference?: string;
+  feePaidAt?: string;
+
   // Application
   reasonForJoining: string;
   areasOfInterest: string[];

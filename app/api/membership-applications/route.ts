@@ -33,6 +33,23 @@ function validateCreateApplication(input: Partial<CreateApplicationInput>): stri
   if (!input.reasonForJoining?.trim()) return "Reason for joining is required";
   if (!Array.isArray(input.areasOfInterest)) return "areasOfInterest must be an array";
   if (typeof input.hasVolunteered !== "boolean") return "hasVolunteered must be a boolean";
+
+  /* The club's approved form. The browser checks these too, but a POST can
+     arrive from anywhere, and an application missing a referral or a
+     division cannot be reviewed. */
+  if (!input.birthMonthDay?.trim()) return "Month and day of birth are required";
+  if (!Array.isArray(input.ibileDivisions) || input.ibileDivisions.length === 0) {
+    return "Choose at least one IBILE division";
+  }
+  if (!input.lagosRoot?.trim()) return "Your root in Lagos State is required";
+  if (!input.otherOrganizations?.trim()) {
+    return "Please answer whether you belong to other groups or organizations";
+  }
+  if (!input.referral1Name?.trim()) return "A first referral name is required";
+  if (!input.referral1Phone?.trim()) return "A first referral phone number is required";
+  if (input.agreedToConstitution !== true) {
+    return "The membership declaration must be accepted";
+  }
   return null;
 }
 
@@ -113,6 +130,27 @@ export async function POST(request: NextRequest) {
       hasVolunteered: payload.hasVolunteered!,
       referredBy: payload.referredBy?.trim(),
       documents: payload.documents,
+
+      /* The club's approved form (ECP Membership Application, Aug 12). */
+      spouseName: payload.spouseName?.trim(),
+      birthMonthDay: payload.birthMonthDay?.trim(),
+      ibileDivisions: payload.ibileDivisions,
+      ibileOther: payload.ibileOther?.trim(),
+      lagosRoot: payload.lagosRoot,
+      lagosRootOther: payload.lagosRootOther?.trim(),
+      streetAgbole: payload.streetAgbole?.trim(),
+      otherOrganizations: payload.otherOrganizations?.trim(),
+      committeeInterests: payload.committeeInterests,
+      committeeOther: payload.committeeOther?.trim(),
+      referral1Name: payload.referral1Name?.trim(),
+      referral1Phone: payload.referral1Phone?.trim(),
+      referral2Name: payload.referral2Name?.trim(),
+      referral2Phone: payload.referral2Phone?.trim(),
+      agreedToConstitution: payload.agreedToConstitution === true,
+      /* The $100 fee is taken on the next screen, so every application
+         starts unpaid and the committee can see which have settled. */
+      feeStatus: "unpaid",
+
       status: "pending",
       statusHistory: [
         {

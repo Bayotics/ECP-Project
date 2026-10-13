@@ -1,5 +1,6 @@
 "use client";
 
+import MemberBadge from "@/components/people/MemberBadge";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -357,11 +358,13 @@ function ServiceProgramsSection() {
    summaries for them would be putting words in their mouths. */
 const EXCO_ZOOM = 2.6;
 
-const EXCO_MEMBERS = [
+const EXCO_MEMBERS: Person[] = [
   {
     name: "Hon. Olabisi Dabiri-Okoya",
     role: "President",
     image: "/gallery/excos/olabisi-dabiri-okoya.png",
+    photo: "/gallery/people/olabisi-dabiri-okoya.jpg",
+    cutout: "/gallery/people/cutout/olabisi-dabiri-okoya.png",
     focusY: 26,
     color: EKO_GREEN,
   },
@@ -390,6 +393,8 @@ const EXCO_MEMBERS = [
     name: "Hon. Bola Okoya",
     role: "Chairman, Board of Trustees",
     image: "/gallery/excos/bola-okoya.png",
+    photo: "/gallery/people/bola-okoya.jpg",
+    cutout: "/gallery/people/cutout/bola-okoya.png",
     focusY: 21,
     color: EKO_GREEN,
   },
@@ -425,6 +430,19 @@ type Person = {
   focusY: number;
   color: string;
   bio?: string[];
+  /**
+   * A plain photograph, where the club has supplied one. When present the
+   * card draws the badge live (see MemberBadge) instead of zooming into the
+   * pre-made artwork, so the coloured rings and the medallion survive at
+   * card size rather than being cropped away.
+   */
+  photo?: string;
+  /** Where in `photo` the circular crop centres, as percentages. */
+  photoFocusX?: number;
+  photoFocusY?: number;
+  /** The same person with the background removed, so the head can rise
+      clear of the ring the way the printed badge has it. */
+  cutout?: string;
 };
 
 const PATRONS: Person[] = [
@@ -439,6 +457,8 @@ const PATRONS: Person[] = [
     name: "Dr. Ganiyu Mimiko",
     role: "Patron",
     image: "/gallery/patrons/ganiyu-mimiko.png",
+    photo: "/gallery/people/ganiyu-mimiko.jpg",
+    cutout: "/gallery/people/cutout/ganiyu-mimiko.png",
     focusY: 30,
     color: EKO_BLUE,
     bio: [
@@ -452,6 +472,8 @@ const PATRONS: Person[] = [
     name: "Chief (Dr.) Maryanne Onitolo",
     role: "Matron",
     image: "/gallery/patrons/maryanne-onitolo.png",
+    photo: "/gallery/people/maryanne-onitolo.jpg",
+    cutout: "/gallery/people/cutout/maryanne-onitolo.png",
     focusY: 30,
     color: EKO_RED,
     bio: [
@@ -475,6 +497,28 @@ const PATRONS: Person[] = [
    affordance and opens the drawer below it. */
 
 function PersonPortrait({ person, zoom, sizes }: { person: Person; zoom: number; sizes: string }) {
+  /* Where the club has supplied a plain photograph, the badge is drawn live
+     rather than cropped out of the pre-made artwork: the rings and the
+     medallion then survive at card size instead of being sliced off at the
+     top, which is what the zoom-crop below does to them. */
+  if (person.photo) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-white p-[6%]">
+        <MemberBadge
+          person={{
+            name: person.name,
+            role: person.role,
+            photo: person.photo,
+            cutout: person.cutout,
+            focusX: person.photoFocusX,
+            focusY: person.photoFocusY ?? 50,
+          }}
+          sizes={sizes}
+        />
+      </div>
+    );
+  }
+
   /* The crop is done by sizing this inner box to `zoom`× the frame and
      offsetting it, never by CSS-scaling the <img>: a transform would upscale
      whatever small file next/image chose for the frame's own dimensions,

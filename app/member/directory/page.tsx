@@ -10,6 +10,7 @@
  * Contact details come back in the API response because this is a members
  * only endpoint, but the page deliberately does not render them. */
 
+import MemberBadge from "@/components/people/MemberBadge";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
@@ -62,6 +63,11 @@ const colorFor = (u: User) => (u.office ? OFFICE_COLOR[u.office] : EKO.red);
    is set as real text. Anything else, including images already cropped on
    upload, is shown as it comes. */
 const BADGE_PREFIX = "/gallery/members/";
+/* Clean photographs the club supplied without the artwork around them. The
+   badge is drawn live over these instead (see MemberBadge), so the rings and
+   the medallion survive at card size. */
+const PHOTO_PREFIX = "/gallery/people/";
+const isPhoto = (url?: string) => Boolean(url?.startsWith(PHOTO_PREFIX));
 const BADGE_ZOOM = 2.3;
 const BADGE_FOCUS_Y = 34;
 const isBadge = (url?: string) => Boolean(url?.startsWith(BADGE_PREFIX));
@@ -99,6 +105,25 @@ function Portrait({ user, className }: { user: User; className?: string }) {
         aria-hidden="true"
       >
         {initialsOf(user.displayName)}
+      </span>
+    );
+  }
+  if (isPhoto(user.avatarUrl)) {
+    return (
+      <span className={cn("relative block bg-white", className)}>
+        <MemberBadge
+          person={{
+            name: user.displayName,
+            role: user.title ?? user.role,
+            photo: user.avatarUrl,
+            /* The cut-out lives beside the photograph under /cutout, as a
+               PNG; where one exists the head rises clear of the ring. */
+            cutout: user.avatarUrl
+              .replace(PHOTO_PREFIX, `${PHOTO_PREFIX}cutout/`)
+              .replace(/\.jpe?g$/i, ".png"),
+          }}
+          sizes="320px"
+        />
       </span>
     );
   }

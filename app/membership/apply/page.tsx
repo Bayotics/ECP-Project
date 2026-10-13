@@ -15,13 +15,11 @@ export default function MembershipApplyPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-(--color-neutral-200) font-display mb-2">
           Membership Application
         </h1>
-        <p className="text-sm text-(--color-neutral-500) max-w-xl mx-auto">
-          Join the Empowerment Community Platform Lagos. Complete the form below — your progress is saved automatically.
-        </p>
+        
         <div className="mt-4 text-xs text-(--color-neutral-400) flex items-center justify-center gap-4 flex-wrap">
-          <span>📋 4 steps</span>
-          <span>💾 Auto-save draft</span>
-          <span>⏱ ~10 mins</span>
+          <span>6 steps</span>
+          <span>Saved as you type</span>
+          <span>$100 application fee at the end</span>
         </div>
       </div>
 
