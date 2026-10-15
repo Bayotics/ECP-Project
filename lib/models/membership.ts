@@ -56,6 +56,9 @@ export const APPLICATION_COMMITTEES = [
 /** The non-refundable application fee, in US dollars. */
 export const APPLICATION_FEE_USD = 100;
 
+/** Where an applicant sends their references, and asks questions. */
+export const MEMBERSHIP_CONTACT_EMAIL = "ekophillymembership@gmail.com";
+
 export type ApplicationFeeStatus = "unpaid" | "pending-confirmation" | "paid";
 
 export interface MembershipApplication {

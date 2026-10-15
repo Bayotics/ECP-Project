@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
 import type { MembershipApplication } from "@/lib/models";
 import { APPLICATION_FEE_USD } from "@/lib/models/membership";
+import { notifyAdminsOfApplicationFee } from "@/lib/server/admin-notifications";
+import { notifyApplicantOfApplicationFee } from "@/lib/server/applicant-notifications";
 
 /* Records the $100 non-refundable application fee against an application.
  *
@@ -38,6 +40,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ ok: false, error: "Application not found" }, { status: 404 });
     }
     if (existing.feeStatus === "paid") {
+      /* Already settled: a reload or a double click must not send the
+         administrators the same application a second time. */
       return NextResponse.json({ ok: true, data: serializeDocument(existing), alreadyPaid: true });
     }
 
@@ -64,7 +68,30 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       { returnDocument: "after" },
     );
 
-    return NextResponse.json({ ok: true, data: serializeDocument(result) });
+    const application = serializeDocument(result);
+
+    /* Tell the administrators, and give the applicant their receipt. Both
+       run after the fee is already recorded and neither can throw, so a
+       mail problem never turns a settled payment into an error for the
+       applicant: they are told it went through, because it did, and the
+       failure goes to the server log.
+
+       Sent together because they describe the same moment, and the two
+       audiences need different words for it: the applicant is told what
+       they have to do next, the administrators what they have to check. */
+    const [notified, receipt] = application
+      ? await Promise.all([
+          notifyAdminsOfApplicationFee(application),
+          notifyApplicantOfApplicationFee(application),
+        ])
+      : [{ sent: 0, failed: 0, recipients: 0 }, { sent: false }];
+
+    return NextResponse.json({
+      ok: true,
+      data: application,
+      adminsNotified: notified.sent,
+      applicantNotified: receipt.sent,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not record the fee";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

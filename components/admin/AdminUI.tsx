@@ -7,7 +7,7 @@
    panels. Every export keeps the name and props it had before, so the admin
    pages themselves did not have to change to pick this up. */
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/utils/cn";
 import { useIsClient } from "@/components/gsap/useReveal";
@@ -88,12 +88,20 @@ export function AdminModal({
   open,
   onClose,
   size = "md",
+  notice,
   children,
 }: {
   title: string;
   open: boolean;
   onClose: () => void;
   size?: "sm" | "md" | "lg" | "xl";
+  /**
+   * Shown pinned to the dialog's top right, over the scrolling body.
+   * For work done inside the modal: a page-level toast at the bottom of
+   * the window is easy to miss when you are looking at a dialog, and
+   * worse, it is still sitting there after the dialog is closed.
+   */
+  notice?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -149,7 +157,7 @@ export function AdminModal({
           <h2 className="text-lg font-normal tracking-[-0.02em] text-neutral-950">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 transition-colors hover:bg-neutral-200"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-neutral-900 transition-colors hover:bg-neutral-200"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -157,8 +165,212 @@ export function AdminModal({
             </svg>
           </button>
         </div>
+        {notice}
         <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
           {children}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ─── Toasts inside a modal ───────────────────────── */
+/* The page-level toast container sits at the bottom right of the window.
+   That is the wrong place for the result of something done inside a modal:
+   the dialog has the administrator's attention and the toast does not, and
+   if they close the dialog the toast is left behind on the page underneath,
+   describing work on a record no longer on screen. These are pinned to the
+   dialog itself and go with it. */
+
+export type ModalToastKind = "success" | "error" | "warning";
+
+export interface ModalToast {
+  id: number;
+  kind: ModalToastKind;
+  title?: string;
+  message: string;
+}
+
+const MODAL_TOAST_MS = 5000;
+
+/**
+ * A toast stack scoped to one modal. `show` returns nothing useful on
+ * purpose: these are notices, not dialogs, and anything worth a decision
+ * belongs in `ConfirmDialog`.
+ */
+export function useModalToasts() {
+  const [toasts, setToasts] = useState<ModalToast[]>([]);
+  const nextId = useRef(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  /* Dialogs are unmounted the moment they close, which would otherwise
+     leave timers firing setState on a gone component. */
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const dismiss = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const show = useCallback(
+    (kind: ModalToastKind, message: string, title?: string) => {
+      const id = ++nextId.current;
+      setToasts((prev) => [...prev, { id, kind, title, message }]);
+      timers.current.push(setTimeout(() => dismiss(id), MODAL_TOAST_MS));
+    },
+    [dismiss],
+  );
+
+  const clear = useCallback(() => setToasts([]), []);
+
+  return { toasts, show, dismiss, clear };
+}
+
+const MODAL_TOAST_STYLE: Record<ModalToastKind, { border: string; icon: string; path: string }> = {
+  success: { border: "border-green-300", icon: "text-green-600", path: "m5 13 4 4L19 7" },
+  error: { border: "border-red-300", icon: "text-red-600", path: "M12 8v5M12 16h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" },
+  warning: { border: "border-amber-300", icon: "text-amber-600", path: "M12 8v5M12 16h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" },
+};
+
+/** Pass to `AdminModal`'s `notice` prop. */
+export function ModalToasts({
+  toasts,
+  onDismiss,
+}: {
+  toasts: ModalToast[];
+  onDismiss: (id: number) => void;
+}) {
+  if (toasts.length === 0) return null;
+
+  return (
+    <div
+      aria-live="polite"
+      /* Over the scrolling body and pinned to the dialog, so it stays in
+         view however far down the form the administrator has scrolled. */
+      className="pointer-events-none absolute right-4 top-[4.25rem] z-30 flex w-[min(21rem,calc(100%-2rem))] flex-col gap-2"
+    >
+      {toasts.map((t) => {
+        const style = MODAL_TOAST_STYLE[t.kind];
+        return (
+          <div
+            key={t.id}
+            role="status"
+            className={cn(
+              "pointer-events-auto flex items-start gap-2.5 rounded-xl border bg-white px-3.5 py-3 shadow-lg [animation:viewer-in_180ms_ease-out]",
+              style.border,
+            )}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cn("mt-0.5 h-4 w-4 shrink-0", style.icon)} aria-hidden="true">
+              <path d={style.path} />
+            </svg>
+            <div className="min-w-0 flex-1">
+              {t.title && <p className="text-sm font-normal text-neutral-950">{t.title}</p>}
+              <p className="text-[13px] leading-5 text-neutral-700">{t.message}</p>
+            </div>
+            <button
+              onClick={() => onDismiss(t.id)}
+              aria-label="Dismiss"
+              className="shrink-0 cursor-pointer rounded p-0.5 text-neutral-400 transition-colors hover:text-neutral-700"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Confirmation ────────────────────────────────── */
+/**
+ * Asks before something that cannot be taken back quietly.
+ *
+ * Portalled above `AdminModal` (z-[10000] against its z-[9999]) so it can
+ * be opened from inside one. Escape and the backdrop both cancel; neither
+ * confirms, because the safe answer should be the easy one.
+ */
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  detail,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  tone = "primary",
+  busy = false,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  /** A second line, for a consequence worth spelling out. */
+  detail?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  tone?: "primary" | "danger" | "warning";
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const isClient = useIsClient();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    /* Capture: the modal underneath also closes on Escape, and the top
+       dialog is the one that should take the key. */
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [open, onCancel]);
+
+  if (!open || !isClient) return null;
+
+  const accent: Record<string, string> = {
+    primary: EKO.green,
+    danger: EKO.red,
+    warning: EKO.yellow,
+  };
+
+  return createPortal(
+    <div
+      data-lenis-prevent
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm [animation:viewer-in_160ms_ease-out]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onCancel();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="w-full max-w-sm overflow-hidden rounded-[1.25rem] bg-white shadow-2xl"
+      >
+        <div className="h-1 w-full" style={{ background: accent[tone] }} aria-hidden="true" />
+        <div className="px-6 py-5">
+          <h3 className="text-base font-normal tracking-[-0.01em] text-neutral-950">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-neutral-700">{message}</p>
+          {detail && <p className="mt-2 text-[13px] leading-6 text-neutral-500">{detail}</p>}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-6 py-4">
+          <Btn size="sm" variant="secondary" onClick={onCancel} disabled={busy}>
+            {cancelLabel}
+          </Btn>
+          <Btn
+            size="sm"
+            variant={tone === "danger" ? "danger" : tone === "warning" ? "warning" : "primary"}
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {busy ? "Working…" : confirmLabel}
+          </Btn>
         </div>
       </div>
     </div>,
@@ -429,7 +641,9 @@ export function Btn({
       onClick={onClick}
       style={background[variant] ? { background: background[variant] } : undefined}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        /* cursor-pointer: a <button> gets the default arrow, which on a pill
+           that looks exactly like a link reads as "not clickable". */
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
         className,

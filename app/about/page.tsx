@@ -1,6 +1,7 @@
 "use client";
 
 import MemberBadge from "@/components/people/MemberBadge";
+import { cutoutFor, slugFromPhoto } from "@/lib/content/badge-cutouts";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -364,7 +365,6 @@ const EXCO_MEMBERS: Person[] = [
     role: "President",
     image: "/gallery/excos/olabisi-dabiri-okoya.png",
     photo: "/gallery/people/olabisi-dabiri-okoya.jpg",
-    cutout: "/gallery/people/cutout/olabisi-dabiri-okoya.png",
     focusY: 26,
     color: EKO_GREEN,
   },
@@ -372,6 +372,7 @@ const EXCO_MEMBERS: Person[] = [
     name: "Hon. Adebimpe Daniells",
     role: "Vice President",
     image: "/gallery/excos/adebimpe-daniells.png",
+    photo: "/gallery/people/adebimpe-daniells.jpg",
     focusY: 26,
     color: EKO_RED,
   },
@@ -379,6 +380,7 @@ const EXCO_MEMBERS: Person[] = [
     name: "Hon. Olabisi Lawal",
     role: "Treasurer / Financial Secretary",
     image: "/gallery/excos/olabisi-lawal.png",
+    photo: "/gallery/people/olabisi-lawal.jpg",
     focusY: 37,
     color: EKO_BLUE,
   },
@@ -386,6 +388,7 @@ const EXCO_MEMBERS: Person[] = [
     name: "Hon. Folashade Adedeji",
     role: "PRO / Social Secretary",
     image: "/gallery/excos/folashade-adedeji.png",
+    photo: "/gallery/people/folashade-adedeji.jpg",
     focusY: 37,
     color: EKO_YELLOW,
   },
@@ -394,7 +397,6 @@ const EXCO_MEMBERS: Person[] = [
     role: "Chairman, Board of Trustees",
     image: "/gallery/excos/bola-okoya.png",
     photo: "/gallery/people/bola-okoya.jpg",
-    cutout: "/gallery/people/cutout/bola-okoya.png",
     focusY: 21,
     color: EKO_GREEN,
   },
@@ -402,6 +404,7 @@ const EXCO_MEMBERS: Person[] = [
     name: "Hon. Elder Modupe Mabinuori-Olageshin",
     role: "Vice Chairwoman / Treasurer, Board of Trustees",
     image: "/gallery/excos/modupe-mabinuori-olageshin.png",
+    photo: "/gallery/people/modupe-mabinuori-olageshin.jpg",
     focusY: 26,
     color: EKO_RED,
   },
@@ -409,6 +412,7 @@ const EXCO_MEMBERS: Person[] = [
     name: "Hon. Saheed Abdullateef",
     role: "Secretary, Board of Trustees",
     image: "/gallery/excos/saheed-abdullateef.png",
+    photo: "/gallery/people/saheed-abdullateef.jpg",
     focusY: 18,
     color: EKO_BLUE,
   },
@@ -450,6 +454,7 @@ const PATRONS: Person[] = [
     name: "Otunba TJ Abass",
     role: "Grand Patron",
     image: "/gallery/patrons/tj-abass.png",
+    photo: "/gallery/people/tj-abass.jpg",
     focusY: 30,
     color: EKO_GREEN,
   },
@@ -458,7 +463,6 @@ const PATRONS: Person[] = [
     role: "Patron",
     image: "/gallery/patrons/ganiyu-mimiko.png",
     photo: "/gallery/people/ganiyu-mimiko.jpg",
-    cutout: "/gallery/people/cutout/ganiyu-mimiko.png",
     focusY: 30,
     color: EKO_BLUE,
     bio: [
@@ -473,7 +477,6 @@ const PATRONS: Person[] = [
     role: "Matron",
     image: "/gallery/patrons/maryanne-onitolo.png",
     photo: "/gallery/people/maryanne-onitolo.jpg",
-    cutout: "/gallery/people/cutout/maryanne-onitolo.png",
     focusY: 30,
     color: EKO_RED,
     bio: [
@@ -485,6 +488,7 @@ const PATRONS: Person[] = [
     name: "Alhaja Risikat Oshilaja",
     role: "Matron",
     image: "/gallery/patrons/risikat-oshilaja.png",
+    photo: "/gallery/people/risikat-oshilaja.jpg",
     focusY: 30,
     color: EKO_YELLOW,
   },
@@ -509,7 +513,7 @@ function PersonPortrait({ person, zoom, sizes }: { person: Person; zoom: number;
             name: person.name,
             role: person.role,
             photo: person.photo,
-            cutout: person.cutout,
+            cutout: cutoutFor(slugFromPhoto(person.photo)),
             focusX: person.photoFocusX,
             focusY: person.photoFocusY ?? 50,
           }}
@@ -1342,7 +1346,7 @@ function LagosHistorySection() {
             alt="Lagos Island seen across the lagoon"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
-            quality={95}
+            quality={100}
             className="object-cover"
           />
         </div>

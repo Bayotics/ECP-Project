@@ -167,3 +167,308 @@ ${button(options.portalUrl, "Sign in to the member portal")}
     }),
   };
 }
+
+/**
+ * Sent to every administrator the moment an applicant settles the fee.
+ *
+ * It leads with what the committee has to do next, because the two payment
+ * methods leave the club in different positions: a PayPal capture is money
+ * already received, while a Zelle transfer is only what the applicant says
+ * they have sent and still has to be found in the club's account. Saying
+ * "payment received" for both would have somebody approving an application
+ * nobody had checked.
+ */
+export function applicationFeeAdminEmail(options: {
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone?: string;
+  method: "paypal" | "zelle";
+  reference?: string;
+  amountUSD: number;
+  appliedAt: string;
+  adminUrl: string;
+}): { subject: string; html: string } {
+  const byZelle = options.method === "zelle";
+  const name = escapeHtml(options.applicantName);
+
+  const verdict = byZelle
+    ? {
+        colour: EKO.yellow,
+        tint: "#fffbeb",
+        line: `${name} says they have sent $${options.amountUSD} by Zelle. Nothing is confirmed until the treasurer finds it in the club account.`,
+        todo: "Check the club's Zelle account, then mark the fee confirmed on the application.",
+      }
+    : {
+        colour: EKO.green,
+        tint: "#f0fdf4",
+        line: `${name} paid the $${options.amountUSD} application fee by PayPal. The money has been captured.`,
+        todo: "The application is ready for the membership committee to review.",
+      };
+
+  const row = (label: string, value?: string) =>
+    value?.trim()
+      ? `<tr>
+           <td style="padding:6px 12px 6px 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${MUTED};white-space:nowrap;">${escapeHtml(label)}</td>
+           <td style="padding:6px 0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">${escapeHtml(value)}</td>
+         </tr>`
+      : "";
+
+  const applied = (() => {
+    const d = new Date(options.appliedAt);
+    return Number.isNaN(d.getTime())
+      ? options.appliedAt
+      : d.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+  })();
+
+  const body = `
+${heading("New membership application")}
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${verdict.colour};background:${verdict.tint};padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      ${verdict.line}
+    </p>
+  </td></tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+  ${row("Applicant", options.applicantName)}
+  ${row("Email", options.applicantEmail)}
+  ${row("Phone", options.applicantPhone)}
+  ${row("Fee", `$${options.amountUSD} by ${byZelle ? "Zelle" : "PayPal"}`)}
+  ${row("Reference", options.reference)}
+  ${row("Applied", applied)}
+</table>
+
+<p style="margin:0 0 4px;">${escapeHtml(verdict.todo)}</p>
+${button(options.adminUrl, "Open the application")}
+
+<p style="margin:0;color:${MUTED};font-size:14px;">
+  You are receiving this because you are an administrator of Eko Club Philadelphia.
+</p>`;
+
+  return {
+    subject: byZelle
+      ? `Zelle payment reported: ${options.applicantName}'s application`
+      : `Fee paid: ${options.applicantName}'s membership application`,
+    html: layout({
+      title: "New membership application",
+      preheader: byZelle
+        ? `${options.applicantName} reported a Zelle transfer. Needs confirming.`
+        : `${options.applicantName} paid the application fee by PayPal.`,
+      body,
+    }),
+  };
+}
+
+/**
+ * The applicant's own receipt, sent at the same moment the administrators
+ * are told. It is the only record they have that the form and the money
+ * arrived, so it repeats both back to them.
+ *
+ * As with the administrators' copy, PayPal and Zelle are not described in
+ * the same words. Telling someone their Zelle transfer is "received" when
+ * the treasurer has not yet found it would have them believe a step is
+ * finished that is not.
+ */
+export function applicationReceivedEmail(options: {
+  name: string;
+  method: "paypal" | "zelle";
+  amountUSD: number;
+  reference?: string;
+  statusUrl: string;
+  /** Where the two written references go. */
+  referencesEmail: string;
+}): { subject: string; html: string } {
+  const byZelle = options.method === "zelle";
+  const first = options.name.trim().split(/\s+/)[0] || "there";
+
+  const fee = byZelle
+    ? {
+        colour: EKO.yellow,
+        tint: "#fffbeb",
+        line: `We have noted that you sent $${options.amountUSD} by Zelle. The treasurer checks the club account and confirms it, usually within a few days. You do not need to do anything else about the fee.`,
+      }
+    : {
+        colour: EKO.green,
+        tint: "#f0fdf4",
+        line: `Your $${options.amountUSD} application fee has been paid by PayPal and is received in full.`,
+      };
+
+  const body = `
+${heading(`Thank you, ${escapeHtml(first)}`)}
+<p style="margin:0 0 16px;">
+  Your membership application for Eko Club Philadelphia has been received.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${fee.colour};background:${fee.tint};padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      ${fee.line}
+    </p>
+  </td></tr>
+</table>
+
+${
+  options.reference?.trim()
+    ? `<p style="margin:0 0 16px;color:${MUTED};font-size:14px;">
+         Your reference number: <span style="color:${INK};">${escapeHtml(options.reference.trim())}</span>
+       </p>`
+    : ""
+}
+
+<p style="margin:0 0 12px;">What happens next:</p>
+<ul style="margin:0 0 20px;padding-left:20px;color:${INK};">
+  <li style="margin-bottom:6px;">The membership committee reviews your application.</li>
+  <li style="margin-bottom:6px;">You may be invited to meet the committee.</li>
+  <li style="margin-bottom:6px;">The Exco signs off on the committee's recommendation.</li>
+</ul>
+<p style="margin:0 0 16px;">
+  We email you at every step, and you can check where your application stands at any time.
+</p>
+${button(options.statusUrl, "Track my application")}
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${EKO.blue};background:#eff6ff;padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      One thing is still yours to do: send your two written references to
+      <a href="mailto:${escapeHtml(options.referencesEmail)}" style="color:${EKO.blue};">${escapeHtml(options.referencesEmail)}</a>.
+    </p>
+  </td></tr>
+</table>
+
+<p style="margin:0;color:${MUTED};font-size:14px;">
+  The $${options.amountUSD} application fee is non-refundable. If anything above looks wrong,
+  reply to this message and we will put it right.
+</p>`;
+
+  return {
+    subject: byZelle
+      ? "We have your application, and we are confirming your Zelle transfer"
+      : "Your application and payment are received",
+    html: layout({
+      title: "Your application has been received",
+      preheader: byZelle
+        ? "Your application is in. The treasurer is confirming your Zelle transfer."
+        : `Your application is in and the $${options.amountUSD} fee is paid.`,
+      body,
+    }),
+  };
+}
+
+/**
+ * Sent to the applicant each time an administrator moves the application on.
+ *
+ * Only what the applicant should see goes in: the internal review notes
+ * stay internal, which is why this takes a status and nothing else from
+ * the review.
+ */
+export function applicationStatusEmail(options: {
+  name: string;
+  status: "pending" | "under-review" | "interview" | "approved" | "rejected";
+  statusUrl: string;
+  portalUrl: string;
+  contactEmail: string;
+}): { subject: string; html: string } {
+  const first = escapeHtml(options.name.trim().split(/\s+/)[0] || "there");
+
+  type Copy = {
+    subject: string;
+    preheader: string;
+    title: string;
+    colour: string;
+    tint: string;
+    banner: string;
+    paragraphs: string[];
+    cta?: { href: string; label: string };
+  };
+
+  const COPY: Record<typeof options.status, Copy> = {
+    pending: {
+      subject: "Your membership application has been received",
+      preheader: "Your application is with Eko Club Philadelphia.",
+      title: `Thank you, ${first}`,
+      colour: EKO.yellow,
+      tint: "#fffbeb",
+      banner: "Your application has been received and is waiting to be reviewed.",
+      paragraphs: ["We will write to you again as soon as the membership committee picks it up."],
+      cta: { href: options.statusUrl, label: "Track my application" },
+    },
+    "under-review": {
+      subject: "Your application is now under review",
+      preheader: "The membership committee has started reviewing your application.",
+      title: `Your application is under review, ${first}`,
+      colour: EKO.blue,
+      tint: "#eff6ff",
+      banner: "The membership committee has begun reviewing your application.",
+      paragraphs: [
+        "There is nothing for you to do at this stage. If the committee needs anything further, they will ask you directly.",
+        "If you have not yet sent your two written references, that is the one thing worth doing now.",
+      ],
+      cta: { href: options.statusUrl, label: "Track my application" },
+    },
+    interview: {
+      subject: "We would like to meet you",
+      preheader: "The membership committee would like to meet you.",
+      title: `Let us meet, ${first}`,
+      colour: EKO.yellow,
+      tint: "#fffbeb",
+      banner: "The membership committee would like to meet you before deciding.",
+      paragraphs: [
+        "Somebody from the committee will be in touch shortly to agree a time that suits you. It is a conversation, not a test: they want to know you, and you should ask them whatever you want to know about the club.",
+      ],
+      cta: { href: options.statusUrl, label: "See my application" },
+    },
+    approved: {
+      subject: "Your membership application has been approved",
+      preheader: "Welcome to Eko Club Philadelphia.",
+      title: `Welcome to the club, ${first}`,
+      colour: EKO.green,
+      tint: "#f0fdf4",
+      banner: "Your membership application has been approved.",
+      paragraphs: [
+        "Eko o ni baje. You are a member of Eko Club Philadelphia, and we are glad to have you.",
+        "Sign in to the member portal to complete your profile, see the directory and the committees you can join, and find the next club event.",
+      ],
+      cta: { href: options.portalUrl, label: "Sign in to the member portal" },
+    },
+    rejected: {
+      subject: "About your membership application",
+      preheader: "An update on your Eko Club Philadelphia application.",
+      title: `Thank you for applying, ${first}`,
+      colour: EKO.red,
+      tint: "#fef2f2",
+      banner: "Your application was not successful on this occasion.",
+      paragraphs: [
+        "We are sorry to send this news. It is not a judgement of you, and it does not shut the door: you are welcome to apply again, and to come to any club event that is open to the public in the meantime.",
+        "If you would like to understand the decision, write to us and we will talk it through with you.",
+      ],
+    },
+  };
+
+  const copy = COPY[options.status];
+
+  const body = `
+${heading(copy.title)}
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${copy.colour};background:${copy.tint};padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      ${escapeHtml(copy.banner)}
+    </p>
+  </td></tr>
+</table>
+
+${copy.paragraphs.map((p) => `<p style="margin:0 0 16px;">${escapeHtml(p)}</p>`).join("\n")}
+${copy.cta ? button(copy.cta.href, copy.cta.label) : ""}
+
+<p style="margin:0;color:${MUTED};font-size:14px;">
+  Any questions, write to
+  <a href="mailto:${escapeHtml(options.contactEmail)}" style="color:${EKO.blue};">${escapeHtml(options.contactEmail)}</a>.
+</p>`;
+
+  return {
+    subject: copy.subject,
+    html: layout({ title: copy.subject, preheader: copy.preheader, body }),
+  };
+}

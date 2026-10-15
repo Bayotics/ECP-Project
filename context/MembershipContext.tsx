@@ -7,8 +7,19 @@ import type {
   CreateApplicationInput,
   UpdateApplicationInput,
 } from "@/lib/models";
-import { apiDelete, apiRequest } from "@/lib/client/api";
+import { apiDelete, apiRequest, apiRequestEnvelope } from "@/lib/client/api";
 import { useAuth } from "./AuthContext";
+
+/**
+ * The outcome of moving an application on. `applicantEmailed` is reported
+ * rather than assumed: the screen tells the administrator whether the
+ * applicant actually heard about it, instead of promising an email that the
+ * provider may have refused.
+ */
+export interface StatusChangeResult {
+  application: MembershipApplication;
+  applicantEmailed: boolean;
+}
 
 interface MembershipContextValue {
   applications: MembershipApplication[];
@@ -19,10 +30,10 @@ interface MembershipContextValue {
   getByUserId: (userId: string) => MembershipApplication | null;
   add: (input: CreateApplicationInput) => Promise<MembershipApplication>;
   update: (id: string, patch: UpdateApplicationInput) => Promise<MembershipApplication | null>;
-  setUnderReview: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
-  setInterview: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
-  approve: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
-  reject: (id: string, reviewedBy: string, notes?: string) => Promise<MembershipApplication | null>;
+  setUnderReview: (id: string, notes?: string) => Promise<StatusChangeResult>;
+  setInterview: (id: string, notes?: string) => Promise<StatusChangeResult>;
+  approve: (id: string, notes?: string) => Promise<StatusChangeResult>;
+  reject: (id: string, notes?: string) => Promise<StatusChangeResult>;
   addAdminMessage: (id: string, fromName: string, content: string) => Promise<MembershipApplication | null>;
   addDocument: (id: string, doc: { name: string; label: string; simulatedSize?: string }) => Promise<MembershipApplication | null>;
   remove: (id: string) => Promise<boolean>;
@@ -92,54 +103,37 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     return updated;
   }, []);
 
-  const applyStatusPatch = useCallback(async (
+  /* A status change goes to its own endpoint rather than the generic PATCH.
+     The server stamps the reviewer from the session, writes the timeline
+     entry the applicant reads, and emails them — none of which belongs in
+     the browser, where the timeline could be rewritten and the reviewer
+     claimed to be somebody else. */
+  const applyStatusChange = useCallback(async (
     id: string,
     status: MembershipApplication["status"],
-    reviewedBy: string,
-    notes: string | undefined,
-    fallbackMessage: string
-  ): Promise<MembershipApplication | null> => {
-    const current = applications.find((application) => application.id === id);
-    if (!current) return null;
+    notes?: string,
+  ): Promise<StatusChangeResult> => {
+    const payload = await apiRequestEnvelope<MembershipApplication, { applicantNotified?: boolean }>(
+      `/api/membership-applications/${id}/status`,
+      { method: "POST", body: JSON.stringify({ status, notes }) },
+    );
 
-    const patch: UpdateApplicationInput = {
-      status,
-      reviewedAt: new Date().toISOString(),
-      reviewedBy,
-      reviewNotes: notes,
-      statusHistory: [
-        ...(current.statusHistory ?? []),
-        {
-          status,
-          date: new Date().toISOString(),
-          message: notes ?? fallbackMessage,
-        },
-      ],
-    };
-
-    const updated = await apiRequest<MembershipApplication>(`/api/membership-applications/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(patch),
-    });
+    const updated = payload.data as MembershipApplication;
     setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
-    return updated;
-  }, [applications]);
+    return { application: updated, applicantEmailed: payload.applicantNotified === true };
+  }, []);
 
-  const setUnderReview = useCallback((id: string, reviewedBy: string, notes?: string) =>
-    applyStatusPatch(id, "under-review", reviewedBy, notes, "Application is now under review."),
-  [applyStatusPatch]);
+  const setUnderReview = useCallback((id: string, notes?: string) =>
+    applyStatusChange(id, "under-review", notes), [applyStatusChange]);
 
-  const setInterview = useCallback((id: string, reviewedBy: string, notes?: string) =>
-    applyStatusPatch(id, "interview", reviewedBy, notes, "You have been invited for an interview. Check your email for details."),
-  [applyStatusPatch]);
+  const setInterview = useCallback((id: string, notes?: string) =>
+    applyStatusChange(id, "interview", notes), [applyStatusChange]);
 
-  const approve = useCallback((id: string, reviewedBy: string, notes?: string) =>
-    applyStatusPatch(id, "approved", reviewedBy, notes, "Congratulations! Your membership application has been approved."),
-  [applyStatusPatch]);
+  const approve = useCallback((id: string, notes?: string) =>
+    applyStatusChange(id, "approved", notes), [applyStatusChange]);
 
-  const reject = useCallback((id: string, reviewedBy: string, notes?: string) =>
-    applyStatusPatch(id, "rejected", reviewedBy, notes, "We regret to inform you that your application was not successful at this time."),
-  [applyStatusPatch]);
+  const reject = useCallback((id: string, notes?: string) =>
+    applyStatusChange(id, "rejected", notes), [applyStatusChange]);
 
   const addAdminMessage = useCallback(async (id: string, fromName: string, content: string): Promise<MembershipApplication | null> => {
     const current = applications.find((application) => application.id === id);

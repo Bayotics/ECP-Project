@@ -88,7 +88,7 @@ export default function LoginPage() {
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <span className="font-semibold">Admin:</span>{" "}
-          <span className="font-mono">admin@ekoclubphiladelphia.org</span>{" "}
+          <span className="font-mono">info@ekoclubphiladelphia.org</span>{" "}
           <span>/</span>{" "}
           <span className="font-mono">ecp2024</span>
         </div>

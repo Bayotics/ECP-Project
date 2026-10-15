@@ -48,11 +48,23 @@ const RADII = BANDS.map((_, i) => RING_R - BAND_W / 2 - i * (BAND_W + GAP));
 /** Inner edge of the innermost band: where the portrait is clipped. */
 const PORTRAIT_R = RADII[RADII.length - 1] - BAND_W / 2;
 
-/** Above this line the cut-out is not clipped, so the head is free. */
-const FREE_TOP = 34;
+/* The window the head rises through: an arch, not a rectangle.
+   A cut-out lifted off a photograph nearly always keeps a scrap of wall,
+   signage or furniture beside the head, and those scraps collect in the
+   corners a rectangular window would expose. An ellipse follows the shape
+   of a head and gele instead, so the headwear comes through and the
+   corners never do. */
+const HEAD_CX = 50;
+const HEAD_CY = 30;
+const HEAD_RX = 26;
+const HEAD_RY = 32;
 
 const MEDALLION_PCT = 21.5;
-const MEDALLION_CY = RING_CY + 0.78 * RING_R;
+/* Centred ON the ring's lower arc, not resting above it: the medallion's
+   centre sits on the mid-line of the four bands, so the arc runs straight
+   through it and the coloured rings show equally above and below. */
+const RING_THICKNESS = BANDS.length * BAND_W + (BANDS.length - 1) * GAP;
+const MEDALLION_CY = RING_CY + RING_R - RING_THICKNESS / 2;
 
 export type BadgePerson = {
   name: string;
@@ -106,14 +118,19 @@ export default function MemberBadge({
 
       {person.cutout ? (
         <>
-          {/* The shape that lets the head out: everything above FREE_TOP is
-              unclipped, everything below is held inside the ring, so the
-              body never spills past the coloured bands. A clipPath unions
-              its children, which is exactly the shape wanted. */}
+          {/* The shape that lets the head out: an arch over the head, unioned
+              with the ring's circle. Above, the headwear comes through;
+              below, the body is held inside the coloured bands. A clipPath
+              unions its children, which is exactly the shape wanted. */}
           <svg className="absolute h-0 w-0" aria-hidden="true">
             <defs>
               <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                <rect x="0" y="0" width="1" height={FREE_TOP / 100} />
+                <ellipse
+                  cx={HEAD_CX / 100}
+                  cy={HEAD_CY / 100}
+                  rx={HEAD_RX / 100}
+                  ry={HEAD_RY / 100}
+                />
                 <circle cx={RING_CX / 100} cy={RING_CY / 100} r={PORTRAIT_R / 100} />
               </clipPath>
             </defs>
@@ -125,7 +142,7 @@ export default function MemberBadge({
               alt={`${person.name}, ${person.role}`}
               fill
               sizes={sizes}
-              quality={95}
+              quality={100}
               className="object-contain object-top"
             />
           </div>
@@ -147,7 +164,7 @@ export default function MemberBadge({
             alt={`${person.name}, ${person.role}`}
             fill
             sizes={sizes}
-            quality={95}
+            quality={100}
             className="object-cover"
             style={{ objectPosition: `${person.focusX ?? 50}% ${person.focusY ?? 50}%` }}
           />

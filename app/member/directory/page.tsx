@@ -11,6 +11,7 @@
  * only endpoint, but the page deliberately does not render them. */
 
 import MemberBadge from "@/components/people/MemberBadge";
+import { cutoutFor, slugFromPhoto } from "@/lib/content/badge-cutouts";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
@@ -116,11 +117,9 @@ function Portrait({ user, className }: { user: User; className?: string }) {
             name: user.displayName,
             role: user.title ?? user.role,
             photo: user.avatarUrl,
-            /* The cut-out lives beside the photograph under /cutout, as a
-               PNG; where one exists the head rises clear of the ring. */
-            cutout: user.avatarUrl
-              .replace(PHOTO_PREFIX, `${PHOTO_PREFIX}cutout/`)
-              .replace(/\.jpe?g$/i, ".png"),
+            /* Only where the background came away cleanly; see
+               lib/content/badge-cutouts.ts for why some do not. */
+            cutout: cutoutFor(slugFromPhoto(user.avatarUrl)),
           }}
           sizes="320px"
         />

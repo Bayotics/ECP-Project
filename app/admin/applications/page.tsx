@@ -1,18 +1,76 @@
 ﻿"use client";
 
-import { useAdminAction, errorMessage } from "@/hooks/useAdminAction";
+import { errorMessage } from "@/hooks/useAdminAction";
 import { useState, useMemo } from "react";
-import { useToast } from "@/hooks/useToast";
 import { useMembership } from "@/context/MembershipContext";
 import { useAuth } from "@/context/AuthContext";
 import {
   AdminPageHeader, AdminFilters, FilterSelect,
   AdminTable, TR, TD, Badge, AdminModal,
   FormField, FormTextarea, Btn, SectionDivider,
+  ConfirmDialog, ModalToasts, useModalToasts,
 } from "@/components/admin/AdminUI";
 import type { MembershipApplication } from "@/lib/models/membership";
 
 const STATUS_OPTIONS = ["all", "pending", "under-review", "interview", "approved", "rejected"];
+
+/* Moving an application on is not an edit that can be quietly undone: the
+   applicant is emailed the moment it happens. So each of the four asks
+   first, in words that say what the applicant will be told. */
+type MoveStatus = "under-review" | "interview" | "approved" | "rejected";
+
+const MOVES: Record<MoveStatus, {
+  label: string;
+  variant: "secondary" | "warning" | "success" | "danger";
+  tone: "primary" | "warning" | "danger";
+  confirmTitle: string;
+  confirmLabel: string;
+  question: (name: string) => string;
+  detail?: string;
+  done: string;
+}> = {
+  "under-review": {
+    label: "Under review",
+    variant: "secondary",
+    tone: "primary",
+    confirmTitle: "Mark as under review?",
+    confirmLabel: "Mark under review",
+    question: (name) =>
+      `${name} will be emailed to say the membership committee has started reviewing their application.`,
+    done: "Marked under review.",
+  },
+  interview: {
+    label: "Invite to interview",
+    variant: "warning",
+    tone: "warning",
+    confirmTitle: "Invite to interview?",
+    confirmLabel: "Send the invitation",
+    question: (name) =>
+      `${name} will be emailed to say the committee would like to meet them.`,
+    detail: "The email does not carry a date. Somebody still has to contact them to agree a time.",
+    done: "Invited to interview.",
+  },
+  approved: {
+    label: "Approve",
+    variant: "success",
+    tone: "primary",
+    confirmTitle: "Approve this application?",
+    confirmLabel: "Approve",
+    question: (name) => `${name} will be emailed to welcome them into the club.`,
+    detail: "Only approve once the Exco has signed off. The applicant is told straight away.",
+    done: "Application approved.",
+  },
+  rejected: {
+    label: "Decline",
+    variant: "danger",
+    tone: "danger",
+    confirmTitle: "Decline this application?",
+    confirmLabel: "Decline",
+    question: (name) => `${name} will be emailed to say their application was not successful.`,
+    detail: "Make sure the committee has decided. The email cannot be called back.",
+    done: "Application declined.",
+  },
+};
 
 /* Applications taken before the address rebuild (§7) only carry `lga`;
    everything since carries country, city, state and ZIP. Both read here. */
@@ -30,7 +88,6 @@ function fullAddressOf(app: MembershipApplication) {
 export default function AdminApplicationsPage() {
   const { applications, update, setUnderReview, setInterview, approve, reject, addAdminMessage } = useMembership();
   const { currentUser } = useAuth();
-  const { success, error } = useToast();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -38,7 +95,12 @@ export default function AdminApplicationsPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [msgContent, setMsgContent] = useState("");
   const [saving, setSaving] = useState(false);
-  const { run } = useAdminAction();
+  const [sending, setSending] = useState(false);
+  /* The move waiting on the administrator's yes, and the one in flight. */
+  const [pendingMove, setPendingMove] = useState<MoveStatus | null>(null);
+  const [movingTo, setMovingTo] = useState<MoveStatus | null>(null);
+  /* Toasts live inside the dialog, where the work is happening. */
+  const { toasts, show, dismiss, clear } = useModalToasts();
 
   const filtered = useMemo(() => {
     let list = applications;
@@ -58,32 +120,47 @@ export default function AdminApplicationsPage() {
     setSelected(app);
     setReviewNotes(app.reviewNotes ?? "");
     setMsgContent("");
+    clear();
   }
-  function closeModal() { setSelected(null); }
+  function closeModal() {
+    setSelected(null);
+    setPendingMove(null);
+    clear();
+  }
 
   async function saveNotes() {
     if (!selected) return;
     setSaving(true);
-    await run(() => update(selected.id, { reviewNotes }), {
-      success: "Notes saved.",
-      errorTitle: "Could not save the notes",
-    });
-    setSaving(false);
+    try {
+      await update(selected.id, { reviewNotes });
+      show("success", "Internal notes saved.");
+    } catch (caught) {
+      show("error", errorMessage(caught), "Could not save the notes");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function sendMessage() {
     if (!selected || !msgContent.trim()) return;
     const name = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Admin";
+    setSending(true);
     try {
-      await addAdminMessage(selected.id, name, msgContent.trim());
-      closeModal();
-      success("Message sent to applicant successfully.", "Message Sent");
+      const updated = await addAdminMessage(selected.id, name, msgContent.trim());
+      /* The modal stays open: the message now shows in the thread above,
+         which is the confirmation that matters. */
+      if (updated) setSelected(updated);
+      setMsgContent("");
+      show("success", "Your message is on the applicant's status page.", "Message sent");
     } catch (caught) {
-      error(errorMessage(caught), "Could not send the message");
+      show("error", errorMessage(caught), "Could not send the message");
+    } finally {
+      setSending(false);
     }
   }
 
-  async function updateStatus(status: "under-review" | "interview" | "approved" | "rejected") {
+  /** Runs the move the administrator has just confirmed. */
+  async function applyMove(status: MoveStatus) {
     if (!selected) return;
 
     const actions = {
@@ -93,15 +170,30 @@ export default function AdminApplicationsPage() {
       rejected: reject,
     } as const;
 
-    const result = await run(() => actions[status](selected.id, reviewedBy), {
-      success: `Application marked ${status.replace("-", " ")}.`,
-      errorTitle: "Could not update the application",
-    });
-    if (!result.ok) return;
-    setSelected((prev) => prev ? { ...prev, status } as MembershipApplication : null);
+    setMovingTo(status);
+    try {
+      const { application, applicantEmailed } = await actions[status](selected.id);
+      setSelected(application);
+      setPendingMove(null);
+      /* Whether the applicant actually heard is reported, not assumed. An
+         administrator who thinks an email went out when it did not will
+         wait for a reply that is never coming. */
+      if (applicantEmailed) {
+        show("success", `${MOVES[status].done} ${application.fullName} has been emailed.`);
+      } else {
+        show(
+          "warning",
+          `${MOVES[status].done} The applicant could not be emailed, so tell them another way.`,
+          "Saved, but not emailed",
+        );
+      }
+    } catch (caught) {
+      setPendingMove(null);
+      show("error", errorMessage(caught), "Could not update the application");
+    } finally {
+      setMovingTo(null);
+    }
   }
-
-  const reviewedBy = currentUser?.id ?? "admin";
 
   return (
     <div className="space-y-6">
@@ -140,7 +232,12 @@ export default function AdminApplicationsPage() {
       </AdminTable>
 
       {selected && (
-        <AdminModal title={selected.fullName} open={!!selected} onClose={closeModal}>
+        <AdminModal
+          title={selected.fullName}
+          open={!!selected}
+          onClose={closeModal}
+          notice={<ModalToasts toasts={toasts} onDismiss={dismiss} />}
+        >
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[
@@ -186,10 +283,23 @@ export default function AdminApplicationsPage() {
               status page and is emailed.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Btn size="sm" variant="secondary" onClick={() => void updateStatus("under-review")}>Under review</Btn>
-              <Btn size="sm" variant="warning"   onClick={() => void updateStatus("interview")}>Invite to interview</Btn>
-              <Btn size="sm" variant="success"   onClick={() => void updateStatus("approved")}>Approve</Btn>
-              <Btn size="sm" variant="danger"    onClick={() => void updateStatus("rejected")}>Decline</Btn>
+              {(Object.keys(MOVES) as MoveStatus[]).map((status) => {
+                const move = MOVES[status];
+                /* Already there: moving again would email the applicant the
+                   same news twice. */
+                const current = selected.status === status;
+                return (
+                  <Btn
+                    key={status}
+                    size="sm"
+                    variant={move.variant}
+                    disabled={current || movingTo !== null}
+                    onClick={() => setPendingMove(status)}
+                  >
+                    {movingTo === status ? "Working…" : move.label}
+                  </Btn>
+                );
+              })}
             </div>
 
             <SectionDivider label="Review notes" />
@@ -215,10 +325,26 @@ export default function AdminApplicationsPage() {
               <FormTextarea rows={2} value={msgContent} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMsgContent(e.target.value)} placeholder="Type a message…" />
             </FormField>
             <div className="flex justify-end">
-              <Btn size="sm" variant="primary" onClick={sendMessage} disabled={!msgContent.trim()}>Send Message</Btn>
+              <Btn size="sm" variant="primary" onClick={sendMessage} disabled={sending || !msgContent.trim()}>
+                {sending ? "Sending…" : "Send Message"}
+              </Btn>
             </div>
           </div>
         </AdminModal>
+      )}
+
+      {selected && pendingMove && (
+        <ConfirmDialog
+          open
+          title={MOVES[pendingMove].confirmTitle}
+          message={MOVES[pendingMove].question(selected.fullName)}
+          detail={MOVES[pendingMove].detail}
+          confirmLabel={MOVES[pendingMove].confirmLabel}
+          tone={MOVES[pendingMove].tone}
+          busy={movingTo !== null}
+          onConfirm={() => void applyMove(pendingMove)}
+          onCancel={() => setPendingMove(null)}
+        />
       )}
     </div>
   );
