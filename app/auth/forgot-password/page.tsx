@@ -9,13 +9,19 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setError("");
     setIsSubmitting(true);
-    await sendPasswordReset(email.trim());
+    const result = await sendPasswordReset(email.trim());
     setIsSubmitting(false);
-    setSent(true);
+    /* Only a request that actually reached the server counts as sent.
+       Reporting success regardless, as this page used to, left members
+       waiting for an email nothing had tried to send. */
+    if (result.success) setSent(true);
+    else setError(result.error ?? "Could not send the email. Try again.");
   }
 
   return (
@@ -36,7 +42,8 @@ export default function ForgotPasswordPage() {
             <div className="text-3xl mb-2">✉️</div>
             <p className="font-semibold text-(--color-green-700) text-sm">Check your inbox</p>
             <p className="text-(--color-green-600) text-sm mt-1">
-              If an account exists for <strong>{email}</strong>, a reset link has been sent.
+              If an account exists for <strong>{email}</strong>, a reset link has been sent. It
+              works once and expires in an hour.
             </p>
           </div>
           <p className="text-center text-sm text-(--color-neutral-500)">
@@ -52,6 +59,11 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+              {error}
+            </p>
+          )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-500 mb-1.5">
               Email address
@@ -80,7 +92,7 @@ export default function ForgotPasswordPage() {
 
       <p className="text-center text-sm text-(--color-neutral-500)">
         Remember it?{" "}
-        <Link href="/login" className="text-(--color-green-600) font-medium hover:underline">
+        <Link href="/auth/login" className="text-(--color-green-600) font-medium hover:underline">
           Back to sign in
         </Link>
       </p>

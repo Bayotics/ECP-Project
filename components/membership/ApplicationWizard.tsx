@@ -22,6 +22,7 @@ import {
   APPLICATION_FEE_USD,
   IBILE_FORM_DIVISIONS,
   LAGOS_ROOT_OPTIONS,
+  MEMBERSHIP_CONTACT_EMAIL,
 } from "@/lib/models/membership";
 import { useToast } from "@/hooks/useToast";
 
@@ -34,7 +35,77 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const MEMBERSHIP_EMAIL = "ekophillymembership@gmail.com";
+const MEMBERSHIP_EMAIL = MEMBERSHIP_CONTACT_EMAIL;
+
+/** Where the Constitution is read. */
+const CONSTITUTION_URL = "/membership/constitution";
+
+/* What the club requires of an applicant, said before they start rather
+   than discovered one step at a time. The fee in particular is
+   non-refundable and only appears at the end, which is no way to meet it
+   for the first time. */
+const REQUIREMENTS: { title: string; detail: React.ReactNode }[] = [
+  {
+    title: `A $${APPLICATION_FEE_USD} application fee`,
+    detail: (
+      <>
+        Non-refundable, paid by Zelle or PayPal on the page straight after this form. Your
+        application is not complete until it is settled.
+      </>
+    ),
+  },
+  {
+    title: "Two referrals",
+    detail: (
+      <>
+        The name and phone number of someone who can speak for you. A second referral is welcome
+        but not required.
+      </>
+    ),
+  },
+  {
+    title: "Two written references",
+    detail: (
+      <>
+        Sent separately by email to{" "}
+        <a href={`mailto:${MEMBERSHIP_CONTACT_EMAIL}`} className="text-green-700 underline">
+          {MEMBERSHIP_CONTACT_EMAIL}
+        </a>
+        . They are not uploaded here.
+      </>
+    ),
+  },
+  {
+    title: "Your roots in Lagos",
+    detail: (
+      <>
+        Which of the five IBILE divisions you are from, whose line your root runs through, and your
+        street or agbole.
+      </>
+    ),
+  },
+  {
+    title: "Agreement to the Constitution",
+    detail: (
+      <>
+        You accept the club&apos;s Constitution, House Rules and By-laws before submitting.{" "}
+        <a
+          href={CONSTITUTION_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-green-700 underline"
+        >
+          Read it first
+        </a>{" "}
+        if you would like to.
+      </>
+    ),
+  },
+  {
+    title: "Annual dues of $20",
+    detail: <>Once you are admitted, dues run yearly and are due by 31 March.</>,
+  },
+];
 
 type Draft = {
   fullName: string;
@@ -339,15 +410,54 @@ export default function ApplicationWizard() {
 
   return (
     <div ref={topRef}>
-      {/* Declaration, verbatim from the head of the club's form. */}
       {step === 0 && (
-        <p className="mb-6 rounded-xl bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-800">
-          I hereby apply for membership in Eko Club Philadelphia. If I should be accepted, I agree
-          to comply with and observe the Constitution, House Rules and Regulations; and further
-          agree that my membership will be subject to all By-laws, House Rules and Regulations now
-          in force and those which may be legally adopted and for infraction thereof the Executive
-          may terminate such membership.
-        </p>
+        <>
+          {/* What the club asks of an applicant, up front. */}
+          <section className="mb-6 rounded-2xl border border-neutral-200 p-5">
+            <h2 className="text-base font-medium tracking-[-0.01em] text-neutral-950">
+              What membership asks of you
+            </h2>
+            <p className="mt-1.5 text-sm leading-6 text-neutral-700">
+              Six steps, about ten minutes. Have these ready before you start.
+            </p>
+
+            <ul className="mt-4 space-y-3">
+              {REQUIREMENTS.map((item) => (
+                <li key={item.title} className="flex gap-3">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mt-1 h-3.5 w-3.5 shrink-0 text-green-600"
+                    aria-hidden="true"
+                  >
+                    <path d="m5 13 4 4L19 7" />
+                  </svg>
+                  <p className="text-sm leading-6 text-neutral-800">
+                    <span className="text-neutral-950">{item.title}.</span> {item.detail}
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-4 border-t border-neutral-200 pt-4 text-sm leading-6 text-neutral-700">
+              Fill the application out in its entirety. Any omission or misinformation may result in
+              automatic dismissal.
+            </p>
+          </section>
+
+          {/* Declaration, verbatim from the head of the club's form. */}
+          <p className="mb-6 rounded-xl bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-800">
+            I hereby apply for membership in Eko Club Philadelphia. If I should be accepted, I agree
+            to comply with and observe the Constitution, House Rules and Regulations; and further
+            agree that my membership will be subject to all By-laws, House Rules and Regulations now
+            in force and those which may be legally adopted and for infraction thereof the Executive
+            may terminate such membership.
+          </p>
+        </>
       )}
 
       {/* Progress */}
@@ -536,19 +646,35 @@ export default function ApplicationWizard() {
               </p>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-50 px-4 py-3">
-              <input
-                type="checkbox"
-                checked={draft.agreedToConstitution}
-                onChange={(e) => set("agreedToConstitution")(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 accent-green-600"
-              />
-              <span className="text-sm leading-6 text-neutral-800">
-                I hereby apply for membership in Eko Club Philadelphia and agree to comply with the
-                Constitution, House Rules and Regulations, and all By-laws now in force or legally
-                adopted hereafter.
-              </span>
-            </label>
+            {/* The link sits outside the <label>: inside it, clicking to
+                read the Constitution would also tick the box agreeing to
+                it, which is precisely backwards. */}
+            <div className="rounded-xl bg-neutral-50 px-4 py-3">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={draft.agreedToConstitution}
+                  onChange={(e) => set("agreedToConstitution")(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-green-600"
+                />
+                <span className="text-sm leading-6 text-neutral-800">
+                  I hereby apply for membership in Eko Club Philadelphia and agree to comply with the
+                  Constitution, House Rules and Regulations, and all By-laws now in force or legally
+                  adopted hereafter.
+                </span>
+              </label>
+              <p className="mt-2 pl-7 text-sm leading-6 text-neutral-700">
+                <a
+                  href={CONSTITUTION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-700 underline hover:no-underline"
+                >
+                  Read the Constitution
+                </a>{" "}
+                <span className="text-neutral-600">(opens in a new tab, your answers are kept)</span>
+              </p>
+            </div>
             {errors.agreedToConstitution && (
               <p className="text-xs leading-5 text-red-700">{errors.agreedToConstitution}</p>
             )}

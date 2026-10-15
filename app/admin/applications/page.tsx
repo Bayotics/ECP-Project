@@ -10,6 +10,7 @@ import {
   FormField, FormTextarea, Btn, SectionDivider,
   ConfirmDialog, ModalToasts, useModalToasts,
 } from "@/components/admin/AdminUI";
+import ApproveApplicationDialog from "@/components/admin/ApproveApplicationDialog";
 import type { MembershipApplication } from "@/lib/models/membership";
 
 const STATUS_OPTIONS = ["all", "pending", "under-review", "interview", "approved", "rejected"];
@@ -50,6 +51,9 @@ const MOVES: Record<MoveStatus, {
     detail: "The email does not carry a date. Somebody still has to contact them to agree a time.",
     done: "Invited to interview.",
   },
+  /* Approve has a dialog of its own, because it asks for the interview
+     confirmation and the membership number. The fields below are only its
+     button and its success line. */
   approved: {
     label: "Approve",
     variant: "success",
@@ -57,7 +61,6 @@ const MOVES: Record<MoveStatus, {
     confirmTitle: "Approve this application?",
     confirmLabel: "Approve",
     question: (name) => `${name} will be emailed to welcome them into the club.`,
-    detail: "Only approve once the Exco has signed off. The applicant is told straight away.",
     done: "Application approved.",
   },
   rejected: {
@@ -99,6 +102,9 @@ export default function AdminApplicationsPage() {
   /* The move waiting on the administrator's yes, and the one in flight. */
   const [pendingMove, setPendingMove] = useState<MoveStatus | null>(null);
   const [movingTo, setMovingTo] = useState<MoveStatus | null>(null);
+  /* Kept beside the approval dialog rather than in a toast, so a rejected
+     membership number can be corrected without retyping the rest. */
+  const [approveError, setApproveError] = useState("");
   /* Toasts live inside the dialog, where the work is happening. */
   const { toasts, show, dismiss, clear } = useModalToasts();
 
@@ -159,14 +165,29 @@ export default function AdminApplicationsPage() {
     }
   }
 
-  /** Runs the move the administrator has just confirmed. */
-  async function applyMove(status: MoveStatus) {
+  /** Reports the outcome of a move in the modal's own toast. */
+  function reportMove(status: MoveStatus, name: string, emailed: boolean, extra = "") {
+    const done = `${MOVES[status].done}${extra}`;
+    /* Whether the applicant actually heard is reported, not assumed. An
+       administrator who thinks an email went out when it did not will
+       wait for a reply that is never coming. */
+    if (emailed) show("success", `${done} ${name} has been emailed.`);
+    else {
+      show(
+        "warning",
+        `${done} The applicant could not be emailed, so tell them another way.`,
+        "Saved, but not emailed",
+      );
+    }
+  }
+
+  /** Runs one of the three plain moves, once confirmed. */
+  async function applyMove(status: Exclude<MoveStatus, "approved">) {
     if (!selected) return;
 
     const actions = {
       "under-review": setUnderReview,
       interview: setInterview,
-      approved: approve,
       rejected: reject,
     } as const;
 
@@ -175,21 +196,46 @@ export default function AdminApplicationsPage() {
       const { application, applicantEmailed } = await actions[status](selected.id);
       setSelected(application);
       setPendingMove(null);
-      /* Whether the applicant actually heard is reported, not assumed. An
-         administrator who thinks an email went out when it did not will
-         wait for a reply that is never coming. */
-      if (applicantEmailed) {
-        show("success", `${MOVES[status].done} ${application.fullName} has been emailed.`);
-      } else {
-        show(
-          "warning",
-          `${MOVES[status].done} The applicant could not be emailed, so tell them another way.`,
-          "Saved, but not emailed",
-        );
-      }
+      reportMove(status, application.fullName, applicantEmailed);
     } catch (caught) {
       setPendingMove(null);
       show("error", errorMessage(caught), "Could not update the application");
+    } finally {
+      setMovingTo(null);
+    }
+  }
+
+  /** Approval: issues the membership number and opens their account. */
+  async function applyApproval(membershipId: string) {
+    if (!selected) return;
+
+    setMovingTo("approved");
+    setApproveError("");
+    try {
+      const { application, applicantEmailed, membership } = await approve(selected.id, {
+        interviewed: true,
+        membershipId,
+      });
+      setSelected(application);
+      setPendingMove(null);
+      /* The number and what happened to the account both go in the toast:
+         if the email did not reach them, this is the only place the
+         administrator can read the number back. */
+      const account = membership?.accountCreated
+        ? " A member account was created for them."
+        : membership?.passwordSet === false
+          ? " Their existing portal password was left as it is."
+          : "";
+      reportMove(
+        "approved",
+        application.fullName,
+        applicantEmailed,
+        ` Membership number ${membership?.membershipId ?? membershipId} issued.${account}`,
+      );
+    } catch (caught) {
+      /* Kept inside the approval dialog: closing it would throw away the
+         number the administrator typed, and a clash is theirs to fix. */
+      setApproveError(errorMessage(caught));
     } finally {
       setMovingTo(null);
     }
@@ -294,7 +340,7 @@ export default function AdminApplicationsPage() {
                     size="sm"
                     variant={move.variant}
                     disabled={current || movingTo !== null}
-                    onClick={() => setPendingMove(status)}
+                    onClick={() => { setApproveError(""); setPendingMove(status); }}
                   >
                     {movingTo === status ? "Working…" : move.label}
                   </Btn>
@@ -333,7 +379,20 @@ export default function AdminApplicationsPage() {
         </AdminModal>
       )}
 
-      {selected && pendingMove && (
+      {/* Approval asks for more than a yes, so it has its own dialog. */}
+      {selected && pendingMove === "approved" && (
+        <ApproveApplicationDialog
+          open
+          applicantName={selected.fullName}
+          applicantEmail={selected.email}
+          busy={movingTo === "approved"}
+          error={approveError}
+          onApprove={(membershipId) => void applyApproval(membershipId)}
+          onCancel={() => { setPendingMove(null); setApproveError(""); }}
+        />
+      )}
+
+      {selected && pendingMove && pendingMove !== "approved" && (
         <ConfirmDialog
           open
           title={MOVES[pendingMove].confirmTitle}

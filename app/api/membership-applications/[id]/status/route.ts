@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
 import { getSessionUser } from "@/lib/server/session";
-import { notifyApplicantOfStatus } from "@/lib/server/applicant-notifications";
+import {
+  notifyApplicantOfApproval,
+  notifyApplicantOfStatus,
+} from "@/lib/server/applicant-notifications";
+import {
+  activateMember,
+  checkMembershipId,
+  membershipIdMessage,
+} from "@/lib/server/membership-activation";
 import type { ApplicationStatus, StatusTimelineEvent } from "@/lib/models/membership";
 
 /* Moving an application on, and telling the applicant.
@@ -41,6 +49,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       status?: ApplicationStatus;
       /** Internal only. Saved on the record, never emailed. */
       notes?: string;
+      /** Approval only: the committee has interviewed this applicant. */
+      interviewed?: boolean;
+      /** Approval only: the club number being issued. */
+      membershipId?: string;
     };
 
     if (!body.status || !STATUSES.includes(body.status)) {
@@ -55,6 +67,31 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const existing = await collection.findOne({ id });
     if (!existing) {
       return NextResponse.json({ ok: false, error: "Membership application not found" }, { status: 404 });
+    }
+
+    /* Approving is the one move that creates a member, so it is the one
+       move with conditions: the committee has to have met the applicant,
+       and a membership number has to be issued. Both are checked before
+       anything is written, so a refusal leaves the application untouched. */
+    let issuedId: string | null = null;
+    if (status === "approved") {
+      if (body.interviewed !== true) {
+        return NextResponse.json(
+          { ok: false, error: "Confirm that the applicant has been interviewed before approving." },
+          { status: 400 },
+        );
+      }
+
+      const checked = await checkMembershipId(body.membershipId, {
+        allowUserId: existing.userId,
+      });
+      if (!checked.ok) {
+        return NextResponse.json(
+          { ok: false, error: membershipIdMessage(checked.problem), field: "membershipId" },
+          { status: checked.problem === "taken" ? 409 : 400 },
+        );
+      }
+      issuedId = checked.value;
     }
 
     const now = new Date().toISOString();
@@ -83,6 +120,44 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const application = serializeDocument(result);
     if (!application) {
       return NextResponse.json({ ok: false, error: "Membership application not found" }, { status: 404 });
+    }
+
+    /* Approval: issue the number and give them an account to sign in to.
+       A failure here is reported rather than swallowed, because an
+       approved applicant with no way in is not a working approval. The
+       status stands either way, so a retry does not have to start over. */
+    if (issuedId) {
+      try {
+        const activation = await activateMember(application, issuedId);
+        const notified = await notifyApplicantOfApproval({
+          application,
+          membershipId: issuedId,
+          passwordSet: activation.passwordSet,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          data: { ...application, userId: activation.user.id },
+          applicantNotified: notified.sent,
+          membership: {
+            membershipId: issuedId,
+            accountCreated: activation.accountCreated,
+            passwordSet: activation.passwordSet,
+          },
+        });
+      } catch (caught) {
+        console.error("[approve] Could not activate the member", caught);
+        const message =
+          caught instanceof Error ? caught.message : "Could not set up the member's account";
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `The application was marked approved, but the member account could not be set up: ${message}`,
+            data: application,
+          },
+          { status: 500 },
+        );
+      }
     }
 
     /* After the write, and it cannot throw: a mail failure must not make

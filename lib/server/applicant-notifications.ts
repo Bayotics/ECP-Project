@@ -1,5 +1,9 @@
 import { sendEmail, siteUrl } from "@/lib/server/email";
-import { applicationReceivedEmail, applicationStatusEmail } from "@/lib/server/email-templates";
+import {
+  applicationReceivedEmail,
+  applicationStatusEmail,
+  membershipApprovedEmail,
+} from "@/lib/server/email-templates";
 import {
   APPLICATION_FEE_USD,
   MEMBERSHIP_CONTACT_EMAIL,
@@ -94,6 +98,54 @@ export async function notifyApplicantOfStatus(
     return { sent: result.ok };
   } catch (caught) {
     console.error("[applicant-notify] Could not send the status email", caught);
+    return { sent: false };
+  }
+}
+
+/**
+ * The approval email, carrying the new member's club number.
+ *
+ * Separate from the plain status note because it is the only copy of
+ * something they need to keep, and because it has to explain that the
+ * number is their first password and should not stay that way.
+ */
+export async function notifyApplicantOfApproval(options: {
+  application: MembershipApplication;
+  membershipId: string;
+  /** False when an existing password was deliberately left in place. */
+  passwordSet: boolean;
+}): Promise<{ sent: boolean }> {
+  const { application, membershipId, passwordSet } = options;
+  try {
+    if (!application.email?.trim()) {
+      console.warn("[applicant-notify] Application has no email address; approval not sent.");
+      return { sent: false };
+    }
+
+    const { subject, html } = membershipApprovedEmail({
+      name: application.fullName,
+      membershipId,
+      email: application.email,
+      loginUrl: `${siteUrl()}/auth/login`,
+      contactEmail: MEMBERSHIP_CONTACT_EMAIL,
+      passwordSet,
+    });
+
+    const result = await sendEmail({
+      to: application.email,
+      subject,
+      html,
+      tags: { type: "membership-approved", applicationId: application.id },
+    });
+
+    if (!result.ok) {
+      console.error(
+        `[applicant-notify] Approval to ${application.email} failed: ${result.error}`,
+      );
+    }
+    return { sent: result.ok };
+  } catch (caught) {
+    console.error("[applicant-notify] Could not send the approval email", caught);
     return { sent: false };
   }
 }

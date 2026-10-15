@@ -63,6 +63,20 @@ export async function upsertCredential(userId: string, email: string, password: 
   );
 }
 
+/** Checks one account's own password, for a signed-in password change. */
+export async function verifyUserPassword(userId: string, password: string): Promise<boolean> {
+  const collection = await getCredentialsCollection();
+  const credential = await collection.findOne({ userId });
+  if (!credential) return false;
+  return credential.passwordHash === hashPassword(password);
+}
+
+/** Whether this account has a password at all. */
+export async function hasCredential(userId: string): Promise<boolean> {
+  const collection = await getCredentialsCollection();
+  return (await collection.countDocuments({ userId }, { limit: 1 })) > 0;
+}
+
 export async function updateCredentialEmail(userId: string, email: string): Promise<void> {
   const collection = await getCredentialsCollection();
   await collection.updateOne({ userId }, { $set: { email: email.trim().toLowerCase(), updatedAt: now() } });

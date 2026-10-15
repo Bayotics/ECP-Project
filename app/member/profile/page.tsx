@@ -3,9 +3,11 @@
 import { IBILE_DIVISIONS } from "@/lib/constants";
 
 import { useState, useEffect, FormEvent } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useUsers } from "@/context/UsersContext";
 import ImageUploader from "@/components/media/ImageUploader";
+import ChangePasswordForm from "@/components/auth/ChangePasswordForm";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 
 
@@ -58,7 +60,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [savedPrivacy, setSavedPrivacy] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "privacy">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "privacy" | "password">("profile");
 
   useEffect(() => {
     if (!currentUser) return;
@@ -150,17 +152,17 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-(--color-neutral-100) rounded-xl p-1 w-fit">
-        {(["profile", "privacy"] as const).map((tab) => (
+        {(["profile", "privacy", "password"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
+            className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
               activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-(--color-neutral-900) hover:text-gray-900"
             }`}
           >
-            {tab === "privacy" ? "Privacy Settings" : "Edit Profile"}
+            {tab === "privacy" ? "Privacy Settings" : tab === "password" ? "Password" : "Edit Profile"}
           </button>
         ))}
       </div>
@@ -306,6 +308,41 @@ export default function ProfilePage() {
             </button>
             {savedPrivacy && <span className="text-sm text-(--color-green-600) font-medium">✓ Settings saved!</span>}
           </div>
+        </div>
+      )}
+
+      {activeTab === "password" && (
+        <div className="space-y-6 rounded-2xl border border-(--color-neutral-200) bg-white p-6">
+          {currentUser?.mustChangePassword && (
+            <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+              You are still signed in with the membership number you were emailed. Set a password
+              only you know.
+            </p>
+          )}
+
+          {currentUser?.membershipId && (
+            <div>
+              <p className="text-sm font-medium text-gray-900">Membership number</p>
+              <p className="mt-1 font-mono text-base tracking-[0.04em] text-gray-700">
+                {currentUser.membershipId}
+              </p>
+            </div>
+          )}
+
+          <div className="max-w-md border-t border-(--color-neutral-100) pt-6">
+            <ChangePasswordForm />
+          </div>
+
+          <p className="border-t border-(--color-neutral-100) pt-5 text-sm leading-6 text-(--color-neutral-900)">
+            Forgotten the password you are signed in with?{" "}
+            <Link
+              href="/auth/forgot-password"
+              className="font-medium text-(--color-green-600) hover:underline"
+            >
+              Have a reset link emailed to you
+            </Link>
+            .
+          </p>
         </div>
       )}
     </div>

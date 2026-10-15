@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import AdminGuard from "@/components/auth/AdminGuard";
 import PortalScrollHandler from "@/components/layout/PortalScrollHandler";
+import PasswordChangeGate from "@/components/auth/PasswordChangeGate";
 
 export const metadata: Metadata = {
   title: {
@@ -26,6 +27,9 @@ export default function AdminLayout({
             <main id="main-content" className="min-h-0 flex-1 overflow-y-auto p-6">{children}</main>
           </div>
         </div>
+        {/* Here too: an administrator signing in on a given password
+            should be asked to replace it for the same reason. */}
+        <PasswordChangeGate />
       </PortalScrollHandler>
     </AdminGuard>
   );

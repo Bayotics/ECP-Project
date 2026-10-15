@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { User } from "@/lib/models";
 import { apiRequestEnvelope, apiRequest } from "@/lib/client/api";
 import type { CreateUserInput } from "@/lib/models/user";
+import { passwordProblem } from "@/lib/models/password";
 
 type RegisterInput = Omit<CreateUserInput, "role" | "status"> & { password: string };
 
@@ -17,7 +18,11 @@ interface AuthContextValue {
   refreshCurrentUser: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string; reason?: string }>;
   register: (input: RegisterInput) => Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }>;
-  sendPasswordReset: (email: string) => Promise<{ success: boolean }>;
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -118,8 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (input: RegisterInput): Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }> => {
-      if (!input.password || input.password.length < 6)
-        return { success: false, error: "Password must be at least 6 characters." };
+      const problem = passwordProblem(input.password ?? "");
+      if (problem) return { success: false, error: problem };
 
       try {
         const payload = await apiRequestEnvelope<User, { verificationEmailSent?: boolean }>(
@@ -141,13 +146,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const sendPasswordReset = useCallback(async (email: string): Promise<{ success: boolean }> => {
-    await apiRequest<{ message: string }>("/api/auth/password-reset", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
-    return { success: true };
-  }, []);
+  const sendPasswordReset = useCallback(
+    async (email: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+      try {
+        /* The envelope, not the data: this endpoint answers with a message
+           and deliberately no data, because it says the same thing whether
+           or not the address belongs to an account. */
+        const payload = await apiRequestEnvelope<null, { message?: string }>(
+          "/api/auth/password-reset",
+          { method: "POST", body: JSON.stringify({ email }) },
+        );
+        return { success: true, message: payload.message };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Could not send the reset email.",
+        };
+      }
+    },
+    [],
+  );
+
+  const changePassword = useCallback(
+    async (
+      currentPassword: string,
+      newPassword: string,
+    ): Promise<{ success: boolean; error?: string }> => {
+      const problem = passwordProblem(newPassword, { rejecting: [currentPassword] });
+      if (problem) return { success: false, error: problem };
+
+      try {
+        const payload = await apiRequestEnvelope<User>("/api/auth/change-password", {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        /* The response carries the account with `mustChangePassword` gone,
+           so the prompt disappears without another round trip. */
+        if (payload.data) setCurrentUser(payload.data);
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Could not change your password.",
+        };
+      }
+    },
+    [],
+  );
 
   const isAuthenticated = currentUser !== null;
   const isAdmin = currentUser?.role === "admin" || currentUser?.role === "super-admin";
@@ -158,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentUser, isLoading, isAuthenticated, isAdmin, isMember,
         login, logout, refreshCurrentUser,
-        loginWithEmail, register, sendPasswordReset,
+        loginWithEmail, register, sendPasswordReset, changePassword,
       }}
     >
       {children}

@@ -1,4 +1,5 @@
 import type { EmailVerificationToken } from "@/lib/server/email-verification";
+import type { PasswordResetToken } from "@/lib/server/password-reset";
 import type { Collection, IndexDescription } from "mongodb";
 import type {
   Cart,
@@ -36,6 +37,7 @@ export const COLLECTIONS = {
   duesPayments: "duesPayments",
   committeeJoinRequests: "committeeJoinRequests",
   emailVerificationTokens: "emailVerificationTokens",
+  passwordResetTokens: "passwordResetTokens",
 } as const;
 
 export interface AppCollections {
@@ -55,6 +57,7 @@ export interface AppCollections {
   duesPayments: DuesPayment;
   committeeJoinRequests: CommitteeJoinRequest;
   emailVerificationTokens: EmailVerificationToken;
+  passwordResetTokens: PasswordResetToken;
 }
 
 type CollectionName = keyof AppCollections;
@@ -69,6 +72,15 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { id: 1 }, unique: true },
     { key: { email: 1 }, unique: true },
     { key: { role: 1 } },
+    /* No two members may hold the same club number. Partial rather than
+       sparse: a sparse unique index still indexes nulls, and a second
+       account with `membershipId: null` would collide with the first. This
+       indexes only the accounts that actually carry a number. */
+    {
+      key: { membershipId: 1 },
+      unique: true,
+      partialFilterExpression: { membershipId: { $type: "string" } },
+    },
   ],
   membershipApplications: [
     { key: { id: 1 }, unique: true },
@@ -156,6 +168,14 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { committeeId: 1 } },
     { key: { userId: 1 } },
     { key: { status: 1 } },
+  ],
+  passwordResetTokens: [
+    { key: { id: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+    { key: { userId: 1 } },
+    /* Dropped an hour past expiry, so spent links do not accumulate. On
+       `expiresAtDate`, because a TTL index ignores an ISO string. */
+    { key: { expiresAtDate: 1 }, expireAfterSeconds: 3600 },
   ],
 };
 

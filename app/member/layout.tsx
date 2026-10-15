@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PortalScrollHandler from "@/components/layout/PortalScrollHandler";
+import PasswordChangeGate from "@/components/auth/PasswordChangeGate";
 
 export const metadata: Metadata = {
   title: {
@@ -26,6 +27,9 @@ export default function MemberLayout({
             <main id="main-content" className="flex-1 overflow-y-auto p-6 min-h-0">{children}</main>
           </div>
         </div>
+        {/* Raised for a member still on the membership number they were
+            emailed; renders nothing for everybody else. */}
+        <PasswordChangeGate />
       </PortalScrollHandler>
     </ProtectedRoute>
   );

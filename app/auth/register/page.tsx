@@ -6,6 +6,7 @@ import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { PASSWORD_MIN_LENGTH, passwordProblem } from "@/lib/models/password";
 
 
 export default function RegisterPage() {
@@ -55,8 +56,9 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const problem = passwordProblem(form.password);
+    if (problem) {
+      setError(problem);
       return;
     }
     setIsSubmitting(true);
@@ -273,7 +275,7 @@ export default function RegisterPage() {
               required
               value={form.password}
               onChange={set("password")}
-              placeholder="Min. 6 characters"
+              placeholder={`Min. ${PASSWORD_MIN_LENGTH} characters`}
               className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 pr-11 text-sm text-gray-500 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition"
             />
             <button

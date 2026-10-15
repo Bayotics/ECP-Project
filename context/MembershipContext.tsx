@@ -19,6 +19,21 @@ import { useAuth } from "./AuthContext";
 export interface StatusChangeResult {
   application: MembershipApplication;
   applicantEmailed: boolean;
+  /** Present on an approval: what the applicant's new account looks like. */
+  membership?: {
+    membershipId: string;
+    accountCreated: boolean;
+    passwordSet: boolean;
+  };
+}
+
+/** What approving an application needs beyond the status itself. */
+export interface ApprovalInput {
+  /** The committee has met the applicant. The server insists on this. */
+  interviewed: boolean;
+  /** The club number being issued, which is also their first password. */
+  membershipId: string;
+  notes?: string;
 }
 
 interface MembershipContextValue {
@@ -32,7 +47,7 @@ interface MembershipContextValue {
   update: (id: string, patch: UpdateApplicationInput) => Promise<MembershipApplication | null>;
   setUnderReview: (id: string, notes?: string) => Promise<StatusChangeResult>;
   setInterview: (id: string, notes?: string) => Promise<StatusChangeResult>;
-  approve: (id: string, notes?: string) => Promise<StatusChangeResult>;
+  approve: (id: string, approval: ApprovalInput) => Promise<StatusChangeResult>;
   reject: (id: string, notes?: string) => Promise<StatusChangeResult>;
   addAdminMessage: (id: string, fromName: string, content: string) => Promise<MembershipApplication | null>;
   addDocument: (id: string, doc: { name: string; label: string; simulatedSize?: string }) => Promise<MembershipApplication | null>;
@@ -111,29 +126,42 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   const applyStatusChange = useCallback(async (
     id: string,
     status: MembershipApplication["status"],
-    notes?: string,
+    extra: { notes?: string; interviewed?: boolean; membershipId?: string } = {},
   ): Promise<StatusChangeResult> => {
-    const payload = await apiRequestEnvelope<MembershipApplication, { applicantNotified?: boolean }>(
-      `/api/membership-applications/${id}/status`,
-      { method: "POST", body: JSON.stringify({ status, notes }) },
-    );
+    const payload = await apiRequestEnvelope<
+      MembershipApplication,
+      { applicantNotified?: boolean; membership?: StatusChangeResult["membership"] }
+    >(`/api/membership-applications/${id}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status, ...extra }),
+    });
 
     const updated = payload.data as MembershipApplication;
     setApplications((prev) => prev.map((application) => (application.id === updated.id ? updated : application)));
-    return { application: updated, applicantEmailed: payload.applicantNotified === true };
+    return {
+      application: updated,
+      applicantEmailed: payload.applicantNotified === true,
+      membership: payload.membership,
+    };
   }, []);
 
   const setUnderReview = useCallback((id: string, notes?: string) =>
-    applyStatusChange(id, "under-review", notes), [applyStatusChange]);
+    applyStatusChange(id, "under-review", { notes }), [applyStatusChange]);
 
   const setInterview = useCallback((id: string, notes?: string) =>
-    applyStatusChange(id, "interview", notes), [applyStatusChange]);
+    applyStatusChange(id, "interview", { notes }), [applyStatusChange]);
 
-  const approve = useCallback((id: string, notes?: string) =>
-    applyStatusChange(id, "approved", notes), [applyStatusChange]);
+  /* Approval carries the interview confirmation and the membership number;
+     the server refuses it without both. */
+  const approve = useCallback((id: string, approval: ApprovalInput) =>
+    applyStatusChange(id, "approved", {
+      notes: approval.notes,
+      interviewed: approval.interviewed,
+      membershipId: approval.membershipId,
+    }), [applyStatusChange]);
 
   const reject = useCallback((id: string, notes?: string) =>
-    applyStatusChange(id, "rejected", notes), [applyStatusChange]);
+    applyStatusChange(id, "rejected", { notes }), [applyStatusChange]);
 
   const addAdminMessage = useCallback(async (id: string, fromName: string, content: string): Promise<MembershipApplication | null> => {
     const current = applications.find((application) => application.id === id);

@@ -6,6 +6,7 @@ import { mergeAnonymousCartIntoUser } from "@/lib/server/cart";
 import { ensureCoreIndexes, getCollection } from "@/lib/server/collections";
 import { clearCartSessionCookie, getCartSessionId } from "@/lib/server/session";
 import { sendVerificationEmail } from "@/lib/server/email-verification";
+import { passwordProblem } from "@/lib/models/password";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "First name, last name, email, and password are required." }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ ok: false, error: "Password must be at least 6 characters." }, { status: 400 });
+    /* The same rule the reset and change-password flows apply, so a
+       password accepted here is one the member can set again later. */
+    const problem = passwordProblem(password);
+    if (problem) {
+      return NextResponse.json({ ok: false, error: problem }, { status: 400 });
     }
 
     const collection = await getCollection("users");

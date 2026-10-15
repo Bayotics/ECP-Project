@@ -34,7 +34,33 @@ export interface User {
   bio?: string;
   joinedAt: string;
   lastLoginAt?: string;
-  membershipId?: string; // linked MembershipApplication id
+  /**
+   * The club membership number, e.g. "ECP-2026-0004". Assigned by an
+   * administrator when the membership committee approves an application,
+   * and unique across the club.
+   */
+  membershipId?: string;
+  /** When the membership number was issued. */
+  membershipIdIssuedAt?: string;
+  /**
+   * True while the account is still on the password it was given rather
+   * than one the member chose. A new member's first password is their
+   * membership number, emailed to them in the clear, so the portal asks
+   * them to replace it the moment they sign in.
+   */
+  mustChangePassword?: boolean;
+}
+
+/** The shape of a club membership number this site issues. */
+export const MEMBERSHIP_ID_PATTERN = /^[A-Z0-9][A-Z0-9-]{3,31}$/;
+
+/**
+ * Tidies a typed membership number: trims, upper-cases, and collapses
+ * runs of spaces or hyphens to a single hyphen, so "ecp 2026 0004" and
+ * "ECP--2026-0004" both land on the same thing.
+ */
+export function normalizeMembershipId(value: string): string {
+  return value.trim().toUpperCase().replace(/[\s-]+/g, "-").replace(/^-|-$/g, "");
 }
 
 export type CreateUserInput = Omit<User, "id" | "joinedAt">;

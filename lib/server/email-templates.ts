@@ -472,3 +472,150 @@ ${copy.cta ? button(copy.cta.href, copy.cta.label) : ""}
     html: layout({ title: copy.subject, preheader: copy.preheader, body }),
   };
 }
+
+/**
+ * Sent when an application is approved and a membership number issued.
+ *
+ * This replaces the plain "approved" note, because it carries something
+ * the member needs to keep: their club number, which is also the password
+ * they sign in with the first time. It says plainly that the number is
+ * temporary as a password, since it travels by email in the clear.
+ */
+export function membershipApprovedEmail(options: {
+  name: string;
+  membershipId: string;
+  email: string;
+  loginUrl: string;
+  contactEmail: string;
+  /** False when the account already had its own password, untouched. */
+  passwordSet: boolean;
+}): { subject: string; html: string } {
+  const first = escapeHtml(options.name.trim().split(/\s+/)[0] || "there");
+  const id = escapeHtml(options.membershipId);
+
+  const credentials = options.passwordSet
+    ? `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border:1px solid ${LINE};border-radius:12px;padding:16px 18px;">
+    <p style="margin:0 0 10px;font:400 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">
+      How to sign in
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding:4px 12px 4px 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${MUTED};">Email</td>
+        <td style="padding:4px 0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">${escapeHtml(options.email)}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 12px 4px 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${MUTED};">Password</td>
+        <td style="padding:4px 0;font:500 14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:${INK};letter-spacing:0.04em;">${id}</td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${EKO.yellow};background:#fffbeb;padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      Your membership number is your password only until you change it. Because it has travelled
+      by email, please set a password of your own as soon as you sign in. The portal will ask you.
+    </p>
+  </td></tr>
+</table>`
+    : `
+<p style="margin:0 0 20px;">
+  Sign in with the email address and password you already use for the portal. Your membership
+  number is now on your account.
+</p>`;
+
+  const body = `
+${heading(`Welcome to the club, ${first}`)}
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border-left:3px solid ${EKO.green};background:#f0fdf4;padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      Your membership application has been approved.
+    </p>
+  </td></tr>
+</table>
+
+<p style="margin:0 0 16px;">
+  Eko o ni baje. You are a member of Eko Club Philadelphia, and we are glad to have you.
+</p>
+
+<p style="margin:0 0 8px;font:400 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">
+  Your membership number
+</p>
+<p style="margin:0 0 20px;font:500 24px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:0.06em;color:${INK};">
+  ${id}
+</p>
+<p style="margin:0 0 20px;">
+  Keep it. It identifies you to the club, on your dues and anywhere the Exco asks for it.
+</p>
+
+${credentials}
+
+${button(options.loginUrl, "Sign in to the member portal")}
+
+<p style="margin:0 0 12px;">Inside you will find:</p>
+<ul style="margin:0 0 20px;padding-left:20px;color:${INK};">
+  <li style="margin-bottom:6px;">The member directory, and the committees you can join</li>
+  <li style="margin-bottom:6px;">Club events, with the calendar and meeting minutes</li>
+  <li style="margin-bottom:6px;">Your dues and payment history</li>
+</ul>
+
+<p style="margin:0;color:${MUTED};font-size:14px;">
+  Any questions, write to
+  <a href="mailto:${escapeHtml(options.contactEmail)}" style="color:${EKO.blue};">${escapeHtml(options.contactEmail)}</a>.
+</p>`;
+
+  return {
+    subject: `Welcome to Eko Club Philadelphia. Your membership number is ${options.membershipId}`,
+    html: layout({
+      title: "Your membership application has been approved",
+      preheader: `Approved. Your membership number is ${options.membershipId}.`,
+      body,
+    }),
+  };
+}
+
+/** The reset link. Short-lived, single use, and says so. */
+export function passwordResetEmail(options: {
+  name: string;
+  resetUrl: string;
+  expiresInMinutes: number;
+}): { subject: string; html: string } {
+  const first = options.name.trim().split(/\s+/)[0] || "there";
+
+  const body = `
+${heading(`Set a new password, ${escapeHtml(first)}`)}
+<p style="margin:0 0 16px;">
+  Somebody asked to reset the password on your Eko Club Philadelphia account. If that was you,
+  use the button below.
+</p>
+${button(options.resetUrl, "Choose a new password")}
+<p style="margin:0 0 16px;color:${MUTED};font-size:14px;">
+  The link works once and expires in ${options.expiresInMinutes} minutes. If the button does not
+  work, copy this into your browser:
+</p>
+<p style="margin:0 0 20px;font-size:13px;word-break:break-all;">
+  <a href="${escapeHtml(options.resetUrl)}" style="color:${EKO.blue};">${escapeHtml(options.resetUrl)}</a>
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0;">
+  <tr><td style="border-left:3px solid ${EKO.yellow};background:#fffbeb;padding:12px 16px;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      If you did not ask for this, you can ignore this message. Your password has not changed, and
+      nobody can change it without this link.
+    </p>
+  </td></tr>
+</table>`;
+
+  return {
+    subject: "Reset your Eko Club Philadelphia password",
+    html: layout({
+      title: "Reset your password",
+      preheader: `A link to set a new password. It expires in ${options.expiresInMinutes} minutes.`,
+      body,
+    }),
+  };
+}
