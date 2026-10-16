@@ -101,10 +101,6 @@ const REQUIREMENTS: { title: string; detail: React.ReactNode }[] = [
       </>
     ),
   },
-  {
-    title: "Annual dues of $20",
-    detail: <>Once you are admitted, dues run yearly and are due by 31 March.</>,
-  },
 ];
 
 type Draft = {

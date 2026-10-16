@@ -27,6 +27,16 @@ export interface StatusChangeResult {
   };
 }
 
+/** What an interview invitation needs: when, and optionally where. */
+export interface InterviewInput {
+  /** "YYYY-MM-DD", read as club wall time by the server. */
+  date: string;
+  /** "HH:MM", likewise. */
+  time: string;
+  location?: string;
+  notes?: string;
+}
+
 /** What approving an application needs beyond the status itself. */
 export interface ApprovalInput {
   /** The committee has met the applicant. The server insists on this. */
@@ -46,7 +56,7 @@ interface MembershipContextValue {
   add: (input: CreateApplicationInput) => Promise<MembershipApplication>;
   update: (id: string, patch: UpdateApplicationInput) => Promise<MembershipApplication | null>;
   setUnderReview: (id: string, notes?: string) => Promise<StatusChangeResult>;
-  setInterview: (id: string, notes?: string) => Promise<StatusChangeResult>;
+  setInterview: (id: string, interview: InterviewInput) => Promise<StatusChangeResult>;
   approve: (id: string, approval: ApprovalInput) => Promise<StatusChangeResult>;
   reject: (id: string, notes?: string) => Promise<StatusChangeResult>;
   addAdminMessage: (id: string, fromName: string, content: string) => Promise<MembershipApplication | null>;
@@ -126,7 +136,14 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   const applyStatusChange = useCallback(async (
     id: string,
     status: MembershipApplication["status"],
-    extra: { notes?: string; interviewed?: boolean; membershipId?: string } = {},
+    extra: {
+      notes?: string;
+      interviewed?: boolean;
+      membershipId?: string;
+      interviewDate?: string;
+      interviewTime?: string;
+      interviewLocation?: string;
+    } = {},
   ): Promise<StatusChangeResult> => {
     const payload = await apiRequestEnvelope<
       MembershipApplication,
@@ -148,8 +165,15 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   const setUnderReview = useCallback((id: string, notes?: string) =>
     applyStatusChange(id, "under-review", { notes }), [applyStatusChange]);
 
-  const setInterview = useCallback((id: string, notes?: string) =>
-    applyStatusChange(id, "interview", { notes }), [applyStatusChange]);
+  /* The invitation carries the appointment; the server refuses it
+     without a date and time still to come. */
+  const setInterview = useCallback((id: string, interview: InterviewInput) =>
+    applyStatusChange(id, "interview", {
+      notes: interview.notes,
+      interviewDate: interview.date,
+      interviewTime: interview.time,
+      interviewLocation: interview.location,
+    }), [applyStatusChange]);
 
   /* Approval carries the interview confirmation and the membership number;
      the server refuses it without both. */

@@ -115,7 +115,7 @@ export default function ApplicationFeeClient() {
           )}
         </p>
         <p className="mt-4 rounded-xl bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-800">
-          One thing still to do: send your two written references to{" "}
+          One thing still to do: send your two written references to{" "}. *Ignore if done
           <a href={`mailto:${MEMBERSHIP_EMAIL}`} className="text-green-700 underline">{MEMBERSHIP_EMAIL}</a>.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">

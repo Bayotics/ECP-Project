@@ -369,8 +369,35 @@ export function applicationStatusEmail(options: {
   statusUrl: string;
   portalUrl: string;
   contactEmail: string;
+  /** Set on an interview invitation: when, and where or how. */
+  interview?: { when: string; location?: string };
 }): { subject: string; html: string } {
   const first = escapeHtml(options.name.trim().split(/\s+/)[0] || "there");
+
+  /* The appointment, set out as its own block rather than buried in a
+     sentence: it is the one thing in the message the applicant has to
+     act on, and the one thing they will come back to the email to
+     re-read. */
+  const appointment = options.interview?.when
+    ? `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+  <tr><td style="border:1px solid ${LINE};border-radius:12px;padding:16px 18px;">
+    <p style="margin:0 0 6px;font:400 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">
+      Your interview
+    </p>
+    <p style="margin:0;font:500 17px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+      ${escapeHtml(options.interview.when)}
+    </p>
+    ${
+      options.interview.location?.trim()
+        ? `<p style="margin:8px 0 0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+             ${escapeHtml(options.interview.location.trim())}
+           </p>`
+        : ""
+    }
+  </td></tr>
+</table>`
+    : "";
 
   type Copy = {
     subject: string;
@@ -408,15 +435,26 @@ export function applicationStatusEmail(options: {
       cta: { href: options.statusUrl, label: "Track my application" },
     },
     interview: {
-      subject: "We would like to meet you",
-      preheader: "The membership committee would like to meet you.",
+      subject: options.interview?.when
+        ? `Your interview with Eko Club Philadelphia: ${options.interview.when}`
+        : "We would like to meet you",
+      preheader: options.interview?.when
+        ? `The membership committee will see you on ${options.interview.when}.`
+        : "The membership committee would like to meet you.",
       title: `Let us meet, ${first}`,
       colour: EKO.yellow,
       tint: "#fffbeb",
-      banner: "The membership committee would like to meet you before deciding.",
-      paragraphs: [
-        "Somebody from the committee will be in touch shortly to agree a time that suits you. It is a conversation, not a test: they want to know you, and you should ask them whatever you want to know about the club.",
-      ],
+      banner: options.interview?.when
+        ? "The membership committee has set a time to meet you."
+        : "The membership committee would like to meet you before deciding.",
+      paragraphs: options.interview?.when
+        ? [
+            "It is a conversation, not a test: the committee want to know you, and you should ask them whatever you want to know about the club.",
+            "If that time does not suit you, reply to this message and we will find another.",
+          ]
+        : [
+            "Somebody from the committee will be in touch shortly to agree a time that suits you. It is a conversation, not a test: they want to know you, and you should ask them whatever you want to know about the club.",
+          ],
       cta: { href: options.statusUrl, label: "See my application" },
     },
     approved: {
@@ -459,6 +497,7 @@ ${heading(copy.title)}
   </td></tr>
 </table>
 
+${appointment}
 ${copy.paragraphs.map((p) => `<p style="margin:0 0 16px;">${escapeHtml(p)}</p>`).join("\n")}
 ${copy.cta ? button(copy.cta.href, copy.cta.label) : ""}
 

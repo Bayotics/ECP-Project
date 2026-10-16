@@ -10,6 +10,7 @@ import {
   type ApplicationStatus,
   type MembershipApplication,
 } from "@/lib/models/membership";
+import { formatClubDateTime } from "@/lib/club-time";
 
 /* Telling the applicant what has happened to their own application.
  *
@@ -81,6 +82,15 @@ export async function notifyApplicantOfStatus(
       statusUrl: `${siteUrl()}/membership/status`,
       portalUrl: `${siteUrl()}/auth/login`,
       contactEmail: MEMBERSHIP_CONTACT_EMAIL,
+      /* Always rendered in club time, never the server's: this runs on a
+         host that is almost certainly set to UTC. */
+      interview:
+        status === "interview" && application.interviewAt
+          ? {
+              when: formatClubDateTime(application.interviewAt),
+              location: application.interviewLocation,
+            }
+          : undefined,
     });
 
     const result = await sendEmail({

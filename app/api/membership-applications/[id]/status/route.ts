@@ -10,6 +10,7 @@ import {
   checkMembershipId,
   membershipIdMessage,
 } from "@/lib/server/membership-activation";
+import { clubWallTimeToInstant, formatClubDateTime } from "@/lib/club-time";
 import type { ApplicationStatus, StatusTimelineEvent } from "@/lib/models/membership";
 
 /* Moving an application on, and telling the applicant.
@@ -53,6 +54,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       interviewed?: boolean;
       /** Approval only: the club number being issued. */
       membershipId?: string;
+      /** Interview only: the appointment, as club wall time. */
+      interviewDate?: string;
+      interviewTime?: string;
+      interviewLocation?: string;
     };
 
     if (!body.status || !STATUSES.includes(body.status)) {
@@ -94,14 +99,45 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       issuedId = checked.value;
     }
 
+    /* An invitation has to name a time, or it is not an invitation. The
+       typed date and time are club wall time; they become a real instant
+       here, once, so every later reading of it agrees. */
+    let interviewAt: string | null = null;
+    if (status === "interview") {
+      const instant = clubWallTimeToInstant(body.interviewDate, body.interviewTime);
+      if (!instant) {
+        return NextResponse.json(
+          { ok: false, error: "Give the date and time of the interview.", field: "interviewDate" },
+          { status: 400 },
+        );
+      }
+      if (instant.getTime() <= Date.now()) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "That time has already passed. Choose a date and time still to come.",
+            field: "interviewDate",
+          },
+          { status: 400 },
+        );
+      }
+      interviewAt = instant.toISOString();
+    }
+
     const now = new Date().toISOString();
     const entry: StatusTimelineEvent = {
       status,
       date: now,
       /* The applicant reads this, so an internal note is not used as the
-         message even when one was supplied. */
-      message: TIMELINE_NOTE[status],
+         message even when one was supplied. An invitation carries the
+         appointment, so the status page says it as well as the email. */
+      message: interviewAt
+        ? `You have been invited to meet the membership committee on ${formatClubDateTime(interviewAt)}.` +
+          (body.interviewLocation?.trim() ? ` ${body.interviewLocation.trim()}` : "")
+        : TIMELINE_NOTE[status],
     };
+
+    const where = body.interviewLocation?.trim();
 
     const result = await collection.findOneAndUpdate(
       { id },
@@ -111,7 +147,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           reviewedAt: now,
           reviewedBy: sessionUser.id,
           ...(body.notes?.trim() ? { reviewNotes: body.notes.trim() } : {}),
+          ...(interviewAt ? { interviewAt, ...(where ? { interviewLocation: where } : {}) } : {}),
         },
+        /* Rescheduling without a place must clear the previous one, or the
+           applicant is sent a new time attached to an old room. */
+        ...(interviewAt && !where ? { $unset: { interviewLocation: "" } } : {}),
         $push: { statusHistory: entry },
       },
       { returnDocument: "after" },

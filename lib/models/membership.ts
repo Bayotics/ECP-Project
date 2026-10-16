@@ -123,6 +123,17 @@ export interface MembershipApplication {
   referredBy?: string;
   // Documents (simulated)
   documents?: ApplicationDocument[];
+  /* ── The interview ─────────────────────────────────────────────────── */
+  /**
+   * When the membership committee will see the applicant, as a real
+   * instant. Set by the administrator when they send the invitation, and
+   * always shown back in club time, so the applicant reads the same
+   * clock the committee meant wherever they happen to be.
+   */
+  interviewAt?: string;
+  /** Where or how: a room, an address, a video link. Optional. */
+  interviewLocation?: string;
+
   // Admin
   status: ApplicationStatus;
   statusHistory?: StatusTimelineEvent[];

@@ -11,6 +11,8 @@ import {
   ConfirmDialog, ModalToasts, useModalToasts,
 } from "@/components/admin/AdminUI";
 import ApproveApplicationDialog from "@/components/admin/ApproveApplicationDialog";
+import InterviewInviteDialog from "@/components/admin/InterviewInviteDialog";
+import { formatClubDateTime } from "@/lib/club-time";
 import type { MembershipApplication } from "@/lib/models/membership";
 
 const STATUS_OPTIONS = ["all", "pending", "under-review", "interview", "approved", "rejected"];
@@ -40,6 +42,9 @@ const MOVES: Record<MoveStatus, {
       `${name} will be emailed to say the membership committee has started reviewing their application.`,
     done: "Marked under review.",
   },
+  /* Like Approve, this has a dialog of its own: an invitation has to name
+     a date and a time. The fields below are only its button and its
+     success line. */
   interview: {
     label: "Invite to interview",
     variant: "warning",
@@ -48,8 +53,7 @@ const MOVES: Record<MoveStatus, {
     confirmLabel: "Send the invitation",
     question: (name) =>
       `${name} will be emailed to say the committee would like to meet them.`,
-    detail: "The email does not carry a date. Somebody still has to contact them to agree a time.",
-    done: "Invited to interview.",
+    done: "Invitation sent.",
   },
   /* Approve has a dialog of its own, because it asks for the interview
      confirmation and the membership number. The fields below are only its
@@ -104,7 +108,7 @@ export default function AdminApplicationsPage() {
   const [movingTo, setMovingTo] = useState<MoveStatus | null>(null);
   /* Kept beside the approval dialog rather than in a toast, so a rejected
      membership number can be corrected without retyping the rest. */
-  const [approveError, setApproveError] = useState("");
+  const [dialogError, setDialogError] = useState("");
   /* Toasts live inside the dialog, where the work is happening. */
   const { toasts, show, dismiss, clear } = useModalToasts();
 
@@ -181,15 +185,11 @@ export default function AdminApplicationsPage() {
     }
   }
 
-  /** Runs one of the three plain moves, once confirmed. */
-  async function applyMove(status: Exclude<MoveStatus, "approved">) {
+  /** Runs one of the two plain moves, once confirmed. */
+  async function applyMove(status: "under-review" | "rejected") {
     if (!selected) return;
 
-    const actions = {
-      "under-review": setUnderReview,
-      interview: setInterview,
-      rejected: reject,
-    } as const;
+    const actions = { "under-review": setUnderReview, rejected: reject } as const;
 
     setMovingTo(status);
     try {
@@ -205,12 +205,39 @@ export default function AdminApplicationsPage() {
     }
   }
 
+  /** The interview invitation, with the appointment the administrator set. */
+  async function applyInterview(appointment: { date: string; time: string; location: string }) {
+    if (!selected) return;
+
+    setMovingTo("interview");
+    setDialogError("");
+    try {
+      const { application, applicantEmailed } = await setInterview(selected.id, appointment);
+      setSelected(application);
+      setPendingMove(null);
+      /* The time goes in the toast as well: if the email did not get
+         through, this is where the administrator reads back what was
+         saved. */
+      reportMove(
+        "interview",
+        application.fullName,
+        applicantEmailed,
+        application.interviewAt ? ` ${formatClubDateTime(application.interviewAt)}.` : "",
+      );
+    } catch (caught) {
+      /* Kept in the dialog: closing it would discard the date they set. */
+      setDialogError(errorMessage(caught));
+    } finally {
+      setMovingTo(null);
+    }
+  }
+
   /** Approval: issues the membership number and opens their account. */
   async function applyApproval(membershipId: string) {
     if (!selected) return;
 
     setMovingTo("approved");
-    setApproveError("");
+    setDialogError("");
     try {
       const { application, applicantEmailed, membership } = await approve(selected.id, {
         interviewed: true,
@@ -235,7 +262,7 @@ export default function AdminApplicationsPage() {
     } catch (caught) {
       /* Kept inside the approval dialog: closing it would throw away the
          number the administrator typed, and a clash is theirs to fix. */
-      setApproveError(errorMessage(caught));
+      setDialogError(errorMessage(caught));
     } finally {
       setMovingTo(null);
     }
@@ -323,6 +350,20 @@ export default function AdminApplicationsPage() {
               </>
             )}
 
+            {/* Once an invitation is out, the appointment is the first
+                thing an administrator opening this record wants to see. */}
+            {selected.interviewAt && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[11px] font-normal uppercase tracking-[0.14em] text-amber-900">
+                  Interview booked
+                </p>
+                <p className="mt-1 text-sm leading-6 text-amber-950">
+                  {formatClubDateTime(selected.interviewAt)}
+                  {selected.interviewLocation ? ` · ${selected.interviewLocation}` : ""}
+                </p>
+              </div>
+            )}
+
             <SectionDivider label="Move the application on" />
             <p className="-mt-1 mb-3 text-xs leading-6 text-neutral-900">
               Submitted, then membership committee review, then Exco sign off. The applicant sees each move on their
@@ -340,7 +381,7 @@ export default function AdminApplicationsPage() {
                     size="sm"
                     variant={move.variant}
                     disabled={current || movingTo !== null}
-                    onClick={() => { setApproveError(""); setPendingMove(status); }}
+                    onClick={() => { setDialogError(""); setPendingMove(status); }}
                   >
                     {movingTo === status ? "Working…" : move.label}
                   </Btn>
@@ -386,13 +427,26 @@ export default function AdminApplicationsPage() {
           applicantName={selected.fullName}
           applicantEmail={selected.email}
           busy={movingTo === "approved"}
-          error={approveError}
+          error={dialogError}
           onApprove={(membershipId) => void applyApproval(membershipId)}
-          onCancel={() => { setPendingMove(null); setApproveError(""); }}
+          onCancel={() => { setPendingMove(null); setDialogError(""); }}
         />
       )}
 
-      {selected && pendingMove && pendingMove !== "approved" && (
+      {/* So does the invitation: it has to name a date and a time. */}
+      {selected && pendingMove === "interview" && (
+        <InterviewInviteDialog
+          open
+          applicantName={selected.fullName}
+          applicantEmail={selected.email}
+          busy={movingTo === "interview"}
+          error={dialogError}
+          onInvite={(appointment) => void applyInterview(appointment)}
+          onCancel={() => { setPendingMove(null); setDialogError(""); }}
+        />
+      )}
+
+      {selected && pendingMove && pendingMove !== "approved" && pendingMove !== "interview" && (
         <ConfirmDialog
           open
           title={MOVES[pendingMove].confirmTitle}
