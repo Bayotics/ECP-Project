@@ -45,3 +45,5 @@ next-env.d.ts
 # must never be committed or served. The web-ready crops live in
 # public/gallery/members and the published fields in lib/content/members.ts.
 /private/
+
+/.npm-cache/

@@ -2,10 +2,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User } from "@/lib/models";
 import { apiRequestEnvelope, apiRequest } from "@/lib/client/api";
-import type { CreateUserInput } from "@/lib/models/user";
 import { passwordProblem } from "@/lib/models/password";
 
-type RegisterInput = Omit<CreateUserInput, "role" | "status"> & { password: string };
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -17,7 +15,6 @@ interface AuthContextValue {
   logout: () => void;
   refreshCurrentUser: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string; reason?: string }>;
-  register: (input: RegisterInput) => Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   changePassword: (
     currentPassword: string,
@@ -121,31 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const register = useCallback(
-    async (input: RegisterInput): Promise<{ success: boolean; error?: string; verificationEmailSent?: boolean }> => {
-      const problem = passwordProblem(input.password ?? "");
-      if (problem) return { success: false, error: problem };
-
-      try {
-        const payload = await apiRequestEnvelope<User, { verificationEmailSent?: boolean }>(
-          "/api/auth/register",
-          {
-            method: "POST",
-            body: JSON.stringify({ ...input, email: input.email.trim().toLowerCase() }),
-          },
-        );
-        if (payload.data) setCurrentUser(payload.data);
-        return { success: true, verificationEmailSent: payload.verificationEmailSent };
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Registration failed.",
-        };
-      }
-    },
-    []
-  );
-
   const sendPasswordReset = useCallback(
     async (email: string): Promise<{ success: boolean; message?: string; error?: string }> => {
       try {
@@ -203,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentUser, isLoading, isAuthenticated, isAdmin, isMember,
         login, logout, refreshCurrentUser,
-        loginWithEmail, register, sendPasswordReset, changePassword,
+        loginWithEmail, sendPasswordReset, changePassword,
       }}
     >
       {children}

@@ -16,6 +16,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Recaptcha from "@/components/membership/Recaptcha";
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { useRouter } from "next/navigation";
 import {
   APPLICATION_COMMITTEES,
@@ -112,6 +114,7 @@ type Draft = {
   stateProvince: string;
   zipPostal: string;
   phone: string;
+  phoneCountry: CountryCode;
   birthMonth: string;
   birthDay: string;
   occupation: string;
@@ -134,7 +137,7 @@ type Draft = {
 const BLANK: Draft = {
   fullName: "", spouseName: "", email: "",
   streetAddress: "", city: "", stateProvince: "", zipPostal: "",
-  phone: "", birthMonth: "", birthDay: "", occupation: "",
+  phone: "", phoneCountry: "US", birthMonth: "", birthDay: "", occupation: "",
   ibileDivisions: [], ibileOther: "", lagosRoot: "", lagosRootOther: "",
   streetAgbole: "", reasonForJoining: "", otherOrganizations: "",
   committeeInterests: [], committeeOther: "",
@@ -220,6 +223,8 @@ export default function ApplicationWizard() {
   const [draft, setDraft] = useState<Draft>(BLANK);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [restored, setRestored] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -283,6 +288,9 @@ export default function ApplicationWizard() {
           next.email = "That does not look like an email address.";
         }
         need("phone", "A cell phone number is required.");
+        if (draft.phone.trim() && !parsePhoneNumberFromString(draft.phone, draft.phoneCountry)?.isValid()) {
+          next.phone = "Enter a valid cell phone number for the selected country.";
+        }
         if (!draft.birthMonth || !draft.birthDay.trim()) {
           next.birthMonth = "Your month and day of birth are required.";
         } else {
@@ -330,6 +338,7 @@ export default function ApplicationWizard() {
   );
 
   const goTo = useCallback((index: number) => {
+    setCaptchaToken("");
     setStep(index);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
@@ -349,6 +358,10 @@ export default function ApplicationWizard() {
       }
     }
 
+    if (!captchaToken) {
+      setErrors({ recaptcha: "Please complete the reCAPTCHA verification." });
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/membership-applications", {
@@ -358,7 +371,8 @@ export default function ApplicationWizard() {
           fullName: draft.fullName.trim(),
           spouseName: draft.spouseName.trim() || undefined,
           email: draft.email.trim().toLowerCase(),
-          phone: draft.phone.trim(),
+          phone: parsePhoneNumberFromString(draft.phone, draft.phoneCountry)!.number,
+          recaptchaToken: captchaToken,
           birthMonthDay: `${draft.birthMonth} ${draft.birthDay}`.trim(),
           country: "US",
           streetAddress: draft.streetAddress.trim() || undefined,
@@ -394,6 +408,8 @@ export default function ApplicationWizard() {
       /* Straight to the fee, which the form requires before review. */
       router.push(`/membership/payment?application=${encodeURIComponent(json.data.id)}`);
     } catch (caught) {
+      setCaptchaToken("");
+      setCaptchaAttempt((attempt) => attempt + 1);
       errorToast(
         caught instanceof Error ? caught.message : "Could not submit your application.",
         "Submission failed",
@@ -486,7 +502,14 @@ export default function ApplicationWizard() {
               <input id="email" type="email" value={draft.email} onChange={(e) => set("email")(e.target.value)} className={inputClass} autoComplete="email" />
             </Field>
             <Field id="phone" label="Cell phone" required error={errors.phone}>
-              <input id="phone" type="tel" value={draft.phone} onChange={(e) => set("phone")(e.target.value)} className={inputClass} autoComplete="tel" />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <select aria-label="Cell phone country code" value={draft.phoneCountry} onChange={(e) => { set("phoneCountry")(e.target.value as CountryCode); }} className={`${inputClass} sm:w-52`}>
+                  {getCountries().map((country) => (
+                    <option key={country} value={country}>{new Intl.DisplayNames(["en"], { type: "region" }).of(country)} (+{getCountryCallingCode(country)})</option>
+                  ))}
+                </select>
+                <input id="phone" type="tel" value={draft.phone} onChange={(e) => set("phone")(e.target.value)} className={inputClass} autoComplete="tel-national" placeholder={`+${getCountryCallingCode(draft.phoneCountry)} phone number`} />
+              </div>
             </Field>
             <Field id="birthMonth" label="Month and day of birth" required hint="For example: January 7." error={errors.birthMonth}>
               <div className="flex gap-3">
@@ -671,6 +694,8 @@ export default function ApplicationWizard() {
                 <span className="text-neutral-600">(opens in a new tab, your answers are kept)</span>
               </p>
             </div>
+            <Recaptcha key={captchaAttempt} onChange={setCaptchaToken} />
+            {errors.recaptcha && !captchaToken && <p role="alert" className="text-xs text-red-700">{errors.recaptcha}</p>}
             {errors.agreedToConstitution && (
               <p className="text-xs leading-5 text-red-700">{errors.agreedToConstitution}</p>
             )}
@@ -701,7 +726,7 @@ export default function ApplicationWizard() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !captchaToken}
             className="rounded-full bg-green-600 px-6 py-2.5 text-sm font-normal text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {submitting ? "Submitting…" : `Submit and pay $${APPLICATION_FEE_USD}`}
@@ -741,7 +766,7 @@ function Review({ draft, onEdit }: { draft: Draft; onEdit: (step: number) => voi
       ["Full name", draft.fullName],
       ["Spouse", draft.spouseName],
       ["Email", draft.email],
-      ["Cell phone", draft.phone],
+      ["Cell phone", parsePhoneNumberFromString(draft.phone, draft.phoneCountry)?.formatInternational() ?? draft.phone],
       ["Birthday", `${draft.birthMonth} ${draft.birthDay}`.trim()],
     ]},
     { title: "Address", step: 1, rows: [

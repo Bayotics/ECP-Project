@@ -69,6 +69,7 @@ export async function notifyApplicantOfApplicationFee(
 export async function notifyApplicantOfStatus(
   application: MembershipApplication,
   status: ApplicationStatus,
+  rescheduled = false,
 ): Promise<{ sent: boolean }> {
   try {
     if (!application.email?.trim()) {
@@ -89,6 +90,7 @@ export async function notifyApplicantOfStatus(
           ? {
               when: formatClubDateTime(application.interviewAt),
               location: application.interviewLocation,
+              rescheduled,
             }
           : undefined,
     });

@@ -132,7 +132,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
          message even when one was supplied. An invitation carries the
          appointment, so the status page says it as well as the email. */
       message: interviewAt
-        ? `You have been invited to meet the membership committee on ${formatClubDateTime(interviewAt)}.` +
+        ? `Your interview ${existing.interviewAt ? "has been rescheduled for" : "is scheduled for"} ${formatClubDateTime(interviewAt)}.` +
           (body.interviewLocation?.trim() ? ` ${body.interviewLocation.trim()}` : "")
         : TIMELINE_NOTE[status],
     };
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
     /* After the write, and it cannot throw: a mail failure must not make
        the administrator think the review did not save, because it did. */
-    const notified = await notifyApplicantOfStatus(application, status);
+    const notified = await notifyApplicantOfStatus(application, status, status === "interview" && Boolean(existing.interviewAt));
 
     return NextResponse.json({
       ok: true,

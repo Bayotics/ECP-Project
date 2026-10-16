@@ -1,3 +1,5 @@
+import { verifyRecaptcha } from "@/lib/server/recaptcha";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 import type { CreateApplicationInput, MembershipApplication } from "@/lib/models";
@@ -27,6 +29,7 @@ function validateCreateApplication(input: Partial<CreateApplicationInput>): stri
   if (!input.fullName?.trim()) return "Full name is required";
   if (!input.email?.trim()) return "Email is required";
   if (!input.phone?.trim()) return "Phone number is required";
+  if (!parsePhoneNumberFromString(input.phone)?.isValid()) return "Enter a valid phone number including the country code";
   const addressError = validateAddress(input);
   if (addressError) return addressError;
   if (!input.occupation?.trim()) return "Occupation is required";
@@ -89,8 +92,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const payload = (await request.json()) as Partial<CreateApplicationInput> & { recaptchaToken?: unknown };
+    const verification = await verifyRecaptcha(payload.recaptchaToken);
+    if (!verification.ok) return NextResponse.json({ ok: false, error: verification.error }, { status: verification.status });
     await ensureCoreIndexes();
-    const payload = (await request.json()) as Partial<CreateApplicationInput>;
     const validationError = validateCreateApplication(payload);
 
     if (validationError) {

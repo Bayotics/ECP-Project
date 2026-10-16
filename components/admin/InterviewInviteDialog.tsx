@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useIsClient } from "@/components/gsap/useReveal";
 import { Btn } from "@/components/admin/AdminUI";
-import { clubWallTimeToInstant, formatClubDateTime } from "@/lib/club-time";
+import { clubWallTimeToInstant, formatClubDateTime, instantToClubWallTime } from "@/lib/club-time";
 import { EKO } from "@/lib/content/programs";
 
 /* Inviting an applicant to meet the committee.
@@ -20,6 +20,8 @@ export default function InterviewInviteDialog({
   open,
   applicantName,
   applicantEmail,
+  initialInterviewAt,
+  initialLocation,
   busy = false,
   error,
   onCancel,
@@ -28,6 +30,8 @@ export default function InterviewInviteDialog({
   open: boolean;
   applicantName: string;
   applicantEmail: string;
+  initialInterviewAt?: string;
+  initialLocation?: string;
   busy?: boolean;
   error?: string;
   onCancel: () => void;
@@ -35,9 +39,11 @@ export default function InterviewInviteDialog({
 }) {
   const isClient = useIsClient();
 
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
+  const initial = instantToClubWallTime(initialInterviewAt);
+  const rescheduling = Boolean(initialInterviewAt);
+  const [date, setDate] = useState(initial.date);
+  const [time, setTime] = useState(initial.time);
+  const [location, setLocation] = useState(initialLocation ?? "");
   const [touched, setTouched] = useState(false);
   /* Whether the chosen time has already gone is decided when the
      administrator presses the button, not while rendering: the dialog may
@@ -118,7 +124,7 @@ export default function InterviewInviteDialog({
         <div className="space-y-4 px-6 py-5">
           <div>
             <h3 id="interview-title" className="text-base font-normal tracking-[-0.01em] text-neutral-950">
-              Invite {applicantName} to interview?
+              {rescheduling ? `Reschedule the interview for ${applicantName}?` : `Invite ${applicantName} to interview?`}
             </h3>
             <p className="mt-1.5 text-sm leading-6 text-neutral-700">
               They are emailed the date and time you set here, and it appears on their application
@@ -206,7 +212,7 @@ export default function InterviewInviteDialog({
           </div>
 
           <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-900">
-            The invitation goes to {applicantEmail} as soon as you send it.
+            {rescheduling ? "The updated appointment" : "The invitation"} goes to {applicantEmail} as soon as you send it.
           </p>
         </div>
 
@@ -215,7 +221,7 @@ export default function InterviewInviteDialog({
             Cancel
           </Btn>
           <Btn size="sm" variant="warning" onClick={submit} disabled={!ready}>
-            {busy ? "Sending…" : "Send the invitation"}
+            {busy ? "Sending…" : rescheduling ? "Reschedule and notify" : "Send the invitation"}
           </Btn>
         </div>
       </div>

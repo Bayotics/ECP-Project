@@ -370,7 +370,7 @@ export function applicationStatusEmail(options: {
   portalUrl: string;
   contactEmail: string;
   /** Set on an interview invitation: when, and where or how. */
-  interview?: { when: string; location?: string };
+  interview?: { when: string; location?: string; rescheduled?: boolean };
 }): { subject: string; html: string } {
   const first = escapeHtml(options.name.trim().split(/\s+/)[0] || "there");
 
@@ -436,16 +436,16 @@ export function applicationStatusEmail(options: {
     },
     interview: {
       subject: options.interview?.when
-        ? `Your interview with Eko Club Philadelphia: ${options.interview.when}`
+        ? `${options.interview.rescheduled ? "Interview rescheduled" : "Your interview with Eko Club Philadelphia"}: ${options.interview.when}`
         : "We would like to meet you",
       preheader: options.interview?.when
         ? `The membership committee will see you on ${options.interview.when}.`
         : "The membership committee would like to meet you.",
-      title: `Let us meet, ${first}`,
+      title: options.interview?.rescheduled ? `Your interview has been rescheduled, ${first}` : `Let us meet, ${first}`,
       colour: EKO.yellow,
       tint: "#fffbeb",
       banner: options.interview?.when
-        ? "The membership committee has set a time to meet you."
+        ? options.interview.rescheduled ? "Your interview has been rescheduled. Please use the updated appointment below; it replaces your previous appointment." : "The membership committee has set a time to meet you."
         : "The membership committee would like to meet you before deciding.",
       paragraphs: options.interview?.when
         ? [

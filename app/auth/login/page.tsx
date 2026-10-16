@@ -183,12 +183,7 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-(--color-neutral-500)">
-        Don&apos;t have an account?{" "}
-        <Link href="/auth/register" className="text-(--color-green-600) font-medium hover:underline">
-          Create one
-        </Link>
-      </p>
+
     </div>
   );
 }

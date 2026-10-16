@@ -41,6 +41,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const { session, deny } = requireSession(request);
+  if (deny) return deny;
+  if (session?.role !== "admin" && session?.role !== "super-admin") {
+    return NextResponse.json({ ok: false, error: "Only administrators can create accounts." }, { status: 403 });
+  }
+
   try {
     await ensureCoreIndexes();
     const payload = (await request.json()) as Partial<CreateUserPayload>;

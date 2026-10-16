@@ -47,7 +47,7 @@ const MOCK_RESPONSES: { pattern: RegExp; reply: string }[] = [
   },
   {
     pattern: /\b(register|sign\s*up|account|create)\b/i,
-    reply: "Create your ECP account on the **Register** page. Once registered, you can apply for full membership to unlock exclusive features like the member directory, documents, and member-only store items.",
+    reply: "Apply for membership on the **Membership Application** page. After approval, the club creates your member account and emails you access instructions.",
   },
   {
     pattern: /\b(dues|payment|fee|subscription)\b/i,

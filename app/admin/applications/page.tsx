@@ -171,7 +171,7 @@ export default function AdminApplicationsPage() {
 
   /** Reports the outcome of a move in the modal's own toast. */
   function reportMove(status: MoveStatus, name: string, emailed: boolean, extra = "") {
-    const done = `${MOVES[status].done}${extra}`;
+    const done = `${status === "interview" && selected?.interviewAt ? "Interview rescheduled." : MOVES[status].done}${extra}`;
     /* Whether the applicant actually heard is reported, not assumed. An
        administrator who thinks an email went out when it did not will
        wait for a reply that is never coming. */
@@ -312,18 +312,52 @@ export default function AdminApplicationsPage() {
           notice={<ModalToasts toasts={toasts} onDismiss={dismiss} />}
         >
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               {[
-                { label: "Email",      value: selected.email },
-                { label: "Phone",      value: selected.phone },
-                { label: "Occupation", value: selected.occupation },
-                { label: "Employer",   value: selected.employer ?? "—" },
-                { label: "Address",    value: fullAddressOf(selected) },
-                { label: "Applied",    value: new Date(selected.appliedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) },
+                { label: "Full name", value: selected.fullName },
+                { label: "Spouse name (joint application)", value: selected.spouseName },
+                { label: "Email", value: selected.email },
+                { label: "Cell phone", value: selected.phone },
+                { label: "Birth month and day", value: selected.birthMonthDay },
+                { label: "Street address", value: selected.streetAddress },
+                { label: "Apartment / unit", value: selected.aptUnit },
+                { label: "City", value: selected.city },
+                { label: "State / province", value: selected.stateProvince },
+                { label: "ZIP / postal code", value: selected.zipPostal },
+                { label: "Country", value: selected.country },
+                { label: "Full address", value: fullAddressOf(selected) },
+                { label: "Profession / occupation", value: selected.occupation },
+                { label: "IBILE divisions", value: selected.ibileDivisions?.join(", ") },
+                { label: "Other IBILE division", value: selected.ibileOther },
+                { label: "Lagos root", value: selected.lagosRoot },
+                { label: "Other Lagos root", value: selected.lagosRootOther },
+                { label: "Street / agbole", value: selected.streetAgbole },
+                { label: "Other groups / organizations", value: selected.otherOrganizations },
+                { label: "Committee interests", value: selected.committeeInterests?.join(", ") },
+                { label: "Other committee", value: selected.committeeOther },
+                { label: "Referral 1 name", value: selected.referral1Name },
+                { label: "Referral 1 phone", value: selected.referral1Phone },
+                { label: "Referral 2 name", value: selected.referral2Name },
+                { label: "Referral 2 phone", value: selected.referral2Phone },
+                { label: "Constitution declaration accepted", value: selected.agreedToConstitution === undefined ? "Not recorded" : selected.agreedToConstitution ? "Yes" : "No" },
+                // Preserve answers from earlier versions of the application too.
+                ...(selected.dateOfBirth ? [{ label: "Date of birth", value: selected.dateOfBirth }] : []),
+                ...(selected.gender ? [{ label: "Gender", value: selected.gender }] : []),
+                ...(selected.employer ? [{ label: "Employer", value: selected.employer }] : []),
+                ...(selected.highestEducation ? [{ label: "Highest education", value: selected.highestEducation }] : []),
+                ...(selected.lga ? [{ label: "LGA", value: selected.lga }] : []),
+                ...(selected.ward ? [{ label: "Ward", value: selected.ward }] : []),
+                ...(selected.referredBy ? [{ label: "Referred by", value: selected.referredBy }] : []),
+                { label: "Previously volunteered", value: selected.hasVolunteered === undefined ? "Not recorded" : selected.hasVolunteered ? "Yes" : "No" },
+                { label: "Application fee status", value: selected.feeStatus },
+                ...(selected.feeMethod ? [{ label: "Fee payment method", value: selected.feeMethod }] : []),
+                ...(selected.feeReference ? [{ label: "Fee payment reference", value: selected.feeReference }] : []),
+                ...(selected.feePaidAt ? [{ label: "Fee paid", value: formatClubDateTime(selected.feePaidAt) }] : []),
+                { label: "Applied", value: new Date(selected.appliedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) },
               ].map(f => (
                 <div key={f.label}>
                   <p className="mb-1 text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">{f.label}</p>
-                  <p className="leading-6 text-neutral-900">{f.value}</p>
+                  <p className="whitespace-pre-wrap break-words leading-6 text-neutral-900">{f.value || "Not provided"}</p>
                 </div>
               ))}
               <div>
@@ -347,6 +381,17 @@ export default function AdminApplicationsPage() {
                     <span key={a} className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-normal text-green-800">{a}</span>
                   ))}
                 </div>
+              </>
+            )}
+
+            {!!selected.documents?.length && (
+              <>
+                <SectionDivider label="Submitted documents" />
+                <ul className="space-y-2 text-sm text-neutral-900">
+                  {selected.documents.map((document) => (
+                    <li key={document.id}>{document.label}: {document.name} (submitted {new Date(document.uploadedAt).toLocaleDateString("en-US")})</li>
+                  ))}
+                </ul>
               </>
             )}
 
@@ -380,10 +425,10 @@ export default function AdminApplicationsPage() {
                     key={status}
                     size="sm"
                     variant={move.variant}
-                    disabled={current || movingTo !== null}
+                    disabled={(current && status !== "interview") || movingTo !== null}
                     onClick={() => { setDialogError(""); setPendingMove(status); }}
                   >
-                    {movingTo === status ? "Working…" : move.label}
+                    {movingTo === status ? "Working…" : status === "interview" && selected.interviewAt ? "Reschedule interview" : move.label}
                   </Btn>
                 );
               })}
@@ -439,6 +484,8 @@ export default function AdminApplicationsPage() {
           open
           applicantName={selected.fullName}
           applicantEmail={selected.email}
+          initialInterviewAt={selected.interviewAt}
+          initialLocation={selected.interviewLocation}
           busy={movingTo === "interview"}
           error={dialogError}
           onInvite={(appointment) => void applyInterview(appointment)}
