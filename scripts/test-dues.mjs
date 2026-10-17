@@ -129,6 +129,47 @@ test('no double charge across a gap that is already covered by a legacy payment'
 test('billing begins after approval even if account was created months earlier', () => {
   assert.equal(calculate([], undefined, { ...user, joinedAt: '2025-01-01T12:00:00Z', membershipIdIssuedAt: user.joinedAt }).billingStartsOn, '2026-11-01');
 });
+test('missing or invalid imported member dates do not crash or invent billing history', () => {
+  for (const value of ['', ' ', undefined, null, 'not-a-date', '2026-02-30', '2026-13-01']) {
+    const summary = calculate([], undefined, { ...user, joinedAt: value, membershipIdIssuedAt: value, duesStartDate: value });
+    assert.equal(summary.status, 'needs-review');
+    assert.equal(summary.billingStartsOn, null);
+    assert.equal(summary.nextPaymentDue, null);
+    assert.equal(summary.suspensionWarning, false);
+    assert.equal(summary.plans.length, 0);
+  }
+});
+test('invalid approval dates fall back to a valid join date, and valid billing overrides need no join date', () => {
+  assert.equal(calculate([], undefined, { ...user, membershipIdIssuedAt: '' }).billingStartsOn, '2026-11-01');
+  assert.equal(calculate([], undefined, { ...user, membershipIdIssuedAt: 'invalid' }).billingStartsOn, '2026-11-01');
+  assert.equal(calculate([], undefined, { ...user, joinedAt: '', duesStartDate: '2026-08-01' }).billingStartsOn, '2026-08-01');
+});
+test('date-only join dates on a month boundary retain their calendar month in Philadelphia', () => {
+  assert.equal(calculate([], undefined, { ...user, joinedAt: '2026-10-01' }).billingStartsOn, '2026-11-01');
+});
+test('payment history and pending transfers remain available when a membership date needs review', () => {
+  const pending = payment({ id: 'pending', status: 'pending' });
+  const summary = calculate([payment(), pending], undefined, { ...user, joinedAt: '' });
+  assert.equal(summary.status, 'needs-review'); assert.equal(summary.totalPaidCents, 24000);
+  assert.equal(summary.pendingPayment.id, 'pending');
+});
+test('admin dues listing succeeds with both complete members and members with blank imported dates', async () => {
+  const members = [user, { ...user, id: 'incomplete', joinedAt: '', membershipIdIssuedAt: '' }];
+  const collections = {
+    users: { find: () => ({ sort: () => ({ skip: () => ({ limit: () => ({ toArray: async () => members }) }) }) }), countDocuments: async () => members.length },
+    duesPayments: { find: () => ({ sort: () => ({ toArray: async () => [] }) }) },
+    duesReminders: { find: () => ({ sort: () => ({ limit: () => ({ toArray: async () => [] }) }) }) },
+  };
+  const route = load('app/api/admin/dues/route.ts', {
+    'next/server': nextMock, '@/lib/server/session': { getSessionUser: async () => ({ ...user, role: 'super-admin' }) },
+    '@/lib/server/collections': { getCollection: async name => collections[name], serializeDocuments: docs => docs },
+    '@/lib/server/email': {}, '@/lib/server/email-templates': {}, '@/lib/server/admin-notifications': {},
+  });
+  const response = await route.GET({ nextUrl: new URL('http://localhost/api/admin/dues?page=0') });
+  assert.equal(response.status, 200); assert.equal(response.body.data.length, 2);
+  assert.equal(response.body.data[0].summary.status, 'current');
+  assert.equal(response.body.data[1].summary.status, 'needs-review');
+});
 test('Philadelphia timezone and leap-year month ends are consistent', () => {
   assert.equal(billing.clubDate(new Date('2028-03-01T02:00:00Z')), '2028-02-29');
   assert.equal(calculate([], '2028-02-29T17:00:00Z', { ...user, duesStartDate: '2028-02-01' }).plans[1].coverageEnd, '2028-02-29');

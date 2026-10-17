@@ -37,13 +37,13 @@ export interface DuesPayment {
 
 export interface DuesSummary {
   frequency: DuesFrequency;
-  billingStartsOn: string;
+  billingStartsOn: string | null;
   asOf: string;
-  status: "current" | "owing" | "at-risk";
+  status: "current" | "owing" | "at-risk" | "needs-review";
   overdueMonths: string[];
   outstandingCents: number;
   paidThrough: string | null;
-  nextPaymentDue: string;
+  nextPaymentDue: string | null;
   suspensionWarning: boolean;
   totalPaidCents: number;
   pendingPayment: DuesPayment | null;

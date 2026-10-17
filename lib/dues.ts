@@ -13,6 +13,20 @@ export function isDuesFrequency(value: unknown): value is DuesFrequency {
 export function clubDate(now = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: DUES_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
+/** Imported members may have empty or missing dates. Date-only values are
+ * calendar dates, so do not shift them to the previous day in Philadelphia. */
+function validMemberDate(value: unknown): string | null {
+  if (typeof value !== "string" && !(value instanceof Date)) return null;
+  if (typeof value === "string") {
+    if (!value.trim()) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const parsed = new Date(`${value}T12:00:00Z`);
+      return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
+    }
+  }
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) ? clubDate(parsed) : null;
+}
 function monthIndex(date: string): number {
   return Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7)) - 1;
 }
@@ -65,12 +79,25 @@ export function calculateDues(user: Pick<User, "joinedAt" | "membershipIdIssuedA
   const { records } = splitDuesPlaceholders(input);
   const today = clubDate(now);
   const currentMonth = monthIndex(today);
-  const baseline = user.duesStartDate ?? monthDate(monthIndex(clubDate(new Date(user.membershipIdIssuedAt ?? user.joinedAt))) + 1);
-  const startSlot = dateSlot(baseline);
   // Interpret any saved preference from the superseded plan as twice yearly;
   // previously recorded payment amounts and coverage remain authoritative.
   const savedFrequency: unknown = user.duesFrequency;
   const frequency: DuesFrequency = isDuesFrequency(savedFrequency) ? savedFrequency : savedFrequency === "twice-monthly" ? "twice-yearly" : "monthly";
+  const totalPaidCents = records.filter(r => r.status === "paid").reduce((sum, r) => sum + Math.round(r.amount * 100), 0);
+  const pendingPayment = records.find(r => r.schemaVersion === 2 && r.status === "pending") ?? null;
+  const explicitStart = validMemberDate(user.duesStartDate);
+  const membershipDate = validMemberDate(user.membershipIdIssuedAt) ?? validMemberDate(user.joinedAt);
+  const baseline = explicitStart ?? (membershipDate ? monthDate(monthIndex(membershipDate) + 1) : null);
+  if (!baseline) {
+    // Keep genuine payment history available, but do not invent a start date,
+    // bill arrears, or warn about suspension when the membership date is unknown.
+    return {
+      frequency, billingStartsOn: null, asOf: today, status: "needs-review",
+      overdueMonths: [], outstandingCents: 0, paidThrough: null, nextPaymentDue: null,
+      suspensionWarning: false, totalPaidCents, pendingPayment, plans: [], catchUp: null,
+    };
+  }
+  const startSlot = dateSlot(baseline);
   const covered = new Set<number>();
   for (const payment of records) {
     if (payment.status !== "paid" && payment.status !== "waived") continue;
@@ -111,8 +138,7 @@ export function calculateDues(user: Pick<User, "joinedAt" | "membershipIdIssuedA
     overdueMonths: [...owed], outstandingCents,
     paidThrough: firstUnpaid > startSlot ? slotEnd(firstUnpaid - 1) : null,
     nextPaymentDue: slotDate(firstUnpaid), suspensionWarning,
-    totalPaidCents: records.filter(r => r.status === "paid").reduce((sum, r) => sum + Math.round(r.amount * 100), 0),
-    pendingPayment: records.find(r => r.schemaVersion === 2 && r.status === "pending") ?? null,
+    totalPaidCents, pendingPayment,
     plans,
     catchUp: contiguousCatchUpEnd >= firstUnpaid ? quote(firstUnpaid, contiguousCatchUpEnd - firstUnpaid + 1) : null,
   };

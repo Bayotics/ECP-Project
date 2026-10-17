@@ -41,9 +41,9 @@ export async function buildDuesHistoryPdf(user: Pick<User, "displayName" | "memb
       for (const line of wrap(`${user.membershipId ?? "Membership number not assigned"} | ${user.email}`, regular, 9, 515)) { text(line, 40, y); y -= 14; }
       y -= 7;
       text(`As of ${summary.asOf} (Philadelphia) | Schedule: ${DUES_PLAN_LABELS[summary.frequency]}`, 40, y); y -= 18;
-      text(`Confirmed paid: ${money(summary.totalPaidCents)}   Outstanding: ${money(summary.outstandingCents)}`, 40, y, 10, true); y -= 17;
-      text(`Paid through: ${summary.paidThrough ?? "No confirmed coverage"} | Next unpaid due: ${summary.nextPaymentDue}`, 40, y); y -= 17;
-      text(`Standing: ${summary.status === "at-risk" ? "At risk of suspension" : summary.status === "owing" ? "Payment due" : "Up to date"}`, 40, y); y -= 17;
+      text(`Confirmed paid: ${money(summary.totalPaidCents)}   Outstanding: ${summary.status === "needs-review" ? "Needs membership date" : money(summary.outstandingCents)}`, 40, y, 10, true); y -= 17;
+      text(`Paid through: ${summary.paidThrough ?? "No confirmed coverage"} | Next unpaid due: ${summary.nextPaymentDue ?? "Needs membership date"}`, 40, y); y -= 17;
+      text(`Standing: ${summary.status === "needs-review" ? "Membership date needs review" : summary.status === "at-risk" ? "At risk of suspension" : summary.status === "owing" ? "Payment due" : "Up to date"}`, 40, y); y -= 17;
       if (summary.overdueMonths.length) {
         const months = summary.overdueMonths.slice(0, 12).join(", ") + (summary.overdueMonths.length > 12 ? ` (+${summary.overdueMonths.length - 12} more; see member portal)` : "");
         for (const line of wrap(`Unpaid months: ${months}`, regular, 9, 515)) {

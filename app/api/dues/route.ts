@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     await ensureCoreIndexes();
     const { summary } = await getMemberDues(user);
     if (summary.pendingPayment) return NextResponse.json({ ok: true, data: summary.pendingPayment });
+    if (summary.status === "needs-review") return NextResponse.json({ ok: false, error: "Your membership billing start needs administrator review before a payment can be prepared" }, { status: 409 });
     const quote = body.catchUp ? summary.catchUp : summary.plans.find(plan => plan.frequency === body.frequency);
     if (!quote || quote.amountCents <= 0) return NextResponse.json({ ok: false, error: "No outstanding period to pay" }, { status: 400 });
     const now = new Date().toISOString();

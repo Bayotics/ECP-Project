@@ -171,7 +171,7 @@ export default function MemberDashboardPage() {
           note={committeesLoading ? undefined : `${allCommittees.length} active in the club`}
         />
         <StatTile
-          value={duesLoading ? "…" : duesSummary ? duesMoney(duesSummary.outstandingCents) : "Unavailable"}
+          value={duesLoading ? "…" : duesSummary ? duesSummary.status === "needs-review" ? "Needs review" : duesMoney(duesSummary.outstandingCents) : "Unavailable"}
           label="Outstanding dues"
           color={EKO.red}
           note={duesSummary ? `Next unpaid due: ${duesDate(duesSummary.nextPaymentDue)}` : undefined}
@@ -275,8 +275,8 @@ export default function MemberDashboardPage() {
             </div>
             {duesLoading ? <p className="text-sm">Loading dues…</p> : duesSummary ? (
               <dl className="divide-y divide-neutral-100">
-                <Row label="Standing">{duesSummary.status === "current" ? "Up to date" : duesSummary.status === "at-risk" ? "At risk of suspension" : "Payment due"}</Row>
-                <Row label="Outstanding">{duesMoney(duesSummary.outstandingCents)}</Row>
+                <Row label="Standing">{duesSummary.status === "needs-review" ? "Membership date needs review" : duesSummary.status === "current" ? "Up to date" : duesSummary.status === "at-risk" ? "At risk of suspension" : "Payment due"}</Row>
+                <Row label="Outstanding">{duesSummary.status === "needs-review" ? "Needs review" : duesMoney(duesSummary.outstandingCents)}</Row>
                 <Row label="Next unpaid due">{duesDate(duesSummary.nextPaymentDue)}</Row>
                 <Row label="Paid through">{duesSummary.paidThrough ? duesDate(duesSummary.paidThrough) : "No confirmed coverage"}</Row>
               </dl>
