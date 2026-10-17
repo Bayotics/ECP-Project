@@ -1,10 +1,11 @@
+import type { SocialProfiles } from "@/lib/social-profiles";
 export type UserRole = "guest" | "applicant" | "member" | "admin" | "super-admin";
 export type UserStatus = "active" | "inactive" | "suspended" | "pending";
 
 /** Which body of the club a member holds office in, for grouping the directory. */
 export type UserOffice = "exco" | "trustees" | "patron";
 
-export interface User {
+export interface User extends SocialProfiles {
   id: string;
   email: string;
   firstName: string;

@@ -16,6 +16,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import SocialProfileFields from "@/components/people/SocialProfileFields";
+import { parseSocialProfiles, type SocialProfiles } from "@/lib/social-profiles";
 import Recaptcha from "@/components/membership/Recaptcha";
 import { getCountries, getCountryCallingCode, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { useRouter } from "next/navigation";
@@ -105,7 +107,7 @@ const REQUIREMENTS: { title: string; detail: React.ReactNode }[] = [
   },
 ];
 
-type Draft = {
+type Draft = SocialProfiles & {
   fullName: string;
   spouseName: string;
   email: string;
@@ -143,6 +145,7 @@ const BLANK: Draft = {
   committeeInterests: [], committeeOther: "",
   referral1Name: "", referral1Phone: "", referral2Name: "", referral2Phone: "",
   agreedToConstitution: false,
+  linkedinUrl: "", instagramUrl: "", facebookUrl: "",
 };
 
 /* ─── Small field primitives ──────────────────────────────────────────── */
@@ -287,6 +290,8 @@ export default function ApplicationWizard() {
         if (draft.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) {
           next.email = "That does not look like an email address.";
         }
+        const social = parseSocialProfiles(draft);
+        if (!social.ok) next[social.field] = social.error;
         need("phone", "A cell phone number is required.");
         if (draft.phone.trim() && !parsePhoneNumberFromString(draft.phone, draft.phoneCountry)?.isValid()) {
           next.phone = "Enter a valid cell phone number for the selected country.";
@@ -358,6 +363,8 @@ export default function ApplicationWizard() {
       }
     }
 
+    const social = parseSocialProfiles(draft);
+    if (!social.ok) { setErrors({ [social.field]: social.error }); goTo(0); return; }
     if (!captchaToken) {
       setErrors({ recaptcha: "Please complete the reCAPTCHA verification." });
       return;
@@ -368,6 +375,7 @@ export default function ApplicationWizard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...social.values,
           fullName: draft.fullName.trim(),
           spouseName: draft.spouseName.trim() || undefined,
           email: draft.email.trim().toLowerCase(),
@@ -527,6 +535,7 @@ export default function ApplicationWizard() {
                 />
               </div>
             </Field>
+            <SocialProfileFields values={draft} onChange={(key, value) => set(key)(value)} errors={errors} />
           </>
         )}
 
@@ -768,6 +777,9 @@ function Review({ draft, onEdit }: { draft: Draft; onEdit: (step: number) => voi
       ["Email", draft.email],
       ["Cell phone", parsePhoneNumberFromString(draft.phone, draft.phoneCountry)?.formatInternational() ?? draft.phone],
       ["Birthday", `${draft.birthMonth} ${draft.birthDay}`.trim()],
+      ["LinkedIn", draft.linkedinUrl],
+      ["Instagram", draft.instagramUrl],
+      ["Facebook", draft.facebookUrl],
     ]},
     { title: "Address", step: 1, rows: [
       ["Address", draft.streetAddress],

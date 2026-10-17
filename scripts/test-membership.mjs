@@ -86,6 +86,7 @@ test('User creation rejects anonymous and non-admin sessions before database acc
   for (const role of [null, 'applicant', 'member']) {
     const route = load('app/api/users/route.ts', {
       require: (name) => {
+        if (name === '@/lib/social-profiles') return load('lib/social-profiles.ts', { URL });
         if (name === 'next/server') return { NextResponse: { json: (body, init) => ({ body, status: init.status }) } };
         if (name === '@/lib/server/guards') return { requireSession: () => role ? { session: { role }, deny: null } : { session: null, deny: { status: 401 } } };
         if (name === '@/lib/server/collections') return { ensureCoreIndexes: () => { throw Error('Database must not be accessed'); } };

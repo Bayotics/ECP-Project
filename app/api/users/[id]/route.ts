@@ -1,3 +1,5 @@
+import { parseSocialProfiles } from "@/lib/social-profiles";
+import { requireSession } from "@/lib/server/guards";
 import { NextRequest, NextResponse } from "next/server";
 import type { UpdateUserInput } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
@@ -22,15 +24,23 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { session, deny } = requireSession(request);
+  if (deny) return deny;
+  const { id } = await context.params;
+  const admin = session?.role === "admin" || session?.role === "super-admin";
+  if (!admin && session?.sub !== id) return NextResponse.json({ ok: false, error: "You can only edit your own profile." }, { status: 403 });
   try {
-    await ensureCoreIndexes();
-    const { id } = await context.params;
     const payload = (await request.json()) as UpdateUserInput;
+    const editable = new Set(["firstName", "lastName", "displayName", "phone", "lagosOrigin", "ward", "occupation", "bio", "avatarUrl", "linkedinUrl", "instagramUrl", "facebookUrl"]);
+    if (!admin && Object.keys(payload).some((key) => !editable.has(key))) return NextResponse.json({ ok: false, error: "This field can only be changed by an administrator." }, { status: 403 });
+    const social = parseSocialProfiles(payload);
+    if (!social.ok) return NextResponse.json({ ok: false, error: social.error }, { status: 400 });
+    await ensureCoreIndexes();
     const collection = await getCollection("users");
 
     const result = await collection.findOneAndUpdate(
       { id },
-      { $set: payload },
+      { $set: { ...payload, ...social.values } },
       { returnDocument: "after" }
     );
 

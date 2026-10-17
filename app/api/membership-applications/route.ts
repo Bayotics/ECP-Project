@@ -1,3 +1,4 @@
+import { parseSocialProfiles } from "@/lib/social-profiles";
 import { verifyRecaptcha } from "@/lib/server/recaptcha";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { nanoid } from "nanoid";
@@ -96,6 +97,8 @@ export async function POST(request: NextRequest) {
     const verification = await verifyRecaptcha(payload.recaptchaToken);
     if (!verification.ok) return NextResponse.json({ ok: false, error: verification.error }, { status: verification.status });
     await ensureCoreIndexes();
+    const social = parseSocialProfiles(payload);
+    if (!social.ok) return badRequest(social.error);
     const validationError = validateCreateApplication(payload);
 
     if (validationError) {
@@ -114,6 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const application: MembershipApplication = {
+      ...social.values,
       id: nanoid(),
       fullName: payload.fullName!.trim(),
       email: normalizedEmail,

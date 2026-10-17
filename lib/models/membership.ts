@@ -1,3 +1,4 @@
+import type { SocialProfiles } from "@/lib/social-profiles";
 export type ApplicationStatus =
   | "pending"
   | "under-review"
@@ -61,7 +62,7 @@ export const MEMBERSHIP_CONTACT_EMAIL = "ekophillymembership@gmail.com";
 
 export type ApplicationFeeStatus = "unpaid" | "pending-confirmation" | "paid";
 
-export interface MembershipApplication {
+export interface MembershipApplication extends SocialProfiles {
   id: string;
   // Personal
   fullName: string;

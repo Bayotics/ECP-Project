@@ -10,6 +10,7 @@
  * Contact details come back in the API response because this is a members
  * only endpoint, but the page deliberately does not render them. */
 
+import SocialProfileLinks from "@/components/people/SocialProfileLinks";
 import MemberBadge from "@/components/people/MemberBadge";
 import { cutoutFor, slugFromPhoto } from "@/lib/content/badge-cutouts";
 import { useEffect, useMemo, useState } from "react";
@@ -155,26 +156,23 @@ function MemberCard({ user, onOpen }: { user: User; onOpen: () => void }) {
   const color = colorFor(user);
   const year = joinYearOf(user);
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white text-left transition-colors hover:border-neutral-400"
-    >
-      <Portrait user={user} className="aspect-square w-full" />
-      <span className="flex flex-1 flex-col p-5">
-        <span className="flex items-center gap-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">
+    <article className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white text-center transition-colors hover:border-neutral-400">
+      <button type="button" onClick={onOpen} aria-label={`View ${user.displayName}'s profile`} className="block w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-green-600">
+        <Portrait user={user} className="aspect-square w-full" />
+      </button>
+      <div className="flex flex-1 flex-col items-center p-5 text-center">
+        <p className="flex items-center justify-center gap-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">
           <span className="h-2 w-2 rounded-full" style={{ background: color }} aria-hidden="true" />
           {user.title ?? <span className="text-neutral-800">N/A</span>}
-        </span>
-        <span className="mt-2 block text-base font-normal leading-snug tracking-[-0.01em] text-neutral-950">
-          {user.displayName}
-        </span>
-        <span className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-900">
+        </p>
+        <button type="button" onClick={onOpen} className="mt-2 block cursor-pointer text-center text-base font-normal leading-snug tracking-[-0.01em] text-neutral-950 hover:underline focus-visible:outline-2 focus-visible:outline-green-600">{user.displayName}</button>
+        <SocialProfileLinks profiles={user} name={user.displayName} className="justify-center" />
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-neutral-900">
           <span>{year ? `Member since ${year}` : <span className="text-neutral-800">Joined N/A</span>}</span>
-          {user.bio && <span className="text-green-700">Read bio</span>}
-        </span>
-      </span>
-    </button>
+          {user.bio && <button type="button" onClick={onOpen} className="cursor-pointer text-green-700 hover:underline">Read bio</button>}
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -232,6 +230,7 @@ function MemberDrawer({ user, onClose }: { user: User; onClose: () => void }) {
               {user.title ?? "N/A"}
             </p>
             <h2 className="mt-2 text-2xl font-normal tracking-[-0.02em] text-neutral-950 sm:text-3xl">{user.displayName}</h2>
+            <SocialProfileLinks profiles={user} name={user.displayName} />
           </div>
           <button
             type="button"

@@ -1,3 +1,4 @@
+import { parseSocialProfiles } from "@/lib/social-profiles";
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/server/guards";
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
     await ensureCoreIndexes();
     const payload = (await request.json()) as Partial<CreateUserPayload>;
 
+    const social = parseSocialProfiles(payload);
+    if (!social.ok) return badRequest(social.error);
     if (!payload.firstName?.trim()) return badRequest("First name is required");
     if (!payload.lastName?.trim()) return badRequest("Last name is required");
     if (!payload.email?.trim()) return badRequest("Email is required");
@@ -63,6 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user: User = {
+      ...social.values,
       id: nanoid(),
       email,
       firstName: payload.firstName.trim(),

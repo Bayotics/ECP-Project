@@ -1,3 +1,4 @@
+import { parseSocialProfiles } from "@/lib/social-profiles";
 import { nanoid } from "nanoid";
 import { getCollection, serializeDocument } from "@/lib/server/collections";
 import { hasCredential, upsertCredential } from "@/lib/server/auth";
@@ -128,6 +129,8 @@ export async function activateMember(
   const applications = await getCollection("membershipApplications");
   const email = application.email.trim().toLowerCase();
   const now = new Date().toISOString();
+  const social = parseSocialProfiles(application);
+  if (!social.ok) throw new Error(social.error);
 
   /* By linked account first, then by address: an applicant who registered
      on the site is the same person as the applicant on the form. */
@@ -144,6 +147,7 @@ export async function activateMember(
         { id: existing.id },
         {
           $set: {
+            ...Object.fromEntries(Object.entries(social.values).filter(([key, value]) => value && existing[key as keyof User] === undefined)),
             /* An administrator stays an administrator. Only a lesser role
                is promoted to member. */
             ...(isAdminAccount ? {} : { role: "member" as const }),
@@ -176,6 +180,7 @@ export async function activateMember(
 
   const { firstName, lastName } = splitName(application.fullName);
   const user: User = {
+    ...social.values,
     id: nanoid(),
     email,
     firstName,

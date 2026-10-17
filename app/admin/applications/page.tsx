@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import SocialProfileLinks from "@/components/people/SocialProfileLinks";
 import { errorMessage } from "@/hooks/useAdminAction";
 import { useState, useMemo } from "react";
 import { useMembership } from "@/context/MembershipContext";
@@ -312,12 +313,16 @@ export default function AdminApplicationsPage() {
           notice={<ModalToasts toasts={toasts} onDismiss={dismiss} />}
         >
           <div className="space-y-5">
+            <SocialProfileLinks profiles={selected} name={selected.fullName} />
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               {[
                 { label: "Full name", value: selected.fullName },
                 { label: "Spouse name (joint application)", value: selected.spouseName },
                 { label: "Email", value: selected.email },
                 { label: "Cell phone", value: selected.phone },
+                { label: "LinkedIn profile", value: selected.linkedinUrl },
+                { label: "Instagram profile", value: selected.instagramUrl },
+                { label: "Facebook profile", value: selected.facebookUrl },
                 { label: "Birth month and day", value: selected.birthMonthDay },
                 { label: "Street address", value: selected.streetAddress },
                 { label: "Apartment / unit", value: selected.aptUnit },

@@ -1,5 +1,7 @@
 "use client";
 
+import SocialProfileLinks from "@/components/people/SocialProfileLinks";
+import type { SocialProfiles } from "@/lib/social-profiles";
 import MemberBadge from "@/components/people/MemberBadge";
 import { cutoutFor, slugFromPhoto } from "@/lib/content/badge-cutouts";
 import { useState, useEffect, useRef } from "react";
@@ -578,6 +580,16 @@ function PeopleSection({
   zoom: number;
   className?: string;
 }) {
+  const [socialProfiles, setSocialProfiles] = useState<Record<string, SocialProfiles>>({});
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/members/social-links", { signal: controller.signal, cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => { if (result.ok && !controller.signal.aborted) setSocialProfiles(result.data); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+  const profilesFor = (person: Person) => socialProfiles[`ecp-${slugFromPhoto(person.photo ?? person.image)}`] ?? {};
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const isClient = useIsClient();
@@ -648,7 +660,7 @@ function PeopleSection({
           {people.map((person, index) => {
             const hasBio = Boolean(person.bio?.length);
             return (
-              <article key={person.name} data-reveal className="group" style={HIDDEN}>
+              <article key={person.name} data-reveal className="group text-center" style={HIDDEN}>
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
                   <PersonPortrait
                     person={person}
@@ -688,6 +700,7 @@ function PeopleSection({
                 <h3 className="mt-3 text-base font-normal leading-snug tracking-[-0.01em] text-neutral-950">
                   {person.name}
                 </h3>
+                <SocialProfileLinks profiles={profilesFor(person)} name={person.name} className="justify-center" />
                 <p className="mt-1 text-sm text-black">{person.role}</p>
               </article>
             );
@@ -742,6 +755,7 @@ function PeopleSection({
                     lead={active.name.split(" ").slice(0, -1).join(" ")}
                     tail={active.name.split(" ").slice(-1).join("")}
                   />
+                  <SocialProfileLinks profiles={profilesFor(active)} name={active.name} />
                   <p className="mt-4 text-sm font-normal uppercase tracking-[0.18em] text-black">
                     {active.role}
                   </p>

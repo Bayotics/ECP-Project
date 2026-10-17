@@ -1,5 +1,8 @@
 "use client";
 
+import SocialProfileFields from "@/components/people/SocialProfileFields";
+import SocialProfileLinks from "@/components/people/SocialProfileLinks";
+import { parseSocialProfiles } from "@/lib/social-profiles";
 import { IBILE_DIVISIONS } from "@/lib/constants";
 
 import { useState, useEffect, FormEvent } from "react";
@@ -54,8 +57,10 @@ export default function ProfilePage() {
     occupation: "",
     bio: "",
     avatarUrl: "",
+    linkedinUrl: "", instagramUrl: "", facebookUrl: "",
   });
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
+  const [profileError, setProfileError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
@@ -74,6 +79,9 @@ export default function ProfilePage() {
         occupation: currentUser.occupation ?? "",
         bio:        currentUser.bio        ?? "",
         avatarUrl:  currentUser.avatarUrl  ?? "",
+        linkedinUrl: currentUser.linkedinUrl ?? "",
+        instagramUrl: currentUser.instagramUrl ?? "",
+        facebookUrl: currentUser.facebookUrl ?? "",
       });
       setPrivacy(loadPrivacy(currentUser.id));
     });
@@ -91,15 +99,21 @@ export default function ProfilePage() {
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault();
     if (!currentUser) return;
+    setProfileError("");
+    const social = parseSocialProfiles(form);
+    if (!social.ok) { setProfileError(social.error); return; }
     setSaving(true);
     try {
       await update(currentUser.id, {
         ...form,
+        ...social.values,
         displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       });
       await refreshCurrentUser();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : "Could not save your profile. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -143,6 +157,7 @@ export default function ProfilePage() {
         )}
         <div>
           <p className="text-xl font-bold text-gray-900">{form.firstName} {form.lastName}</p>
+          {currentUser && <SocialProfileLinks profiles={currentUser} name={currentUser.displayName} />}
           <p className="text-sm text-(--color-neutral-900)">{currentUser?.email}</p>
           <span className="inline-block mt-1 rounded-full bg-(--color-green-100) text-(--color-green-700) px-2.5 py-0.5 text-xs font-medium capitalize">
             {currentUser?.role}
@@ -239,6 +254,8 @@ export default function ProfilePage() {
               className="w-full rounded-lg border border-(--color-neutral-300) bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-(--color-green-500) focus:ring-2 focus:ring-(--color-green-200) transition resize-none"
             />
           </div>
+          <SocialProfileFields values={form} onChange={(key, value) => setForm((previous) => ({ ...previous, [key]: value }))} />
+          {profileError && <p role="alert" className="text-sm text-red-700">{profileError}</p>}
           {/* Email (read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-1.5">Email <span className="text-(--color-neutral-800)">(cannot be changed)</span></label>

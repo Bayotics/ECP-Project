@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:membership": "node --test scripts/test-membership.mjs"
+    "test:membership": "node --test scripts/test-membership.mjs",
+    "test:social-profiles": "node --test scripts/test-social-profiles.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",

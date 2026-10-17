@@ -1,3 +1,4 @@
+import { parseSocialProfiles } from "@/lib/social-profiles";
 import { NextRequest, NextResponse } from "next/server";
 import type { UpdateApplicationInput } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
@@ -25,11 +26,13 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     await ensureCoreIndexes();
     const { id } = await context.params;
     const payload = (await request.json()) as UpdateApplicationInput;
+    const social = parseSocialProfiles(payload);
+    if (!social.ok) return NextResponse.json({ ok: false, error: social.error }, { status: 400 });
 
     const collection = await getCollection("membershipApplications");
     const result = await collection.findOneAndUpdate(
       { id },
-      { $set: payload },
+      { $set: { ...payload, ...social.values } },
       { returnDocument: "after" }
     );
 
