@@ -7,6 +7,7 @@ import type {
   CommitteeJoinRequest,
   Donation,
   DuesPayment,
+  DuesReminder,
   Event,
   MembershipApplication,
   NewsPost,
@@ -35,6 +36,7 @@ export const COLLECTIONS = {
   newsletterSubscribers: "newsletterSubscribers",
   notificationLogs: "notificationLogs",
   duesPayments: "duesPayments",
+  duesReminders: "duesReminders",
   committeeJoinRequests: "committeeJoinRequests",
   emailVerificationTokens: "emailVerificationTokens",
   passwordResetTokens: "passwordResetTokens",
@@ -55,6 +57,7 @@ export interface AppCollections {
   newsletterSubscribers: NewsletterSubscriber;
   notificationLogs: NotificationLog;
   duesPayments: DuesPayment;
+  duesReminders: DuesReminder;
   committeeJoinRequests: CommitteeJoinRequest;
   emailVerificationTokens: EmailVerificationToken;
   passwordResetTokens: PasswordResetToken;
@@ -149,9 +152,17 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
   duesPayments: [
     { key: { id: 1 }, unique: true },
     { key: { userId: 1 } },
-    { key: { userId: 1, year: 1 }, unique: true },
+    { key: { userId: 1, year: 1 } },
+    { key: { userId: 1, status: 1 }, unique: true, name: "one_open_dues_invoice", partialFilterExpression: { schemaVersion: 2, status: "pending" } },
+    { key: { paypalOrderId: 1 }, unique: true, partialFilterExpression: { paypalOrderId: { $type: "string" } } },
+    { key: { paypalCaptureId: 1 }, unique: true, partialFilterExpression: { paypalCaptureId: { $type: "string" } } },
     { key: { status: 1 } },
     { key: { year: 1 } },
+  ],
+  duesReminders: [
+    { key: { id: 1 }, unique: true },
+    { key: { userId: 1, month: 1 }, unique: true },
+    { key: { status: 1, leaseUntil: 1 } },
   ],
   emailVerificationTokens: [
     { key: { id: 1 }, unique: true },
@@ -205,10 +216,20 @@ export async function ensureCoreIndexes(): Promise<void> {
         (Object.keys(COLLECTIONS) as CollectionName[]).map(async (name) => {
           const collection = await getCollection(name);
           const indexes = COLLECTION_INDEXES[name];
+          if (name === "duesPayments") {
+            // The annual-only index prevents multiple installments in a year.
+            const existing = await collection.listIndexes().toArray().catch((error: { code?: number }) => {
+              if (error.code === 26) return [];
+              throw error;
+            });
+            for (const index of existing) {
+              if (index.unique && Object.keys(index.key).join(",") === "userId,year" && index.name) await collection.dropIndex(index.name);
+            }
+          }
           await Promise.all(indexes.map((index) => collection.createIndex(index.key, index)));
         })
       );
-    })();
+    })().catch(error => { indexesPromise = null; throw error; });
   }
 
   await indexesPromise;

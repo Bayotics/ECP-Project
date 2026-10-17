@@ -11,6 +11,7 @@ import { useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { cn } from "@/utils/cn";
 import { EKO } from "@/lib/content/programs";
+import { CLUB_ZELLE_EMAIL } from "@/lib/payment-config";
 
 export type PaymentMethodKey = "paystack" | "paypal" | "zelle" | "bank-transfer";
 
@@ -29,6 +30,7 @@ interface PaymentWidgetProps {
   description: string;
   context: "donation" | "dues" | "order";
   recordId: string;
+  lockedMethod?: "paypal";
   enableAutoRenew?: boolean;
   defaultAutoRenew?: boolean;
   onSuccess: (result: PaymentResult, autoRenew?: boolean) => void;
@@ -55,29 +57,34 @@ export default function PaymentWidget({
   description,
   context,
   recordId,
+  lockedMethod,
   enableAutoRenew,
   defaultAutoRenew,
   onSuccess,
   onError,
 }: PaymentWidgetProps) {
-  const [method, setMethod] = useState<Selectable>("paypal");
+  const availableMethods = METHODS.filter(m => context !== "dues" || m.key === "paypal" || m.key === "zelle");
+  const [method, setMethod] = useState<Selectable>(lockedMethod ?? (context === "dues" && !process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? "zelle" : availableMethods[0]?.key ?? "paypal"));
+  const [providerStarted, setProviderStarted] = useState(!!lockedMethod);
   const [autoRenew, setAutoRenew] = useState(defaultAutoRenew ?? false);
   const [busy, setBusy] = useState(false);
   const [zelleRef, setZelleRef] = useState("");
   const [zelleSubmitted, setZelleSubmitted] = useState(false);
+  const [transferReference, setTransferReference] = useState("");
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? "";
 
   async function handleZelleSubmit() {
     setBusy(true);
     try {
-      const res = await fetch(context === "dues" ? "/api/dues" : "/api/donations", {
-        method: "POST",
+      const res = await fetch(context === "dues" ? `/api/dues/${recordId}` : "/api/donations", {
+        method: context === "dues" ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethod: "zelle" }),
+        body: JSON.stringify(context === "dues" ? { action: "submit", paymentMethod: "zelle", transferReference: transferReference.trim() } : { paymentMethod: "zelle" }),
       });
       const json = (await res.json()) as { ok: boolean; data?: { zelleRef?: string; id?: string }; error?: string };
       if (!json.ok) throw new Error(json.error ?? "Failed");
-      const ref = json.data?.zelleRef ?? `ECP-ZELLE-${Date.now()}`;
+      const ref = json.data?.zelleRef;
+      if (!ref) throw new Error("No payment reference was returned. Please refresh and try again.");
       setZelleRef(ref);
       setZelleSubmitted(true);
       onSuccess({ method: "zelle", reference: ref, zelleRef: ref }, autoRenew);
@@ -88,18 +95,20 @@ export default function PaymentWidget({
     }
   }
 
+
   return (
     <div className="space-y-4">
       <div>
         <p className="mb-2 text-[11px] font-normal uppercase tracking-[0.16em] text-neutral-900">Choose how to pay</p>
         <div className="grid gap-2 sm:grid-cols-3">
-          {METHODS.map((m) => {
+          {availableMethods.map((m) => {
             const on = method === m.key;
             return (
               <button
                 key={m.key}
                 type="button"
                 onClick={() => setMethod(m.key)}
+                disabled={busy || (context === "dues" && providerStarted && m.key !== "paypal")}
                 aria-pressed={on}
                 className={cn(
                   "rounded-2xl border p-3 text-left transition-colors",
@@ -144,26 +153,30 @@ export default function PaymentWidget({
                 const res = await fetch("/api/payments/paypal/create-order", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amountUSD, description, invoiceId: recordId }),
+                  body: JSON.stringify({ amountUSD, description, invoiceId: recordId, context }),
                 });
                 const json = (await res.json()) as { ok: boolean; data?: { orderId: string }; error?: string };
                 if (!json.ok) throw new Error(json.error ?? "Failed to create PayPal order");
+                if (context === "dues") setProviderStarted(true);
                 return json.data!.orderId;
               }}
               onApprove={async (data) => {
                 setBusy(true);
+                try {
                 const res = await fetch("/api/payments/paypal/capture", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ paypalOrderId: data.orderID, context, recordId }),
                 });
                 const json = (await res.json()) as { ok: boolean; data?: { captureId: string }; error?: string };
-                setBusy(false);
                 if (json.ok) {
                   onSuccess({ method: "paypal", reference: data.orderID, captureId: json.data?.captureId }, autoRenew);
                 } else {
                   onError?.(json.error ?? "PayPal capture failed");
                 }
+                } catch {
+                  onError?.("Unable to confirm payment. Refresh your dues before trying again.");
+                } finally { setBusy(false); }
               }}
               onError={() => {
                 onError?.("PayPal payment failed. Please try again.");
@@ -175,7 +188,7 @@ export default function PaymentWidget({
 
       {method === "paypal" && !paypalClientId && (
         <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          PayPal is not configured on this site yet. Use Zelle or a bank transfer, or contact the treasurer.
+          {context === "dues" ? "PayPal is currently unavailable. Choose Zelle to pay the club." : "PayPal is not configured on this site yet. Use Zelle or a bank transfer, or contact the treasurer."}
         </p>
       )}
 
@@ -185,7 +198,7 @@ export default function PaymentWidget({
           <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50 p-4">
             <p className="text-sm font-normal text-blue-900">Send with Zelle</p>
             <p className="text-sm text-blue-900">
-              <span className="text-blue-950">Recipient:</span> {process.env.NEXT_PUBLIC_ZELLE_EMAIL ?? "the club treasurer"}
+              <span className="text-blue-950">Recipient:</span> {context === "dues" ? CLUB_ZELLE_EMAIL : process.env.NEXT_PUBLIC_ZELLE_EMAIL ?? "the club treasurer"}
             </p>
             <p className="text-sm text-blue-900">
               <span className="text-blue-950">Name:</span> Eko Club Philadelphia
@@ -199,6 +212,8 @@ export default function PaymentWidget({
             </p>
           </div>
           {!zelleSubmitted ? (
+            <div className="space-y-3">
+            {context === "dues" && <label className="block text-sm text-neutral-900">Zelle confirmation number (optional)<input value={transferReference} maxLength={160} onChange={event => setTransferReference(event.target.value)} className="mt-1 block w-full rounded-xl border border-neutral-300 bg-white p-3" /></label>}
             <button
               type="button"
               onClick={handleZelleSubmit}
@@ -208,6 +223,7 @@ export default function PaymentWidget({
             >
               {busy ? "Submitting…" : "I have sent the Zelle payment"}
             </button>
+            </div>
           ) : (
             <p className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-900">
               Recorded. Your reference is <strong className="font-normal">{zelleRef}</strong>. We will confirm within one

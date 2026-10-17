@@ -19,7 +19,6 @@
      users                  /api/users          (UsersContext)
      dues                   /api/dues           (fetched here) */
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useEvents } from "@/context/EventsContext";
@@ -28,7 +27,8 @@ import { useMembership } from "@/context/MembershipContext";
 import { useUsers } from "@/context/UsersContext";
 import { useCommittees } from "@/context/CommitteesContext";
 import { useRSVP } from "@/context/RSVPContext";
-import type { DuesPayment } from "@/lib/models";
+import { useDues } from "@/hooks/useDues";
+import DuesStatus, { duesDate, duesMoney } from "@/components/payments/DuesStatus";
 import { EKO } from "@/lib/content/programs";
 import { GhostButton, PageHeader, Panel, PanelHeading, Pill, PrimaryButton, StatTile } from "@/components/portal/ui";
 
@@ -39,7 +39,6 @@ const shortFormat = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "
 const monthFormat = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short" });
 const dayNumFormat = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", day: "numeric" });
 
-const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 /** Renders a backend value, or N/A when the backend has nothing for it. */
 function Value({ children, loading }: { children?: React.ReactNode; loading?: boolean }) {
@@ -72,13 +71,6 @@ const STATUS_TONE: Record<string, "green" | "yellow" | "blue" | "red" | "neutral
   rejected: "red",
 };
 
-const DUES_TONE: Record<DuesPayment["status"], "green" | "yellow" | "red" | "neutral"> = {
-  paid: "green",
-  pending: "yellow",
-  overdue: "red",
-  waived: "neutral",
-};
-
 function initialsOf(name: string) {
   return name
     .split(" ")
@@ -89,37 +81,6 @@ function initialsOf(name: string) {
     .toUpperCase();
 }
 
-/** The signed-in member's dues records, straight from /api/dues. */
-function useMyDues() {
-  const [dues, setDues] = useState<DuesPayment[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const res = await fetch("/api/dues");
-        const json = (await res.json()) as { ok: boolean; data?: DuesPayment[] };
-        if (!active) return;
-        setDues(json.ok && json.data ? json.data : []);
-      } catch {
-        if (active) setDues([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    void load();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { dues, loading };
-}
-
 export default function MemberDashboardPage() {
   const { currentUser } = useAuth();
   const { events, isLoading: eventsLoading, getUpcoming } = useEvents();
@@ -128,7 +89,7 @@ export default function MemberDashboardPage() {
   const { users, isLoading: usersLoading } = useUsers();
   const { isLoading: committeesLoading, getActive: getActiveCommittees } = useCommittees();
   const { rsvps, isLoading: rsvpsLoading } = useRSVP();
-  const { dues, loading: duesLoading } = useMyDues();
+  const { summary: duesSummary, loading: duesLoading, error: duesError } = useDues(currentUser?.id);
 
   const upcomingEvents = getUpcoming().slice(0, 4);
   const upcomingCount = getUpcoming().length;
@@ -139,17 +100,14 @@ export default function MemberDashboardPage() {
   const directory = users.filter((u) => u.role === "member" || u.role === "admin" || u.role === "super-admin");
   const myRsvps = currentUser ? rsvps.filter((r) => r.userId === currentUser.id && r.status !== "cancelled") : [];
 
-  /* Dues for the year the club is currently collecting, taken as the most
-     recent year the backend holds a record for rather than assumed from the
-     clock. */
-  const latestDues = dues && dues.length > 0 ? [...dues].sort((a, b) => b.year - a.year)[0] : null;
-
   const firstName = currentUser?.firstName?.trim() || currentUser?.displayName?.split(" ")[0]?.trim() || "";
   const joinYear = currentUser?.joinedAt ? new Date(currentUser.joinedAt).getUTCFullYear() : null;
   const lastLogin = currentUser?.lastLoginAt ?? null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-10">
+      {duesSummary && <DuesStatus summary={duesSummary} compact />}
+      {duesError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">Dues status is unavailable: {duesError} <Link href="/member/dues" className="underline">Retry on the dues page</Link></p>}
       <PageHeader
         eyebrow="Member portal"
         title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
@@ -213,10 +171,10 @@ export default function MemberDashboardPage() {
           note={committeesLoading ? undefined : `${allCommittees.length} active in the club`}
         />
         <StatTile
-          value={duesLoading ? "…" : latestDues ? latestDues.year : "N/A"}
-          label="Latest dues year"
+          value={duesLoading ? "…" : duesSummary ? duesMoney(duesSummary.outstandingCents) : "Unavailable"}
+          label="Outstanding dues"
           color={EKO.red}
-          note={duesLoading ? undefined : latestDues ? `${money(latestDues.amount)} ${latestDues.status}` : "No dues records"}
+          note={duesSummary ? `Next unpaid due: ${duesDate(duesSummary.nextPaymentDue)}` : undefined}
         />
       </div>
 
@@ -315,26 +273,14 @@ export default function MemberDashboardPage() {
                 Manage
               </Link>
             </div>
-            {duesLoading ? (
-              <div className="h-16 animate-pulse rounded-2xl bg-neutral-100" />
-            ) : latestDues ? (
+            {duesLoading ? <p className="text-sm">Loading dues…</p> : duesSummary ? (
               <dl className="divide-y divide-neutral-100">
-                <div className="flex items-baseline justify-between gap-4 py-2">
-                  <dt className="text-[11px] font-normal uppercase tracking-[0.14em] text-neutral-900">{latestDues.year}</dt>
-                  <dd>
-                    <Pill tone={DUES_TONE[latestDues.status]}>{latestDues.status}</Pill>
-                  </dd>
-                </div>
-                <Row label="Amount">{money(latestDues.amount)}</Row>
-                <Row label="Due">{latestDues.dueDate ? shortFormat.format(new Date(latestDues.dueDate)) : undefined}</Row>
-                <Row label="Paid">{latestDues.paidDate ? shortFormat.format(new Date(latestDues.paidDate)) : undefined}</Row>
-                <Row label="Reference">{latestDues.reference}</Row>
+                <Row label="Standing">{duesSummary.status === "current" ? "Up to date" : duesSummary.status === "at-risk" ? "At risk of suspension" : "Payment due"}</Row>
+                <Row label="Outstanding">{duesMoney(duesSummary.outstandingCents)}</Row>
+                <Row label="Next unpaid due">{duesDate(duesSummary.nextPaymentDue)}</Row>
+                <Row label="Paid through">{duesSummary.paidThrough ? duesDate(duesSummary.paidThrough) : "No confirmed coverage"}</Row>
               </dl>
-            ) : (
-              <p className="py-2 text-sm text-neutral-900">
-                No dues records. <span className="text-neutral-800">N/A</span>
-              </p>
-            )}
+            ) : <p className="text-sm">Dues status is unavailable. Open Manage to retry.</p>}
           </div>
         </Panel>
       </div>

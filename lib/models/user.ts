@@ -43,6 +43,9 @@ export interface User extends SocialProfiles {
   membershipId?: string;
   /** When the membership number was issued. */
   membershipIdIssuedAt?: string;
+  duesFrequency?: import("./dues").DuesFrequency;
+  /** Optional administrator-set billing start, YYYY-MM-01. Otherwise next month after approval/join. */
+  duesStartDate?: string;
   /**
    * True while the account is still on the password it was given rather
    * than one the member chose. A new member's first password is their

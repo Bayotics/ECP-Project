@@ -51,7 +51,7 @@ const MOCK_RESPONSES: { pattern: RegExp; reply: string }[] = [
   },
   {
     pattern: /\b(dues|payment|fee|subscription)\b/i,
-    reply: "Annual membership dues can be paid from your **Member Dashboard → Dues** page. Keeping dues up to date ensures you retain access to all member benefits.",
+    reply: "Pay membership dues yearly ($240), monthly ($20), or twice yearly ($120 per six months) from **Member Dashboard → Dues**. That page shows your coverage, unpaid months and next due date, and lets you download payment history as a PDF. Three completed unpaid months trigger a warning that membership might be suspended.",
   },
   {
     pattern: /\b(contact|email|phone|reach|support|help)\b/i,

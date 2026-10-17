@@ -46,9 +46,11 @@ export async function paypalCreateOrder(params: {
   amountUSD: string; // e.g. "10.00"
   description: string;
   invoiceId?: string;
+  requestId?: string;
 }): Promise<PayPalOrderResult> {
   return paypalFetch<PayPalOrderResult>("/v2/checkout/orders", {
     method: "POST",
+    ...(params.requestId ? { headers: { "PayPal-Request-Id": params.requestId } } : {}),
     body: JSON.stringify({
       intent: "CAPTURE",
       purchase_units: [
@@ -80,10 +82,16 @@ export interface PayPalCaptureResult {
 }
 
 export async function paypalCaptureOrder(orderId: string): Promise<PayPalCaptureResult> {
-  return paypalFetch<PayPalCaptureResult>(`/v2/checkout/orders/${orderId}/capture`, {
+  return paypalFetch<PayPalCaptureResult>(`/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
     method: "POST",
+    headers: { "PayPal-Request-Id": `capture-${orderId}` },
     body: "{}",
   });
+}
+
+/** Recover a completed capture after a network failure or an expired idempotency window. */
+export async function paypalGetOrder(orderId: string): Promise<PayPalCaptureResult> {
+  return paypalFetch<PayPalCaptureResult>(`/v2/checkout/orders/${encodeURIComponent(orderId)}`);
 }
 
 // ─── Check if configured ──────────────────────────────────────────────────────

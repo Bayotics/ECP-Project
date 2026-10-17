@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPaystackWebhook } from "@/lib/server/paystack";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
-import { sendDonationReceipt, sendDuesReceipt, sendOrderReceipt } from "@/lib/server/notifications";
+import { sendDonationReceipt, sendOrderReceipt } from "@/lib/server/notifications";
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,32 +52,6 @@ export async function POST(request: NextRequest) {
         );
         const donation = serializeDocument(result);
         if (donation) sendDonationReceipt(donation).catch(console.error);
-      }
-
-      if (context === "dues" && recordId) {
-        const col = await getCollection("duesPayments");
-        const result = await col.findOneAndUpdate(
-          { id: recordId },
-          {
-            $set: {
-              status: "paid",
-              paystackRef: reference,
-              reference,
-              paymentMethod: "paystack",
-              paystackSubscriptionCode: subscription?.subscription_code,
-              paidDate: now,
-              receiptSentAt: now,
-              updatedAt: now,
-            },
-          },
-          { returnDocument: "after" }
-        );
-        const dues = serializeDocument(result);
-        if (dues) {
-          const usersCol = await getCollection("users");
-          const user = serializeDocument(await usersCol.findOne({ id: dues.userId }));
-          if (user) sendDuesReceipt(dues, user.displayName, user.email, user.phone).catch(console.error);
-        }
       }
 
       if (context === "order" && recordId) {

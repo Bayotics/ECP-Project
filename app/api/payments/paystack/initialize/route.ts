@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "email, amountNGN, and context are required" }, { status: 400 });
     }
 
+    if (body.context === "dues") return NextResponse.json({ ok: false, error: "Dues are charged in USD. Use PayPal or a verified bank transfer." }, { status: 400 });
+
     const sessionUser = await getSessionUser(request);
     const reference = `ECP-${body.context.toUpperCase()}-${nanoid(10)}`;
 

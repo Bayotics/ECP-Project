@@ -158,6 +158,7 @@ const memberLinksPublic = [
 
 const adminLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
+  { href: "/admin/dues", label: "Member dues", icon: "money" },
   { href: "/admin/applications", label: "Applications", icon: "status" },
   { href: "/admin/members", label: "Members", icon: "people" },
   { href: "/admin/committees", label: "Committees", icon: "committees" },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { paystackVerify, isPaystackConfigured } from "@/lib/server/paystack";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
-import { sendDonationReceipt, sendDuesReceipt, sendOrderReceipt } from "@/lib/server/notifications";
+import { sendDonationReceipt, sendOrderReceipt } from "@/lib/server/notifications";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     if (!reference || !context || !recordId) {
       return NextResponse.json({ ok: false, error: "reference, context, and recordId are required" }, { status: 400 });
     }
+
+    if (context === "dues") return NextResponse.json({ ok: false, error: "Dues are charged in USD. Use PayPal or a verified bank transfer." }, { status: 400 });
 
     const txn = await paystackVerify(reference);
     if (txn.status !== "success") {
@@ -39,24 +41,6 @@ export async function POST(request: NextRequest) {
         sendDonationReceipt(donation).catch(console.error);
       }
       return NextResponse.json({ ok: true, data: { status: "successful", reference } });
-    }
-
-    if (context === "dues") {
-      const col = await getCollection("duesPayments");
-      const result = await col.findOneAndUpdate(
-        { id: recordId },
-        { $set: { status: "paid", paystackRef: reference, reference, paymentMethod: "paystack", paidDate: now, receiptSentAt: now, updatedAt: now } },
-        { returnDocument: "after" }
-      );
-      const dues = serializeDocument(result);
-      if (dues) {
-        const usersCol = await getCollection("users");
-        const user = serializeDocument(await usersCol.findOne({ id: dues.userId }));
-        if (user) {
-          sendDuesReceipt(dues, user.displayName, user.email, user.phone).catch(console.error);
-        }
-      }
-      return NextResponse.json({ ok: true, data: { status: "paid", reference } });
     }
 
     if (context === "order") {

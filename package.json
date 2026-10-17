@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:membership": "node --test scripts/test-membership.mjs",
-    "test:social-profiles": "node --test scripts/test-social-profiles.mjs"
+    "test:social-profiles": "node --test scripts/test-social-profiles.mjs",
+    "test:dues": "node --test scripts/test-dues.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",
@@ -22,6 +23,7 @@
     "nanoid": "^5.1.11",
     "next": "16.2.4",
     "nodemailer": "^8.0.11",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sendridge": "^0.1.0",

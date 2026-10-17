@@ -1,128 +1,63 @@
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
-import { requireSession } from "@/lib/server/guards";
 import type { DuesPayment } from "@/lib/models";
-import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
+import { isDuesFrequency } from "@/lib/dues";
+import { ensureCoreIndexes, getCollection } from "@/lib/server/collections";
 import { getSessionUser } from "@/lib/server/session";
-import { sendZellePendingNotification } from "@/lib/server/notifications";
-
-/* Annual membership dues, in US dollars. */
-const DUES_AMOUNT = 20;
+import { getMemberDues, isDuesMember } from "@/lib/server/dues";
 
 export async function GET(request: NextRequest) {
-  const { deny } = requireSession(request);
-  if (deny) return deny;
-
   try {
-    await ensureCoreIndexes();
-    const sessionUser = await getSessionUser(request);
-    if (!sessionUser) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-
-    const col = await getCollection("duesPayments");
-    const isAdmin = sessionUser.role === "admin" || sessionUser.role === "super-admin";
-    const userId = request.nextUrl.searchParams.get("userId") ?? sessionUser.id;
-
-    if (!isAdmin && userId !== sessionUser.id) {
-      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-    }
-
-    const records = serializeDocuments(
-      await col.find({ userId }).sort({ year: -1 }).toArray()
-    );
-
-    // Auto-create records for current + past 3 years if none exist
-    if (records.length === 0) {
-      const currentYear = new Date().getFullYear();
-      const now = new Date().toISOString();
-      const defaults: DuesPayment[] = [];
-      for (let y = currentYear - 3; y <= currentYear; y++) {
-        const isPast = y < currentYear;
-        defaults.push({
-          id: nanoid(),
-          userId,
-          year: y,
-          amount: DUES_AMOUNT,
-          status: isPast ? "paid" : "pending",
-          dueDate: `${y}-03-31`,
-          paidDate: isPast ? `${y}-02-15` : undefined,
-          reference: isPast ? `ECP-PAY-${Math.random().toString(36).slice(2, 10).toUpperCase()}` : undefined,
-          paymentMethod: isPast ? "bank-transfer" : undefined,
-          autoRenew: false,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-      await col.insertMany(defaults);
-      return NextResponse.json({ ok: true, data: defaults });
-    }
-
-    return NextResponse.json({ ok: true, data: records });
+    const user = await getSessionUser(request);
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (!isDuesMember(user)) return NextResponse.json({ ok: false, error: "Membership required" }, { status: 403 });
+    const userId = request.nextUrl.searchParams.get("userId") ?? user.id;
+    const admin = user.role === "admin" || user.role === "super-admin";
+    if (userId !== user.id && !admin) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    const target = userId === user.id ? user : await (await getCollection("users")).findOne({ id: userId });
+    if (!target) return NextResponse.json({ ok: false, error: "Member not found" }, { status: 404 });
+    const { records, summary } = await getMemberDues(target);
+    return NextResponse.json({ ok: true, data: records, summary }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch dues";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error("[dues] Read failed", error);
+    return NextResponse.json({ ok: false, error: "Unable to load dues. Please try again." }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getSessionUser(request);
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (!isDuesMember(user)) return NextResponse.json({ ok: false, error: "Membership required" }, { status: 403 });
+    const body = await request.json();
+    if (!body || !isDuesFrequency(body.frequency) || (body.catchUp !== undefined && typeof body.catchUp !== "boolean")) {
+      return NextResponse.json({ ok: false, error: "Choose yearly, monthly or twice-yearly dues" }, { status: 400 });
+    }
     await ensureCoreIndexes();
-    const sessionUser = await getSessionUser(request);
-    if (!sessionUser) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-
-    const body = (await request.json()) as {
-      year?: number;
-      paymentMethod: DuesPayment["paymentMethod"];
-      autoRenew?: boolean;
-      zelleRef?: string;
-    };
-
-    const year = body.year ?? new Date().getFullYear();
-    const col = await getCollection("duesPayments");
+    const { summary } = await getMemberDues(user);
+    if (summary.pendingPayment) return NextResponse.json({ ok: true, data: summary.pendingPayment });
+    const quote = body.catchUp ? summary.catchUp : summary.plans.find(plan => plan.frequency === body.frequency);
+    if (!quote || quote.amountCents <= 0) return NextResponse.json({ ok: false, error: "No outstanding period to pay" }, { status: 400 });
     const now = new Date().toISOString();
-
-    // Upsert: find existing or create new
-    let dues: DuesPayment | undefined = serializeDocuments(
-      await col.find({ userId: sessionUser.id, year }).toArray()
-    )[0];
-
-    if (!dues) {
-      const newDues: DuesPayment = {
-        id: nanoid(),
-        userId: sessionUser.id,
-        year,
-        amount: DUES_AMOUNT,
-        status: "pending",
-        dueDate: `${year}-03-31`,
-        autoRenew: body.autoRenew ?? false,
-        createdAt: now,
-        updatedAt: now,
-      };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await col.insertOne(newDues as any);
-      dues = newDues;
+    const payment: DuesPayment = {
+      id: nanoid(), userId: user.id, year: Number(quote.coverageStart.slice(0, 4)),
+      amount: quote.amountCents / 100, status: "pending", dueDate: quote.coverageStart,
+      frequency: body.frequency, coverageStart: quote.coverageStart, coverageEnd: quote.coverageEnd,
+      schemaVersion: 2, autoRenew: false, createdAt: now, updatedAt: now,
+    };
+    const collection = await getCollection("duesPayments");
+    try { await collection.insertOne(payment); }
+    catch (error) {
+      if ((error as { code?: number }).code !== 11000) throw error;
+      const existing = await collection.findOne({ userId: user.id, schemaVersion: 2, status: "pending" }, { projection: { _id: 0 } });
+      if (existing) return NextResponse.json({ ok: true, data: existing });
+      throw error;
     }
-
-    if (body.paymentMethod === "zelle") {
-      const ref = `ECP-DUES-${year}-${nanoid(6).toUpperCase()}`;
-      await col.updateOne({ id: dues.id }, { $set: { zelleRef: ref, paymentMethod: "zelle", status: "pending", updatedAt: now } });
-      const usersCol = await getCollection("users");
-      const user = await usersCol.findOne({ id: sessionUser.id });
-      if (user) {
-        await sendZellePendingNotification({
-          payerName: user.displayName,
-          payerEmail: user.email,
-          amount: DUES_AMOUNT,
-          reference: ref,
-          type: "dues",
-          details: `${year} Annual Dues`,
-        });
-      }
-      return NextResponse.json({ ok: true, data: { ...dues, zelleRef: ref, status: "pending" } });
-    }
-
-    return NextResponse.json({ ok: true, data: { ...dues, id: dues.id } });
+    await (await getCollection("users")).updateOne({ id: user.id }, { $set: { duesFrequency: body.frequency } });
+    return NextResponse.json({ ok: true, data: payment }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create dues record";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    if (error instanceof SyntaxError) return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    console.error("[dues] Creation failed", error);
+    return NextResponse.json({ ok: false, error: "Unable to prepare payment. Please try again." }, { status: 500 });
   }
 }

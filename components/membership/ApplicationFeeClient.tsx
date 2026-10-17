@@ -20,7 +20,7 @@ import { useSearchParams } from "next/navigation";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { APPLICATION_FEE_USD } from "@/lib/models/membership";
 
-const ZELLE_EMAIL = "ekoclubphiladelphia@gmail.com";
+import { CLUB_ZELLE_EMAIL as ZELLE_EMAIL } from "@/lib/payment-config";
 const MEMBERSHIP_EMAIL = "ekophillymembership@gmail.com";
 
 type Phase = "choose" | "zelle-sent" | "paid";

@@ -20,17 +20,16 @@ import { Sendridge, SendridgeError } from "sendridge";
  * can decide about instead of an exception that aborts registration.
  */
 
-/* Sendridge wants a bare address and rejects the RFC display-name form
-   ("Eko Club Philadelphia <no-reply@…>") with {"from":["Invalid email"]}.
-   That form is what SMTP_FROM has always held, so it is accepted here and
-   the address is pulled out of it, rather than leaving a configuration that
-   looks right and fails at send time. */
+/* Reply-To only needs to route the reply, so it is reduced to the address. */
 function bareAddress(value: string): string {
   const angled = value.match(/<([^>]+)>/);
   return (angled ? angled[1] : value).trim();
 }
 
-const FROM = bareAddress(process.env.EMAIL_FROM ?? process.env.SMTP_FROM ?? "");
+/* Passed through whole: the display name in "Eko Club Philadelphia
+   <info@…>" is what inboxes show as the sender. Stripping it leaves them
+   showing "info". */
+const FROM = (process.env.EMAIL_FROM ?? process.env.SMTP_FROM ?? "").trim();
 const REPLY_TO = process.env.EMAIL_REPLY_TO ? bareAddress(process.env.EMAIL_REPLY_TO) : undefined;
 
 /** False until credentials are present, so callers can degrade politely. */
