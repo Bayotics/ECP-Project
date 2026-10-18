@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useEvents } from "@/context/EventsContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -36,6 +36,7 @@ export default function AdminEventsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("event-newest");
   const [selected, setSelected] = useState<Event | null>(null);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -75,8 +76,17 @@ export default function AdminEventsPage() {
       const q = search.toLowerCase();
       list = list.filter(e => e.title.toLowerCase().includes(q) || (e.location ?? "").toLowerCase().includes(q));
     }
-    return [...list].sort((a, b) => b.date.localeCompare(a.date));
-  }, [events, search, typeFilter, statusFilter]);
+    const field = sortOrder.startsWith("created-") ? "createdAt" : "date";
+    const direction = sortOrder.endsWith("oldest") ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const left = Date.parse(a[field]);
+      const right = Date.parse(b[field]);
+      // Legacy events without a valid timestamp stay at the end in either direction.
+      if (!Number.isFinite(left)) return Number.isFinite(right) ? 1 : 0;
+      if (!Number.isFinite(right)) return -1;
+      return direction * (left - right);
+    });
+  }, [events, search, typeFilter, statusFilter, sortOrder]);
 
   const loadRsvps = useCallback(async (eventId: string) => {
     setRsvpsLoading(true);
@@ -251,7 +261,7 @@ export default function AdminEventsPage() {
   }
 
   const confirmedCount = rsvps.filter(r => r.status === "confirmed").length;
-  const headers = ["Title", "Type", "Date", "Audience", "Status", "Featured"];
+  const headers = ["Title", "Type", "Event date", "Created", "Audience", "Status", "Featured"];
 
   const tabClass = (tab: typeof activeTab) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
@@ -270,6 +280,15 @@ export default function AdminEventsPage() {
         <>
           <FilterSelect value={typeFilter} onChange={setTypeFilter} options={EVENT_TYPES.map(t => ({ value: t, label: t === "all" ? "All types" : t.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase()) }))} />
           <FilterSelect value={statusFilter} onChange={setStatusFilter} options={EVENT_STATUSES.map(s => ({ value: s, label: s === "all" ? "All statuses" : s.replace(/\b\w/g, c => c.toUpperCase()) }))} />
+          <label className="flex items-center gap-2 text-sm text-neutral-800">
+            Sort by
+            <FilterSelect aria-label="Sort events" value={sortOrder} onChange={setSortOrder} options={[
+              { value: "event-newest", label: "Event date: newest first" },
+              { value: "event-oldest", label: "Event date: oldest first" },
+              { value: "created-newest", label: "Date created: newest first" },
+              { value: "created-oldest", label: "Date created: oldest first" },
+            ]} />
+          </label>
         </>
       } />
 
@@ -279,6 +298,9 @@ export default function AdminEventsPage() {
             <TD className="font-medium text-(--color-neutral-900)">{ev.title}</TD>
             <TD><Badge value={ev.type} /></TD>
             <TD>{new Date(ev.date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</TD>
+            <TD>{Number.isFinite(Date.parse(ev.createdAt))
+              ? new Date(ev.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
+              : "Unavailable"}</TD>
             <TD>
               {ev.membersOnly
                 ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">🔒 Members Only</span>

@@ -454,14 +454,17 @@ export function FilterSelect({
   onChange,
   options,
   className,
+  "aria-label": ariaLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
   className?: string;
+  "aria-label"?: string;
 }) {
   return (
     <select
+      aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(

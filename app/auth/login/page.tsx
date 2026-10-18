@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -68,9 +69,14 @@ export default function LoginPage() {
     <div className="w-full bg-white rounded-2xl shadow-lg border border-(--color-neutral-200) p-8 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-green-600) text-white font-bold text-lg mb-4">
-          ECP
-        </div>
+        <Image
+          src="/new-logo.png"
+          alt="Eko Club Philadelphia logo"
+          width={80}
+          height={80}
+          priority
+          className="mx-auto mb-4 h-20 w-20 object-contain"
+        />
         <h1 className="text-2xl font-bold text-gray-500">Welcome back</h1>
         <p className="mt-1 text-sm text-(--color-neutral-500)">
           Sign in to your ECP member account
