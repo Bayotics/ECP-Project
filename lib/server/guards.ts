@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/server/session";
+import { getSessionUser } from "@/lib/server/session";
 
 /**
- * Lightweight authorization guards for API route handlers.
- *
- * `requireSession` verifies the signed auth cookie WITHOUT a database hit
- * (the token payload already carries id/email/role). Use it to protect
- * endpoints that expose member or applicant data.
+ * Authorization always checks the current account, including restrictions
+ * and session version, rather than trusting a role in an older cookie.
  */
 
 export interface RequestSession {
@@ -16,17 +13,17 @@ export interface RequestSession {
   emailVerified: boolean;
 }
 
-export function getRequestSession(request: NextRequest): RequestSession | null {
-  const payload = verifySessionToken(request.cookies.get(AUTH_COOKIE_NAME)?.value);
-  if (!payload) return null;
+export async function getRequestSession(request: NextRequest): Promise<RequestSession | null> {
+  const user = await getSessionUser(request);
+  if (!user) return null;
   return {
-    sub: payload.sub,
-    email: payload.email,
-    role: payload.role,
+    sub: user.id,
+    email: user.email,
+    role: user.role,
     /* Older tokens predate the field. Treating absent as verified keeps
        existing sessions working; a signed-out unverified user cannot get a
        new token at all, because login refuses them. */
-    emailVerified: payload.emailVerified !== false,
+    emailVerified: user.emailVerified !== false,
   };
 }
 
@@ -37,14 +34,14 @@ export function unauthorized(message = "Authentication required") {
 /**
  * Returns the session, or `null` alongside a ready-made 401 response.
  * Usage:
- *   const { session, deny } = requireSession(request);
+ *   const { session, deny } = await requireSession(request);
  *   if (deny) return deny;
  */
-export function requireSession(request: NextRequest): {
+export async function requireSession(request: NextRequest): Promise<{
   session: RequestSession | null;
   deny: NextResponse | null;
-} {
-  const session = getRequestSession(request);
+}> {
+  const session = await getRequestSession(request);
   if (!session) return { session: null, deny: unauthorized() };
   return { session, deny: null };
 }

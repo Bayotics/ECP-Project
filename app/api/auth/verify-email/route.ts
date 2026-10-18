@@ -49,18 +49,18 @@ export async function POST(request: NextRequest) {
     /* The account was created `pending` and is activated here, which is what
        lets it sign in. A suspended account stays suspended: confirming an
        address is not a way back in past an administrator's decision. */
-    const nextStatus = user.status === "pending" ? "active" : user.status;
-
     await users.updateOne(
       { id: user.id },
       {
         $set: {
           emailVerified: true,
           emailVerifiedAt: new Date().toISOString(),
-          status: nextStatus,
         },
       },
     );
+    // An administrator may restrict the account while this link is being
+    // verified. Never overwrite that newer status with the earlier snapshot.
+    await users.updateOne({ id: user.id, status: "pending" }, { $set: { status: "active" } });
 
     /* The welcome note is a courtesy. If it fails the address is still
        confirmed, so it must not turn a successful verification into an error. */

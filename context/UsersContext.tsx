@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import type { User, CreateUserInput, UpdateUserInput } from "@/lib/models";
 import { apiDelete, apiRequest } from "@/lib/client/api";
 import { useAuth } from "./AuthContext";
@@ -25,6 +25,9 @@ const UsersContext = createContext<UsersContextValue | null>(null);
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const { currentUser } = useAuth();
+  const userId = currentUser?.id;
+  const [loadedFor, setLoadedFor] = useState<string | undefined>();
+  const visibleUsers = useMemo(() => userId && loadedFor === userId ? users : [], [userId, loadedFor, users]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -41,17 +44,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     let isActive = true;
 
     // Private data — only fetch for signed-in members; clear on sign-out.
-    if (!currentUser) {
-      setUsers([]);
-      setIsLoading(false);
-      return;
-    }
+    if (!userId) return;
 
     async function loadInitialUsers() {
       try {
         const nextUsers = await apiRequest<User[]>("/api/users");
         if (isActive) {
           setUsers(nextUsers);
+          setLoadedFor(userId);
         }
       } catch {
         // Silent: endpoint is auth-gated; nothing to surface publicly.
@@ -67,7 +67,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, [currentUser?.id]);
+  }, [userId]);
 
   const add = useCallback(async (input: CreateUserPayload): Promise<User> => {
     const created = await apiRequest<User>("/api/users", {
@@ -103,7 +103,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setStatus = useCallback(async (id: string, status: User["status"]): Promise<User | null> => {
-    const updated = await apiRequest<User>(`/api/users/${id}`, {
+    const updated = await apiRequest<User>(`/api/users/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
@@ -111,14 +111,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     return updated;
   }, []);
 
-  const getById = useCallback((id: string) => users.find(u => u.id === id) ?? null, [users]);
-  const getByEmail = useCallback((email: string) => users.find(u => u.email === email) ?? null, [users]);
-  const getByRole = useCallback((role: User["role"]) => users.filter(u => u.role === role), [users]);
+  const getById = useCallback((id: string) => visibleUsers.find(u => u.id === id) ?? null, [visibleUsers]);
+  const getByEmail = useCallback((email: string) => visibleUsers.find(u => u.email === email) ?? null, [visibleUsers]);
+  const getByRole = useCallback((role: User["role"]) => visibleUsers.filter(u => u.role === role), [visibleUsers]);
 
   return (
     <UsersContext.Provider
       value={{
-        users, isLoading,
+        users: visibleUsers, isLoading: !!userId && (loadedFor !== userId || isLoading),
         getById, getByEmail, getByRole,
         add, update, remove, setRole, setStatus, refresh,
       }}

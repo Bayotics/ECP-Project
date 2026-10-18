@@ -4,6 +4,9 @@ import Navbar from "@/components/layout/Navbar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PortalScrollHandler from "@/components/layout/PortalScrollHandler";
 import PasswordChangeGate from "@/components/auth/PasswordChangeGate";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: {
@@ -12,11 +15,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MemberLayout({
+export default async function MemberLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  if (!await getSessionUser({ cookies: await cookies() })) redirect("/auth/login");
   return (
     <ProtectedRoute>
       <PortalScrollHandler>

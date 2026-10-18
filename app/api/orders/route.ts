@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Unauthenticated access is allowed ONLY for the guest order-confirmation
     // lookup, which must supply an exact orderNumber. Everything else
     // requires a session.
-    const session = getRequestSession(request);
+    const session = await getRequestSession(request);
     if (!session && !orderNumber?.trim()) {
       return unauthorized();
     }

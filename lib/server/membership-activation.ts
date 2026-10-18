@@ -2,7 +2,7 @@ import { parseSocialProfiles } from "@/lib/social-profiles";
 import { nanoid } from "nanoid";
 import { getCollection, serializeDocument } from "@/lib/server/collections";
 import { hasCredential, upsertCredential } from "@/lib/server/auth";
-import { MEMBERSHIP_ID_PATTERN, normalizeMembershipId, type User } from "@/lib/models/user";
+import { MEMBERSHIP_ID_PATTERN, normalizeMembershipId, accountIsRestricted, type User } from "@/lib/models/user";
 import type { MembershipApplication } from "@/lib/models/membership";
 
 /* Turning an approved application into a member who can sign in.
@@ -140,11 +140,12 @@ export async function activateMember(
   );
 
   if (existing) {
+    if (accountIsRestricted(existing.status)) throw new Error("This account is suspended or revoked. Reinstate it from the member access controls before approving it again.");
     const isAdminAccount = ADMIN_ROLES.includes(existing.role);
 
     const updated = serializeDocument(
       await users.findOneAndUpdate(
-        { id: existing.id },
+        { id: existing.id, status: existing.status, sessionVersion: existing.sessionVersion ?? { $exists: false } },
         {
           $set: {
             ...Object.fromEntries(Object.entries(social.values).filter(([key, value]) => value && existing[key as keyof User] === undefined)),

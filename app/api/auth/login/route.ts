@@ -3,6 +3,7 @@ import { verifyCredentials } from "@/lib/server/auth";
 import { mergeAnonymousCartIntoUser } from "@/lib/server/cart";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
 import { clearCartSessionCookie, getCartSessionId, setAuthSessionCookie } from "@/lib/server/session";
+import { accountIsRestricted, publicUser } from "@/lib/models/user";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,20 +22,13 @@ export async function POST(request: NextRequest) {
     }
 
     const collection = await getCollection("users");
-    const now = new Date().toISOString();
-    const result = await collection.findOneAndUpdate(
-      { id: userId },
-      { $set: { lastLoginAt: now } },
-      { returnDocument: "after" }
-    );
-
-    const user = serializeDocument(result);
+    const user = serializeDocument(await collection.findOne({ id: userId }));
     if (!user) {
       return NextResponse.json({ ok: false, error: "User not found." }, { status: 404 });
     }
 
-    if (user.status === "suspended") {
-      return NextResponse.json({ ok: false, error: "This account has been suspended." }, { status: 403 });
+    if (accountIsRestricted(user.status)) {
+      return NextResponse.json({ ok: false, reason: `account-${user.status}`, error: `Your membership has been ${user.status}. Contact the club administrators. Portal access will be restored only after reinstatement.` }, { status: 403 });
     }
 
     /* The gate. An unconfirmed address gets no session, so the portal is
@@ -54,10 +48,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const loggedIn = serializeDocument(await collection.findOneAndUpdate(
+      { id: user.id, status: user.status, sessionVersion: user.sessionVersion ?? { $exists: false } },
+      { $set: { lastLoginAt: new Date().toISOString() } }, { returnDocument: "after" },
+    ));
+    if (!loggedIn) return NextResponse.json({ ok: false, error: "Account access changed. Please try signing in again." }, { status: 403 });
     await mergeAnonymousCartIntoUser(getCartSessionId(request), user.id);
 
-    const response = NextResponse.json({ ok: true, data: user });
-    setAuthSessionCookie(response, user);
+    const response = NextResponse.json({ ok: true, data: publicUser(loggedIn) });
+    setAuthSessionCookie(response, loggedIn);
     clearCartSessionCookie(response);
     return response;
   } catch (error) {

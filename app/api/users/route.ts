@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/server/guards";
 import type { Filter } from "mongodb";
 import type { User } from "@/lib/models";
+import { publicUser } from "@/lib/models/user";
 import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
 import { createUserWithPassword } from "@/lib/server/auth";
 
@@ -16,7 +17,7 @@ function badRequest(message: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const { deny } = requireSession(request);
+  const { deny } = await requireSession(request);
   if (deny) return deny;
 
   try {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (email) filter.email = email.trim().toLowerCase();
 
     const users = serializeDocuments(await collection.find(filter).sort({ joinedAt: -1 }).toArray());
-    return NextResponse.json({ ok: true, data: users });
+    return NextResponse.json({ ok: true, data: users.map(publicUser) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch users";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { session, deny } = requireSession(request);
+  const { session, deny } = await requireSession(request);
   if (deny) return deny;
   if (session?.role !== "admin" && session?.role !== "super-admin") {
     return NextResponse.json({ ok: false, error: "Only administrators can create accounts." }, { status: 403 });

@@ -12,7 +12,7 @@ function badRequest(message: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const { deny } = requireSession(request);
+  const { deny } = await requireSession(request);
   if (deny) return deny;
 
   try {

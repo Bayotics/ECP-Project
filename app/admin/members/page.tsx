@@ -10,12 +10,13 @@ import {
 import type { User } from "@/lib/models/user";
 import { IBILE_DIVISIONS } from "@/lib/constants";
 import { useAdminAction } from "@/hooks/useAdminAction";
+import MemberAccessControls from "@/components/admin/MemberAccessControls";
 
 const ROLES = ["all", "guest", "applicant", "member", "admin", "super-admin"];
-const STATUSES = ["all", "active", "inactive", "suspended", "pending"];
+const STATUSES = ["all", "active", "inactive", "suspended", "revoked", "pending"];
 
 export default function AdminMembersPage() {
-  const { users, add, update, setRole, setStatus } = useUsers();
+  const { users, add, update, setRole } = useUsers();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -26,7 +27,7 @@ export default function AdminMembersPage() {
   const [createError, setCreateError] = useState("");
 
   // local edit state
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lagosOrigin: "", occupation: "", role: "", status: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", lagosOrigin: "", occupation: "", role: "" });
   const [saving, setSaving] = useState(false);
   const { run } = useAdminAction();
 
@@ -54,7 +55,6 @@ export default function AdminMembersPage() {
       lagosOrigin: user.lagosOrigin ?? "",
       occupation: user.occupation ?? "",
       role: user.role,
-      status: user.status,
     });
   }
 
@@ -63,7 +63,7 @@ export default function AdminMembersPage() {
   async function saveChanges() {
     if (!selected) return;
     setSaving(true);
-    /* Role and status are separate endpoints, so all three go in one action:
+    /* Profile details and role are saved together in this action:
        if any of them fails the administrator is told, and the modal stays
        open with the edits still in it. */
     const result = await run(
@@ -76,7 +76,6 @@ export default function AdminMembersPage() {
           occupation: form.occupation || undefined,
         });
         if (form.role !== selected.role) await setRole(selected.id, form.role as User["role"]);
-        if (form.status !== selected.status) await setStatus(selected.id, form.status as User["status"]);
       },
       { success: "Member saved.", errorTitle: "Could not save the member" },
     );
@@ -224,25 +223,19 @@ export default function AdminMembersPage() {
             </div>
 
             <div>
-              <SectionDivider label="Role & Status" />
+              <SectionDivider label="Role" />
               <div className="grid grid-cols-2 gap-3 mt-2">
     <FormField label="Role">
-                  <FormSelect value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
+                  <FormSelect value={form.role} disabled={selected.status === "suspended" || selected.status === "revoked"} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
                     {["guest", "applicant", "member", "admin", "super-admin"].map(r => (
                       <option key={r} value={r}>{r.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>
-                    ))}
-                  </FormSelect>
-                </FormField>
-                <FormField label="Status">
-                  <FormSelect value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                    {["active", "inactive", "suspended", "pending"].map(s => (
-                      <option key={s} value={s}>{s.replace(/\b\w/g, c => c.toUpperCase())}</option>
                     ))}
                   </FormSelect>
                 </FormField>
               </div>
             </div>
 
+            <MemberAccessControls key={selected.id} member={selected} onUpdated={setSelected} />
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={closeModal}>Cancel</Btn>
               <Btn variant="primary" onClick={saveChanges} disabled={saving}>{saving ? "Saving…" : "Save Changes"}</Btn>

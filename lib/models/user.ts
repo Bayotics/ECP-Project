@@ -1,6 +1,19 @@
 import type { SocialProfiles } from "@/lib/social-profiles";
 export type UserRole = "guest" | "applicant" | "member" | "admin" | "super-admin";
-export type UserStatus = "active" | "inactive" | "suspended" | "pending";
+export type UserStatus = "active" | "inactive" | "suspended" | "revoked" | "pending";
+
+export interface AccountStatusChange {
+  id: string;
+  fromStatus: UserStatus;
+  toStatus: UserStatus;
+  reason?: string;
+  changedAt: string;
+  changedBy: string;
+  notificationStatus: "pending" | "sending" | "sent" | "failed" | "superseded";
+  notificationLeaseUntil?: string;
+  notificationSentAt?: string;
+  notificationError?: string;
+}
 
 /** Which body of the club a member holds office in, for grouping the directory. */
 export type UserOffice = "exco" | "trustees" | "patron";
@@ -14,6 +27,10 @@ export interface User extends SocialProfiles {
   /** Portal permissions. Separate from `title`, which is the club office. */
   role: UserRole;
   status: UserStatus;
+  /** Incremented on account-status changes; older cookies cannot be reused. */
+  sessionVersion?: number;
+  /** Administrator audit trail and durable notification queue. Never directory data. */
+  accountStatusHistory?: AccountStatusChange[];
   /**
    * The office this member holds in the club, exactly as the club's own
    * spotlight badge prints it: "President", "Secretary, Board of Trustees",
@@ -69,3 +86,14 @@ export function normalizeMembershipId(value: string): string {
 
 export type CreateUserInput = Omit<User, "id" | "joinedAt">;
 export type UpdateUserInput = Partial<Omit<User, "id" | "joinedAt">>;
+
+export function accountIsRestricted(status: UserStatus): boolean {
+  return status === "suspended" || status === "revoked";
+}
+
+export function publicUser(user: User): User {
+  const result = { ...user };
+  delete result.accountStatusHistory;
+  delete result.sessionVersion;
+  return result;
+}

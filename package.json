@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:membership": "node --test scripts/test-membership.mjs",
     "test:social-profiles": "node --test scripts/test-social-profiles.mjs",
-    "test:dues": "node --test scripts/test-dues.mjs"
+    "test:dues": "node --test scripts/test-dues.mjs",
+    "test:account-access": "node --test scripts/test-account-access.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",

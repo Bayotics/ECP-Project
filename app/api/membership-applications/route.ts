@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Unauthenticated access is allowed ONLY for the public "check my
     // application status" flow, which must supply an exact email filter.
     // Everything else (full list, status/userId queries) requires a session.
-    const session = getRequestSession(request);
+    const session = await getRequestSession(request);
     if (!session && !email?.trim()) {
       return unauthorized();
     }

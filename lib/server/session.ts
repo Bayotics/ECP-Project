@@ -1,6 +1,7 @@
 import { createHmac } from "crypto";
 import type { NextRequest, NextResponse } from "next/server";
 import type { User } from "@/lib/models";
+import { accountIsRestricted } from "@/lib/models/user";
 import { getCollection, serializeDocument } from "@/lib/server/collections";
 
 export const AUTH_COOKIE_NAME = "ecp_auth_token";
@@ -11,11 +12,9 @@ interface SessionPayload {
   sub: string;
   email: string;
   role: User["role"];
-  /* Carried in the token so a guard can refuse an unverified session
-     without a database round trip. A token minted before verification keeps
-     the old value until the member signs in again, which is exactly what
-     happens once they follow the link. */
+  /** Account status, role and session version are checked live on every request. */
   emailVerified: boolean;
+  sessionVersion?: number;
   iat: number;
   exp: number;
 }
@@ -50,6 +49,7 @@ export function createSessionToken(user: User): string {
       email: user.email,
       role: user.role,
       emailVerified: user.emailVerified !== false,
+      sessionVersion: user.sessionVersion ?? 0,
       iat: now,
       exp: now + SESSION_MAX_AGE_SECONDS,
     } satisfies SessionPayload)
@@ -109,16 +109,20 @@ export function getCartSessionId(request: NextRequest): string | null {
   return request.cookies.get(CART_COOKIE_NAME)?.value ?? null;
 }
 
-export function getSessionUserId(request: NextRequest): string | null {
+type SessionRequest = { cookies: { get(name: string): { value: string } | undefined } };
+
+export function getSessionUserId(request: SessionRequest): string | null {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const payload = verifySessionToken(token);
   return payload?.sub ?? null;
 }
 
-export async function getSessionUser(request: NextRequest): Promise<User | null> {
-  const userId = getSessionUserId(request);
-  if (!userId) return null;
+export async function getSessionUser(request: SessionRequest): Promise<User | null> {
+  const payload = verifySessionToken(request.cookies.get(AUTH_COOKIE_NAME)?.value);
+  if (!payload) return null;
 
   const collection = await getCollection("users");
-  return serializeDocument(await collection.findOne({ id: userId }));
+  const user = serializeDocument(await collection.findOne({ id: payload.sub }));
+  if (!user || accountIsRestricted(user.status) || (payload.sessionVersion ?? 0) !== (user.sessionVersion ?? 0)) return null;
+  return user;
 }

@@ -90,7 +90,7 @@ test('User creation rejects anonymous and non-admin sessions before database acc
         if (name === 'next/server') return { NextResponse: { json: (body, init) => ({ body, status: init.status }) } };
         if (name === '@/lib/server/guards') return { requireSession: () => role ? { session: { role }, deny: null } : { session: null, deny: { status: 401 } } };
         if (name === '@/lib/server/collections') return { ensureCoreIndexes: () => { throw Error('Database must not be accessed'); } };
-        if (name === 'nanoid' || name === '@/lib/server/auth') return {};
+        if (name === 'nanoid' || name === '@/lib/server/auth' || name === '@/lib/models/user') return {};
         throw Error(`Unexpected import: ${name}`);
       },
     });

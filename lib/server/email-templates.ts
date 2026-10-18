@@ -85,6 +85,21 @@ function heading(text: string): string {
   return `<h1 style="margin:0 0 16px;font:500 26px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-0.02em;color:${INK};">${escapeHtml(text)}</h1>`;
 }
 
+export function accountStatusEmail(options: {
+  name: string; status: string; reason?: string; loginUrl: string;
+}): { subject: string; html: string } {
+  const restored = options.status === "active";
+  const restricted = options.status === "suspended" || options.status === "revoked";
+  const title = restored ? "Your membership has been reinstated" : restricted ? `Your membership has been ${options.status}` : "Your account status has changed";
+  const body = `${heading(title)}
+<p>Hello ${escapeHtml(options.name)},</p>
+<p>${restored ? "Your portal access has been restored. Sign in again using your existing credentials." : restricted ? "You cannot sign in or access the member portal until an administrator reinstates your account. Existing sessions have been invalidated." : `Your account status is now ${escapeHtml(options.status)}.`}</p>
+${options.reason ? `<p><strong>Reason:</strong> ${escapeHtml(options.reason)}</p>` : ""}
+<p>Contact the club administrators if you have questions about this change.</p>
+${restored ? button(options.loginUrl, "Sign in to your portal") : ""}`;
+  return { subject: title, html: layout({ title, body, preheader: title }) };
+}
+
 /** Sent immediately after signup. The link is the only thing that matters here. */
 export function verificationEmail(options: {
   name: string;

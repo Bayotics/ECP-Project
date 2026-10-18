@@ -27,6 +27,7 @@ const BADGE_COLORS: Record<string, string> = {
   active: "border-green-200 bg-green-50 text-green-800",
   inactive: "border-neutral-200 bg-neutral-100 text-neutral-900",
   suspended: "border-red-200 bg-red-50 text-red-800",
+  revoked: "border-red-300 bg-red-100 text-red-900",
   // User roles
   member: "border-blue-200 bg-blue-50 text-blue-800",
   admin: "border-amber-200 bg-amber-50 text-amber-800",

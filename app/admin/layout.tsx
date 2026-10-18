@@ -4,6 +4,9 @@ import Navbar from "@/components/layout/Navbar";
 import AdminGuard from "@/components/auth/AdminGuard";
 import PortalScrollHandler from "@/components/layout/PortalScrollHandler";
 import PasswordChangeGate from "@/components/auth/PasswordChangeGate";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: {
@@ -12,11 +15,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getSessionUser({ cookies: await cookies() });
+  if (!user) redirect("/auth/login");
+  if (user.role !== "admin" && user.role !== "super-admin") redirect("/member/dashboard");
   return (
     <AdminGuard>
       <PortalScrollHandler>

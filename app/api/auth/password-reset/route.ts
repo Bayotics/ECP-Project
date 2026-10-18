@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ...SAME_ANSWER, expiresInMinutes: RESET_TTL_MINUTES });
     }
 
-    if (user.status === "suspended") {
+    if (user.status === "suspended" || user.status === "revoked") {
       /* A suspended account should not be able to let itself back in. */
       console.warn(`[reset] ${email} is suspended; nothing sent.`);
       return NextResponse.json({ ...SAME_ANSWER, expiresInMinutes: RESET_TTL_MINUTES });

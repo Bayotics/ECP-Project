@@ -32,7 +32,7 @@ function bad(message: string, status = 400) {
 }
 
 export async function POST(request: NextRequest) {
-  const { session, deny } = requireSession(request);
+  const { session, deny } = await requireSession(request);
   if (deny) return deny;
 
   if (!cloudinaryConfigured) {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { session, deny } = requireSession(request);
+  const { session, deny } = await requireSession(request);
   if (deny) return deny;
 
   if (!cloudinaryConfigured) return bad("File hosting is not configured", 503);

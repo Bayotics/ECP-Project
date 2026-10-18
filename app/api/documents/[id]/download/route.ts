@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     if (!document) return fail("Document not found", 404);
     if (!document.url) return fail("No file is attached to this document", 404);
 
-    const session = getRequestSession(request);
+    const session = await getRequestSession(request);
     const isAdmin = ADMIN_ROLES.includes(session?.role ?? "");
 
     if (document.access === "admin-only" && !isAdmin) {

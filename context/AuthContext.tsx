@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { User } from "@/lib/models";
 import { apiRequestEnvelope, apiRequest } from "@/lib/client/api";
 import { passwordProblem } from "@/lib/models/password";
+import { accountIsRestricted } from "@/lib/models/user";
 
 
 interface AuthContextValue {
@@ -39,6 +40,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+
+  // Revalidate open tabs without flashing the full loading screen. Protected
+  // requests reject restrictions immediately; idle tabs catch up on this poll.
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    let active = true;
+    let pending = false;
+    const invalidate = () => { if (active) setCurrentUser(null); };
+    async function revalidate() {
+      if (pending) return;
+      pending = true;
+      try {
+        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        const result = await response.json();
+        if (active && response.ok && result.ok) setCurrentUser(result.data);
+        else if (active && (response.status === 401 || response.status === 403)) invalidate();
+      } catch { /* Keep the view during a network outage; server checks still deny access. */ }
+      finally { pending = false; }
+    }
+    const focus = () => { void revalidate(); };
+    const visible = () => { if (document.visibilityState === "visible") void revalidate(); };
+    const timer = window.setInterval(focus, 30_000);
+    window.addEventListener("focus", focus);
+    window.addEventListener("ecp:session-invalid", invalidate);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      active = false; window.clearInterval(timer);
+      window.removeEventListener("focus", focus); window.removeEventListener("ecp:session-invalid", invalidate);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [currentUser?.id]);
 
   useEffect(() => {
     let isActive = true;
@@ -166,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const isAuthenticated = currentUser !== null;
+  const isAuthenticated = currentUser !== null && !accountIsRestricted(currentUser.status);
   const isAdmin = currentUser?.role === "admin" || currentUser?.role === "super-admin";
   const isMember = currentUser?.role === "member" || isAdmin;
 
