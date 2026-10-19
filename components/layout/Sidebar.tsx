@@ -157,12 +157,14 @@ const memberLinksPublic = [
 ];
 
 const adminLinks = [
+  { href: "/admin/homepage", label: "Homepage", icon: "gallery" },
   { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/admin/dues", label: "Member dues", icon: "money" },
   { href: "/admin/applications", label: "Applications", icon: "status" },
   { href: "/admin/members", label: "Members", icon: "people" },
   { href: "/admin/committees", label: "Committees", icon: "committees" },
   { href: "/admin/events", label: "Events", icon: "calendar" },
+  { href: "/admin/volunteers", label: "Volunteers", icon: "people" },
   { href: "/admin/news", label: "News", icon: "news" },
   { href: "/admin/newsletter", label: "Newsletter", icon: "mail" },
   { href: "/admin/products", label: "Products", icon: "store" },

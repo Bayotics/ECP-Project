@@ -1,5 +1,7 @@
 "use client";
 
+import RSVPForm from "@/components/events/RSVPForm";
+import { registrationMode } from "@/lib/event-registration";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { useState, useMemo } from "react";
 import { useEvents } from "@/context/EventsContext";
@@ -33,95 +35,6 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${colors[status] ?? "bg-gray-100 text-gray-900"}`}>
       {status}
     </span>
-  );
-}
-
-interface RSVPFormInline {
-  name: string;
-  email: string;
-  phone: string;
-  guestCount: number;
-  notes: string;
-}
-
-function RSVPPanel({ event, currentUser, onDone }: { event: Event; currentUser: { id: string; firstName: string; lastName: string; email: string; phone?: string }; onDone: () => void }) {
-  const { add } = useRSVP();
-  const [form, setForm] = useState<RSVPFormInline>({
-    name: `${currentUser.firstName} ${currentUser.lastName}`,
-    email: currentUser.email,
-    phone: currentUser.phone ?? "",
-    guestCount: 0,
-    notes: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
-  const [rsvpId, setRsvpId] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    try {
-      const rsvp = await add({
-        eventId: event.id,
-        userId: currentUser.id,
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim() || undefined,
-        guestCount: form.guestCount,
-        notes: form.notes.trim() || undefined,
-      });
-      setRsvpId(rsvp.id);
-      setDone(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (done) {
-    return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center space-y-2">
-        <p className="text-2xl">🎉</p>
-        <p className="font-bold text-green-800">You&apos;re registered!</p>
-        <p className="text-sm text-green-700">Confirmation ID: <code className="font-mono">{rsvpId}</code></p>
-        <p className="text-xs text-green-600">A confirmation email has been sent to {form.email}</p>
-        <button onClick={onDone} className="mt-2 text-sm text-green-700 underline hover:no-underline">Back to events</button>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <label className="block text-xs font-semibold text-gray-900 mb-1">Full Name *</label>
-        <input className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text.gray-900 mb-1">Email *</label>
-        <input type="email" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-gray-900 mb-1">Phone <span className="font-normal text-gray-800">(optional — for SMS reminders)</span></label>
-        <input type="tel" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="08012345678" />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-gray-900 mb-1">Additional Attendees (besides you)</label>
-        <select className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-200" value={form.guestCount} onChange={e => setForm(p => ({ ...p, guestCount: Number(e.target.value) }))}>
-          {Array.from({ length: 10 }).map((_, i) => <option key={i} value={i}>{i === 0 ? "Just me" : `+${i} guest${i > 1 ? "s" : ""}`}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-gray-900 mb-1">Notes <span className="font-normal text-gray-800">(optional)</span></label>
-        <textarea className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-green-200" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
-      </div>
-      {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-      <button type="submit" disabled={submitting} className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold rounded-lg text-sm transition-colors">
-        {submitting ? "Registering…" : "Confirm Registration"}
-      </button>
-    </form>
   );
 }
 
@@ -253,18 +166,19 @@ export default function MemberEventsPage() {
             <AddToCalendarButton event={selected} />
 
             {/* Registration */}
-            {selected.status !== "cancelled" && new Date(selected.date) > new Date() && (
+            {selected.status === "published" && registrationMode(selected) && new Date(selected.date) > new Date() && (
               <div className="border-t border-gray-100 pt-4">
-                {isRegistered(selected.id) ? (
+                {isRegistered(selected.id) && !showRSVP ? (
                   <p className="text-sm text-green-700 bg-green-50 rounded-lg px-4 py-3">
                     ✅ You are already registered for this event. Check your email for confirmation details.
                   </p>
+                ) : registrationMode(selected) === "link" ? (
+                  <a href={selected.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white">Register on the organiser&apos;s page ↗</a>
                 ) : showRSVP ? (
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3">Register for this event</h3>
-                    <RSVPPanel
+                    <RSVPForm
                       event={selected}
-                      currentUser={{ id: currentUser.id, firstName: currentUser.firstName, lastName: currentUser.lastName, email: currentUser.email, phone: currentUser.phone }}
                       onDone={() => { closeDetail(); setTab("my-rsvps"); }}
                     />
                   </div>

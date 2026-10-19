@@ -9,7 +9,8 @@ import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { HEADER_OFFSET } from "@/components/layout/Header";
 import { EASE, HIDDEN, SHIFT, useIsClient, useReveal } from "@/components/gsap/useReveal";
-import { useEvents, useRSVP } from "@/context";
+import { useEvents } from "@/context";
+import EventCalendarSummary from "@/components/events/EventCalendarSummary";
 import type { Event, EventType } from "@/lib/models";
 import { cn } from "@/utils/cn";
 import { EKO } from "@/lib/content/programs";
@@ -145,9 +146,9 @@ function Badges({ event, full }: { event: Event; full: boolean }) {
 
 /* ─── Event card ────────────────────────────────────────────────────────── */
 
-function EventTile({ event, attending }: { event: Event; attending: number }) {
+function EventTile({ event }: { event: Event }) {
   const color = TYPE_COLOR[event.type];
-  const full = !!(event.maxAttendees && attending >= event.maxAttendees);
+
   const summary = event.shortDescription ?? event.description;
 
   return (
@@ -173,7 +174,7 @@ function EventTile({ event, attending }: { event: Event; attending: number }) {
           </div>
         )}
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <Badges event={event} full={full} />
+          <Badges event={event} full={false} />
         </div>
         {event.imageUrl && (
           <p className="absolute bottom-4 left-5 text-sm font-normal uppercase tracking-[0.18em] text-white">{formatDay(event.date)}</p>
@@ -211,9 +212,6 @@ function EventTile({ event, attending }: { event: Event; attending: number }) {
               →
             </span>
           </Link>
-          <span className="text-neutral-500">
-            {attending} going{event.maxAttendees ? ` of ${event.maxAttendees}` : ""}
-          </span>
           {/* Anyone can take the date away, signed in or not. */}
           <AddToCalendarButton event={event} variant="compact" className="w-full justify-center" />
         </div>
@@ -222,9 +220,9 @@ function EventTile({ event, attending }: { event: Event; attending: number }) {
   );
 }
 
-function EventRow({ event, attending }: { event: Event; attending: number }) {
+function EventRow({ event }: { event: Event }) {
   const color = TYPE_COLOR[event.type];
-  const full = !!(event.maxAttendees && attending >= event.maxAttendees);
+
 
   return (
     <article data-event-card className="group flex flex-col gap-5 rounded-[1.5rem] border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-300 sm:flex-row sm:items-center">
@@ -243,7 +241,6 @@ function EventRow({ event, attending }: { event: Event; attending: number }) {
           {event.membersOnly && (
             <span className="rounded-full border border-neutral-200 px-2.5 py-0.5 text-[11px] font-normal text-neutral-700">Members only</span>
           )}
-          {full && <span className="rounded-full bg-neutral-900 px-2.5 py-0.5 text-[11px] font-normal text-white">Fully booked</span>}
         </div>
         <h3 className="mt-2 text-xl font-normal tracking-[-0.02em] text-neutral-950">{event.title}</h3>
         <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-neutral-600">
@@ -443,7 +440,6 @@ function AdoptProjectModal({ onClose }: { onClose: () => void }) {
 
 export default function EventsPageClient() {
   const { events, isLoading } = useEvents();
-  const { countConfirmed } = useRSVP();
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<EventType | "all">("all");
@@ -494,9 +490,6 @@ export default function EventsPageClient() {
     [filtered, dateFilter],
   );
 
-  const upcomingCount = useMemo(() => published.filter((event) => new Date(event.date) >= now).length, [published, now]);
-  const totalAttending = useMemo(() => published.reduce((sum, event) => sum + countConfirmed(event.id), 0), [published, countConfirmed]);
-
   const hasFilters = search !== "" || typeFilter !== "all" || dateFilter !== "upcoming" || organizerFilter !== "all";
   /* The list opens on "Upcoming", so an empty result with nothing else
      narrowed means the calendar is simply between events rather than
@@ -508,13 +501,6 @@ export default function EventsPageClient() {
     setDateFilter("upcoming");
     setOrganizerFilter("all");
   }
-
-  const stats = [
-    { value: published.length, label: "Published events", color: EKO.green },
-    { value: upcomingCount, label: "Coming up", color: EKO.red },
-    { value: featured.length, label: "Featured", color: EKO.blue },
-    { value: totalAttending, label: "Confirmed RSVPs", color: EKO.yellow },
-  ];
 
   const pageRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
@@ -597,7 +583,7 @@ export default function EventsPageClient() {
         ))}
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-28 lg:px-8 lg:py-32">
-          <div className="grid items-end gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid items-start gap-14 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="max-w-3xl">
               <div ref={heroTextRef} data-reveal style={HIDDEN}>
                 <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
@@ -638,21 +624,9 @@ export default function EventsPageClient() {
               </div>
             </div>
 
-            <div ref={heroPanelRef} data-reveal className="rounded-4xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl" style={HIDDEN}>
-              <p className="text-xs font-normal uppercase tracking-[0.22em] text-white">On the calendar</p>
-              <dl className="mt-5 grid grid-cols-2 gap-3">
-                {stats.map((s) => (
-                  <div key={s.label} className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                    <dt className="sr-only">{s.label}</dt>
-                    <dd>
-                      <span className="block text-4xl font-normal tracking-[-0.04em]" style={{ color: s.color }}>
-                        {isLoading ? "–" : s.value.toLocaleString()}
-                      </span>
-                      <span className="mt-2 block text-xs font-normal uppercase tracking-[0.16em] text-white">{s.label}</span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+            <div ref={heroPanelRef} role="region" aria-labelledby="calendar-summary-heading" data-reveal className="rounded-4xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl" style={HIDDEN}>
+              <h2 id="calendar-summary-heading" className="text-xs font-normal uppercase tracking-[0.22em] text-white">On the calendar</h2>
+              <EventCalendarSummary />
             </div>
           </div>
         </div>
@@ -691,7 +665,7 @@ export default function EventsPageClient() {
                 </p>
               </div>
             ) : (
-              featured.map((event) => <EventTile key={event.id} event={event} attending={countConfirmed(event.id)} />)
+              featured.map((event) => <EventTile key={event.id} event={event} />)
             )}
           </div>
         </div>
@@ -862,13 +836,13 @@ export default function EventsPageClient() {
             ) : viewMode === "card" ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sorted.map((event) => (
-                  <EventTile key={event.id} event={event} attending={countConfirmed(event.id)} />
+                  <EventTile key={event.id} event={event} />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {sorted.map((event) => (
-                  <EventRow key={event.id} event={event} attending={countConfirmed(event.id)} />
+                  <EventRow key={event.id} event={event} />
                 ))}
               </div>
             )}

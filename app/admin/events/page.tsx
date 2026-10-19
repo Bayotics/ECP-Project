@@ -13,6 +13,12 @@ import { useAdminAction, errorMessage } from "@/hooks/useAdminAction";
 import type { Event } from "@/lib/models/event";
 import type { RSVP } from "@/lib/models/rsvp";
 import { apiRequest } from "@/lib/client/api";
+import EventRegistrationFields from "@/components/admin/EventRegistrationFields";
+import EventPlatformFields from "@/components/admin/EventPlatformFields";
+import EventVolunteerCapField from "@/components/admin/EventVolunteerCapField";
+import EventLeadFields from "@/components/admin/EventLeadFields";
+import { eventListingForm } from "@/lib/event-platform-links";
+import { registrationMode } from "@/lib/event-registration";
 
 const EVENT_TYPES = ["all", "town-hall", "workshop", "volunteer", "meetup", "seminar", "press-conference", "other"];
 const EVENT_STATUSES = ["all", "draft", "published", "cancelled", "completed"];
@@ -40,16 +46,22 @@ export default function AdminEventsPage() {
   const [selected, setSelected] = useState<Event | null>(null);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState({
+    ...eventListingForm(),
+    volunteerCap: "",
+    volunteerLeadIds: [] as string[],
     title: "", type: "meetup", date: "", time: "", location: "", description: "",
     membersOnly: false, registrationRequired: false,
-    imageUrl: "", imageAlt: "", registrationUrl: "",
+    imageUrl: "", imageAlt: "", registrationUrl: "", registrationMode: "",
   });
   const [form, setForm] = useState({
+    ...eventListingForm(),
+    volunteerCap: "",
+    volunteerLeadIds: [] as string[],
     title: "", type: "", date: "", time: "", location: "", venue: "",
     status: "", maxAttendees: "", isFeatured: false, isPublic: false,
     membersOnly: false, registrationRequired: false,
     description: "", organizerName: "",
-    imageUrl: "", imageAlt: "", registrationUrl: "",
+    imageUrl: "", imageAlt: "", registrationUrl: "", registrationMode: "",
   });
   const [saving, setSaving] = useState(false);
   const { run } = useAdminAction();
@@ -111,6 +123,9 @@ export default function AdminEventsPage() {
     setNotifyResult(null);
     setNotifyError(null);
     setForm({
+      ...eventListingForm(ev),
+      volunteerCap: ev.volunteerCap == null ? "" : String(ev.volunteerCap),
+      volunteerLeadIds: ev.volunteerLeadIds ?? [],
       title: ev.title,
       type: ev.type,
       date: ev.date,
@@ -128,6 +143,7 @@ export default function AdminEventsPage() {
       imageUrl: ev.imageUrl ?? "",
       imageAlt: ev.imageAlt ?? "",
       registrationUrl: ev.registrationUrl ?? "",
+      registrationMode: registrationMode(ev) ?? "",
     });
     loadRsvps(ev.id);
   }
@@ -146,6 +162,9 @@ export default function AdminEventsPage() {
     const result = await run(
       () =>
         update(selected.id, {
+          ...eventListingForm(form),
+          volunteerCap: form.volunteerCap.trim() ? Number(form.volunteerCap) : null,
+          volunteerLeadIds: form.volunteerLeadIds,
           title: form.title,
           type: form.type as Event["type"],
           date: form.date,
@@ -158,13 +177,14 @@ export default function AdminEventsPage() {
           isPublic: form.isPublic,
           membersOnly: form.membersOnly,
           registrationRequired: form.registrationRequired,
+          registrationMode: form.registrationRequired ? form.registrationMode as Event["registrationMode"] : undefined,
           description: form.description || undefined,
           organizerName: form.organizerName || undefined,
           imageUrl: form.imageUrl || undefined,
           imageAlt: form.imageAlt || undefined,
           /* Clearing the checkbox clears the link, so a stale URL cannot
              linger on an event that no longer takes registrations. */
-          registrationUrl: form.registrationRequired ? form.registrationUrl || undefined : undefined,
+          registrationUrl: form.registrationRequired && form.registrationMode === "link" ? form.registrationUrl.trim() : "",
         }),
       { success: "Event saved.", errorTitle: "Could not save the event" },
     );
@@ -229,6 +249,9 @@ export default function AdminEventsPage() {
     const result = await run(
       () =>
         add({
+          ...eventListingForm(createForm),
+          volunteerCap: createForm.volunteerCap.trim() ? Number(createForm.volunteerCap) : null,
+          volunteerLeadIds: createForm.volunteerLeadIds,
           title: createForm.title.trim(),
           slug: slugify(createForm.title),
           description: createForm.description || createForm.title,
@@ -244,7 +267,8 @@ export default function AdminEventsPage() {
           isPublic: !createForm.membersOnly,
           membersOnly: createForm.membersOnly,
           registrationRequired: createForm.registrationRequired,
-          registrationUrl: createForm.registrationRequired ? createForm.registrationUrl || undefined : undefined,
+          registrationMode: createForm.registrationRequired ? createForm.registrationMode as Event["registrationMode"] : undefined,
+          registrationUrl: createForm.registrationRequired && createForm.registrationMode === "link" ? createForm.registrationUrl.trim() : "",
           imageUrl: createForm.imageUrl || undefined,
           imageAlt: createForm.imageAlt || undefined,
           isOnline: false,
@@ -254,9 +278,12 @@ export default function AdminEventsPage() {
     if (!result.ok) return;
     setCreating(false);
     setCreateForm({
+      ...eventListingForm(),
+      volunteerCap: "",
+      volunteerLeadIds: [],
       title: "", type: "meetup", date: "", time: "", location: "", description: "",
       membersOnly: false, registrationRequired: false,
-      imageUrl: "", imageAlt: "", registrationUrl: "",
+      imageUrl: "", imageAlt: "", registrationUrl: "", registrationMode: "",
     });
   }
 
@@ -369,22 +396,14 @@ export default function AdminEventsPage() {
             </div>
             {/* Only worth asking for once registration is actually required. */}
             {createForm.registrationRequired && (
-              <FormField label="Registration link">
-                <FormInput
-                  type="url"
-                  value={createForm.registrationUrl}
-                  onChange={e => setCreateForm(p => ({ ...p, registrationUrl: e.target.value }))}
-                  placeholder="https://…"
-                />
-                <p className="mt-1.5 text-xs leading-5 text-neutral-700">
-                  Where members sign up, if it is handled off site. Leave empty to use the
-                  RSVP form on the event page.
-                </p>
-              </FormField>
+              <EventRegistrationFields value={createForm} onChange={patch => setCreateForm(p => ({ ...p, ...patch }))} />
             )}
+            <EventVolunteerCapField value={createForm.volunteerCap} onChange={volunteerCap => setCreateForm(p => ({ ...p, volunteerCap }))} />
+            <EventLeadFields value={createForm.volunteerLeadIds} onChange={volunteerLeadIds => setCreateForm(p => ({ ...p, volunteerLeadIds }))} />
+            <EventPlatformFields value={createForm} onChange={patch => setCreateForm(p => ({ ...p, ...patch }))} />
             <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
               <Btn variant="secondary" onClick={() => setCreating(false)}>Cancel</Btn>
-              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim() || !createForm.date}>Create Event</Btn>
+              <Btn variant="primary" onClick={handleCreate} disabled={!createForm.title.trim() || !createForm.date || (createForm.registrationRequired && (!createForm.registrationMode || (createForm.registrationMode === "link" && !createForm.registrationUrl.trim())))}>Create Event</Btn>
             </div>
           </div>
         </AdminModal>
@@ -464,18 +483,7 @@ export default function AdminEventsPage() {
 
               {/* Only worth asking for once registration is actually required. */}
               {form.registrationRequired && (
-                <FormField label="Registration link">
-                  <FormInput
-                    type="url"
-                    value={form.registrationUrl}
-                    onChange={e => setForm(p => ({ ...p, registrationUrl: e.target.value }))}
-                    placeholder="https://…"
-                  />
-                  <p className="mt-1.5 text-xs leading-5 text-neutral-700">
-                    Where members sign up, if it is handled off site. Leave empty to use the
-                    RSVP form on the event page.
-                  </p>
-                </FormField>
+                <EventRegistrationFields value={form} onChange={patch => setForm(p => ({ ...p, ...patch }))} />
               )}
 
               {form.membersOnly && (
@@ -506,6 +514,10 @@ export default function AdminEventsPage() {
                 <FormTextarea rows={3} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
               </FormField>
 
+              <EventVolunteerCapField value={form.volunteerCap} onChange={volunteerCap => setForm(p => ({ ...p, volunteerCap }))} />
+              <EventLeadFields value={form.volunteerLeadIds} onChange={volunteerLeadIds => setForm(p => ({ ...p, volunteerLeadIds }))} />
+              <EventPlatformFields value={form} onChange={patch => setForm(p => ({ ...p, ...patch }))} />
+
               <div>
                 <SectionDivider label="Quick Actions" />
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -517,7 +529,7 @@ export default function AdminEventsPage() {
 
               <div className="flex justify-end gap-2 pt-2 border-t border-(--color-neutral-100)">
                 <Btn variant="secondary" onClick={closeModal}>Cancel</Btn>
-                <Btn variant="primary" onClick={saveChanges} disabled={saving}>{saving ? "Saving…" : "Save Changes"}</Btn>
+                <Btn variant="primary" onClick={saveChanges} disabled={saving || (form.registrationRequired && (!form.registrationMode || (form.registrationMode === "link" && !form.registrationUrl.trim())))}>{saving ? "Saving…" : "Save Changes"}</Btn>
               </div>
             </div>
           )}
@@ -618,7 +630,7 @@ export default function AdminEventsPage() {
 
               {notifyResult && (
                 <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm space-y-1">
-                  <p className="font-semibold text-green-800">✅ Notification sent!</p>
+                  <p className="font-semibold text-green-800">{notifyResult.emailSent + notifyResult.smsSent > 0 ? "Notification sending complete" : notifyResult.recipientCount === 0 ? "No recipients matched this audience" : "No notifications were sent"}</p>
                   <p className="text-green-700">Recipients: <strong>{notifyResult.recipientCount}</strong></p>
                   {notifyResult.emailSent > 0 && <p className="text-green-700">Emails sent: <strong>{notifyResult.emailSent}</strong></p>}
                   {notifyResult.emailFailed > 0 && <p className="text-red-600">Email failures: <strong>{notifyResult.emailFailed}</strong></p>}

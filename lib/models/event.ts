@@ -9,6 +9,11 @@ export type EventType =
 
 export type EventStatus = "draft" | "published" | "cancelled" | "completed";
 
+export interface EventPlatformLink {
+  name: string;
+  url: string;
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -31,10 +36,21 @@ export interface Event {
   imageUrl?: string;
   // Capacity
   maxAttendees?: number;
+  /** Separate from attendee capacity; null or absent means unlimited volunteers. */
+  volunteerCap?: number | null;
+  volunteerLeadIds?: string[];
+  /** Serializes capacity decisions in volunteer transactions. */
+  volunteerRevision?: number;
   registrationRequired: boolean;
+  /** Only an explicit form selection enables on-site registration. */
+  registrationMode?: "link" | "form";
   registrationDeadline?: string;
   /** Where registration happens, when it is handled off site. */
   registrationUrl?: string;
+  /** Additional listings, independent of the event's registration method. */
+  eventbriteUrl?: string;
+  partifulUrl?: string;
+  otherPlatformLinks?: EventPlatformLink[];
   /** Alt text for `imageUrl`, so the picture is not invisible to a screen reader. */
   imageAlt?: string;
   /** The programme this event is an occurrence of, where there is one. */

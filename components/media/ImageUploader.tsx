@@ -19,6 +19,7 @@ export default function ImageUploader({
   label = "Image",
   hint,
   shape = "square",
+  fit = "cover",
   className,
 }: {
   value?: string;
@@ -27,6 +28,7 @@ export default function ImageUploader({
   label?: string;
   hint?: string;
   shape?: "square" | "wide";
+  fit?: "cover" | "contain" | "fill";
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +66,7 @@ export default function ImageUploader({
         >
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="" className="h-full w-full object-cover" />
+            <img src={value} alt="" className={cn("h-full w-full", fit === "fill" ? "object-fill" : fit === "contain" ? "object-contain" : "object-cover")} />
           ) : (
             <span className="flex h-full w-full items-center justify-center text-xs text-neutral-400">No image</span>
           )}

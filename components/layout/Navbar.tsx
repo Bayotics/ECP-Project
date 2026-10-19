@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import { useAuth } from "@/context/AuthContext";
+import MembershipActions from "@/components/layout/MembershipActions";
 
 interface NavbarProps {
   isAdmin?: boolean;
@@ -48,7 +49,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
   const adminMode = isAdmin || userIsAdmin;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-white px-3 py-3 sm:px-6">
       {/* Left */}
       <div className="flex items-center gap-2 text-sm font-normal text-neutral-900">
         <Link href="/" className="transition-colors hover:text-green-700">
@@ -66,7 +67,7 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3">
         {/* Out of the portal and back to the public site. */}
         <Link
           href="/"
@@ -77,6 +78,8 @@ export default function Navbar({ isAdmin = false }: NavbarProps) {
           </svg>
           <span className="hidden sm:inline">Go back home</span>
         </Link>
+
+        <MembershipActions />
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={menuRef}>

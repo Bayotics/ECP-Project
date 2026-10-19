@@ -63,6 +63,7 @@ export default function AdminDashboardPage() {
   const totalDonated = getTotalSuccessful();
 
   const shortcuts = [
+    { href: "/admin/homepage", label: "Homepage", count: 4, note: "What We Do slides" },
     { href: "/admin/applications", label: "Applications", count: pendingApps.length, note: "awaiting a decision" },
     { href: "/admin/members", label: "Members", count: members.length, note: "with portal accounts" },
     { href: "/admin/events", label: "Events", count: events.length, note: "on the calendar" },

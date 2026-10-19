@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import type { Donation, DuesPayment, Event, Order, RSVP } from "@/lib/models";
+import type { Donation, DuesPayment, Order } from "@/lib/models";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ function emailWrapper(title: string, body: string): string {
 
 // ─── SMS helper ───────────────────────────────────────────────────────────────
 
-async function sendSMS(to: string, body: string): Promise<boolean> {
+export async function sendSMS(to: string, body: string): Promise<boolean> {
   const creds = getSMSClient();
   if (!creds) return false;
 
@@ -128,130 +128,8 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   }
 }
 
-// ─── RSVP Confirmation ────────────────────────────────────────────────────────
-
-export async function sendRSVPConfirmation(rsvp: RSVP, event: Event): Promise<void> {
-  const date = new Date(event.date).toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
-  });
-  const time = event.time ?? "";
-
-  const emailHtml = emailWrapper(
-    `Registration Confirmed — ${event.title}`,
-    `<p>Hi <strong>${rsvp.name}</strong>,</p>
-    <p>Your registration for <strong>${event.title}</strong> has been confirmed!</p>
-    <div class="highlight">
-      <p><strong>📅 Date:</strong> ${date}${time ? ` at ${time}` : ""}</p>
-      <p><strong>📍 Location:</strong> ${event.location}${event.venue ? ` — ${event.venue}` : ""}</p>
-      ${event.isOnline && event.meetingUrl ? `<p><strong>🔗 Meeting Link:</strong> <a href="${event.meetingUrl}">${event.meetingUrl}</a></p>` : ""}
-      <p><strong>🎟 Confirmation ID:</strong> <code>${rsvp.id}</code></p>
-      ${rsvp.guestCount ? `<p><strong>👥 Additional Guests:</strong> ${rsvp.guestCount}</p>` : ""}
-    </div>
-    <p>Please save this confirmation. We look forward to seeing you!</p>
-    ${event.registrationDeadline ? `<p style="font-size:13px;color:#6b7280;">Registration deadline: ${new Date(event.registrationDeadline).toLocaleDateString()}</p>` : ""}
-    <hr>
-    <p style="font-size:13px;color:#6b7280;">If you need to cancel, please contact us at least 24 hours before the event.</p>`
-  );
-
-  await sendEmail(rsvp.email, `✅ You're registered for ${event.title}`, emailHtml);
-
-  if (rsvp.phone) {
-    const smsBody = `ECP: You're registered for "${event.title}" on ${date}${time ? ` at ${time}` : ""}. Location: ${event.location}. ID: ${rsvp.id}`;
-    await sendSMS(rsvp.phone, smsBody);
-  }
-}
-
-// ─── Batch event notifications ────────────────────────────────────────────────
-
-export type NotificationType = "announcement" | "reminder" | "cancellation";
-
-export async function sendEventNotifications(
-  event: Event,
-  recipients: Recipient[],
-  type: NotificationType,
-  channel: "email" | "sms" | "both"
-): Promise<BatchResult> {
-  const result: BatchResult = { emailSent: 0, emailFailed: 0, smsSent: 0, smsFailed: 0 };
-  if (recipients.length === 0) return result;
-
-  const date = new Date(event.date).toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
-  });
-  const time = event.time ?? "";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const eventUrl = `${siteUrl}/events/${event.slug}`;
-
-  let subject = "";
-  let bodyHtml = "";
-  let smsText = "";
-
-  if (type === "announcement") {
-    subject = `📣 New Event: ${event.title}`;
-    bodyHtml = `
-      <p>We have an exciting upcoming event and we'd love to see you there!</p>
-      <div class="highlight">
-        <p style="font-size:18px;font-weight:700;margin-bottom:8px">${event.title}</p>
-        <p><strong>📅 Date:</strong> ${date}${time ? ` at ${time}` : ""}</p>
-        <p><strong>📍 Location:</strong> ${event.location}${event.venue ? ` — ${event.venue}` : ""}</p>
-        ${event.shortDescription ? `<p>${event.shortDescription}</p>` : ""}
-        ${event.membersOnly ? `<p><span class="badge">Members Only</span></p>` : ""}
-      </div>
-      <p><a href="${eventUrl}" class="btn">View Event & Register →</a></p>
-      ${event.maxAttendees ? `<p style="font-size:13px;color:#6b7280;">Limited to ${event.maxAttendees} attendees.</p>` : ""}
-    `;
-    smsText = `ECP EVENT: "${event.title}" on ${date}${time ? ` at ${time}` : ""}. ${event.location}. Register: ${eventUrl}`;
-  } else if (type === "reminder") {
-    subject = `⏰ Reminder: ${event.title} is coming up!`;
-    bodyHtml = `
-      <p>This is a friendly reminder about an upcoming event you may be interested in:</p>
-      <div class="highlight">
-        <p style="font-size:18px;font-weight:700;margin-bottom:8px">${event.title}</p>
-        <p><strong>📅 Date:</strong> ${date}${time ? ` at ${time}` : ""}</p>
-        <p><strong>📍 Location:</strong> ${event.location}${event.venue ? ` — ${event.venue}` : ""}</p>
-        ${event.isOnline && event.meetingUrl ? `<p><strong>🔗 Meeting Link:</strong> <a href="${event.meetingUrl}">${event.meetingUrl}</a></p>` : ""}
-      </div>
-      <p><a href="${eventUrl}" class="btn">View Details →</a></p>
-    `;
-    smsText = `ECP REMINDER: "${event.title}" is on ${date}${time ? ` at ${time}` : ""}. ${event.location}. Details: ${eventUrl}`;
-  } else {
-    subject = `❌ Event Cancelled: ${event.title}`;
-    bodyHtml = `
-      <p>We regret to inform you that the following event has been <strong>cancelled</strong>:</p>
-      <div class="highlight" style="border-left-color:#dc2626">
-        <p style="font-size:18px;font-weight:700;margin-bottom:8px">${event.title}</p>
-        <p><strong>📅 Originally Scheduled:</strong> ${date}${time ? ` at ${time}` : ""}</p>
-        <p><strong>📍 Location:</strong> ${event.location}</p>
-      </div>
-      <p>We apologise for any inconvenience caused. Stay tuned for future events from Eko Club Philadelphia.</p>
-    `;
-    smsText = `ECP: "${event.title}" on ${date} has been CANCELLED. We apologise for the inconvenience.`;
-  }
-
-  const fullHtml = emailWrapper(subject, bodyHtml);
-
-  const emailPromises: Promise<void>[] = [];
-  const smsPromises: Promise<void>[] = [];
-
-  for (const recipient of recipients) {
-    if (channel === "email" || channel === "both") {
-      emailPromises.push(
-        sendEmail(recipient.email, subject, fullHtml).then((ok) => {
-          if (ok) result.emailSent++; else result.emailFailed++;
-        })
-      );
-    }
-    if ((channel === "sms" || channel === "both") && recipient.phone) {
-      smsPromises.push(
-        sendSMS(recipient.phone, smsText).then((ok) => {
-          if (ok) result.smsSent++; else result.smsFailed++;
-        })
-      );
-    }
-  }
-
-  await Promise.allSettled([...emailPromises, ...smsPromises]);
-  return result;
-}
+export { sendRSVPConfirmation, sendEventNotifications } from "@/lib/server/event-notifications";
+export type { NotificationType } from "@/lib/server/event-notifications";
 
 // ─── Shared receipt helpers ───────────────────────────────────────────────────
 

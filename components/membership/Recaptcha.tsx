@@ -33,7 +33,7 @@ export default function Recaptcha({ onChange }: { onChange: (token: string) => v
 
   useEffect(() => { renderRef.current = renderWidget; });
 
-  if (!sitekey) return <p role="alert" className="text-sm text-red-700">Application verification is not configured. Please contact the membership committee.</p>;
+  if (!sitekey) return <p role="alert" className="text-sm text-red-700">Verification is not configured. Please contact the club.</p>;
 
   return (
     <div className="space-y-2">

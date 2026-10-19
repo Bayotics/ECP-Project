@@ -1,6 +1,7 @@
 export * from "./user";
 export * from "./membership";
 export * from "./event";
+export * from "./volunteer";
 export * from "./rsvp";
 export * from "./news";
 export * from "./committee";

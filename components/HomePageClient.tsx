@@ -19,6 +19,10 @@ import type { Event as AppEvent } from "@/lib/models/event";
 import { useEvents } from "@/context/EventsContext";
 import { PROGRAMS } from "@/lib/content/programs";
 import { cn } from "@/utils/cn";
+import { apiRequest } from "@/lib/client/api";
+import { DEFAULT_WHAT_WE_DO, type WhatWeDoContent } from "@/lib/content/what-we-do";
+import WhatWeDoCardFace from "@/components/home/WhatWeDoCardFace";
+import ConventionsSection from "@/components/home/ConventionsSection";
 
 /* ══════════════════════════════════════════════════════
    BRAND
@@ -89,6 +93,9 @@ function MagneticButton({
   );
 }
 
+/* ══════════════════════════════════════════════════════
+   2. HERO — cinematic Lagos backdrop · Ken Burns · parallax
+   ══════════════════════════════════════════════════════ */
 function CountUp({ to, suffix = "", prefix = "" }: { to: number; suffix?: string; prefix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -107,9 +114,6 @@ function CountUp({ to, suffix = "", prefix = "" }: { to: number; suffix?: string
   return <span ref={ref}>{prefix}{val}{suffix}</span>;
 }
 
-/* ══════════════════════════════════════════════════════
-   2. HERO — cinematic Lagos backdrop · Ken Burns · parallax
-   ══════════════════════════════════════════════════════ */
 function HeroSection() {
   const heroRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
@@ -524,46 +528,6 @@ function EciIntroSection() {
 /* ══════════════════════════════════════════════════════
    4. WHAT WE DO — 4 editorial tiles
    ══════════════════════════════════════════════════════ */
-/* The card these sit in is aspect-[16/11], so a portrait photograph shows
-   barely half its height and `object-cover` takes the missing 48% off the
-   top and bottom, cropping straight through people's faces. Every image
-   here is landscape (4:3 or wider), which loses only about 8%. Keep it
-   that way when swapping any of them. */
-const WHAT_WE_DO = [
-  {
-    color: "#059669",
-    title: "Programs",
-    description: "Nine recurring community programs every year: highway cleanups, scholarship nights, back to school drives, the turkey giveaway, and the biennial medical mission.",
-    href: "/programs",
-    label: "View programs",
-    image: "/gallery/projects/highway/spring-crew.jpg",
-  },
-  {
-    color: "#dc2626",
-    title: "Committees",
-    description: "Ten committees are how the work gets done, each with a chair and a month in the calendar. Joining one is how members find their place.",
-    href: "/member/committees",
-    label: "Browse committees",
-    image: "/gallery/about/right-about-hero-4.jpg",
-  },
-  {
-    color: "#2563eb",
-    title: "Events",
-    description: "The parade, service days, health talks and award nights, all on one calendar you can add straight to your own.",
-    href: "/events",
-    label: "See all events",
-    image: "/gallery/projects/parade/contingent.jpg",
-  },
-  {
-    color: "#d97706",
-    title: "Donate",
-    description: "Every dollar funds scholarships, turkeys at Thanksgiving, coats in winter and backpacks in August. Give once or set up monthly support.",
-    href: "/donate",
-    label: "Make a gift",
-    image: "/gallery/projects/thanksgiving/team-and-turkeys.jpg",
-  },
-] as const;
-
 /* Auto-advance dwell time per tab, in ms. The underline's fill animation
    duration is derived from this same constant so the two stay in sync. */
 const TAB_DURATION_MS = 5000;
@@ -573,66 +537,15 @@ const TAB_DURATION_MS = 5000;
    slowly the new card slides down over the old one. */
 const PUSH_DURATION_S = 0.85;
 
-/* One carousel card's visual content (image + legibility overlay + text).
-   Shared by both the static outgoing layer and the animated incoming layer
-   so the two stay pixel-identical. */
-function CarouselCardFace({ item }: { item: (typeof WHAT_WE_DO)[number] }) {
-  return (
-    <>
-      <Image
-        src={item.image}
-        alt={item.title}
-        fill
-        className="object-cover"
-        sizes="(max-width: 1024px) 100vw, 60vw"
-      />
-
-      {/* Overlay. It begins earlier and lands heavier than it used to: the
-          body copy sits around three quarters of the way down, where the
-          old "transparent at 50%" ramp was still too light to read white
-          text against a bright photograph. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          /* The stops are placed against where the text actually sits: the
-             heading lands around 57% down the card and the body around 72%,
-             so the ramp is already heavy by the midpoint. Measured against a
-             bright photograph this holds white text above the 4.5:1 contrast
-             needed to read it. The top half stays light so the picture still
-             carries the card. */
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.22) 38%, rgba(0,0,0,0.62) 58%, rgba(0,0,0,0.84) 68%, rgba(0,0,0,0.96) 100%)",
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Text overlay. The shadow is insurance for a bright patch of
-          photograph sitting directly behind a letter. */}
-      <div
-        className="absolute inset-x-0 bottom-0 p-6 sm:p-8"
-        style={{ textShadow: "0 1px 12px rgba(0,0,0,0.55)" }}
-      >
-        <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">
-          {item.title}
-        </h3>
-        <p className="text-sm sm:text-base text-white leading-relaxed max-w-md mb-5">
-          {item.description}
-        </p>
-        <Link
-          href={item.href}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#059669] transition-colors"
-        >
-          {item.label}
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
-    </>
-  );
-}
-
 function WhatWeDoSection() {
+  const [slides, setSlides] = useState(DEFAULT_WHAT_WE_DO);
+  useEffect(() => {
+    let mounted = true;
+    apiRequest<WhatWeDoContent>("/api/site-content/what-we-do").then(content => {
+      if (mounted && content.slides?.length === 4) setSlides(content.slides);
+    }).catch(error => console.error("[homepage] Could not refresh carousel content", error));
+    return () => { mounted = false; };
+  }, []);
   const [active, setActive] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
   const introColRef = useRef<HTMLDivElement>(null);
@@ -678,18 +591,18 @@ function WhatWeDoSection() {
   useEffect(() => {
     if (!autoPlay) return;
     const t = setTimeout(() => {
-      setActive((a) => (a + 1) % WHAT_WE_DO.length);
+      setActive((a) => (a + 1) % slides.length);
     }, TAB_DURATION_MS);
     return () => clearTimeout(t);
-  }, [active, autoPlay]);
+  }, [active, autoPlay, slides.length]);
 
   function selectTab(i: number) {
     setAutoPlay(false);
     setActive(i);
   }
 
-  const current = WHAT_WE_DO[active];
-  const previous = prevIndex !== null ? WHAT_WE_DO[prevIndex] : null;
+  const current = slides[active];
+  const previous = prevIndex !== null ? slides[prevIndex] : null;
 
   return (
     <section
@@ -722,7 +635,7 @@ function WhatWeDoSection() {
           <div ref={carouselColRef}>
             {/* Tab menu */}
             <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-8">
-              {WHAT_WE_DO.map((item, i) => {
+              {slides.map((item, i) => {
                 const isActive = i === active;
                 return (
                   <button
@@ -764,11 +677,11 @@ function WhatWeDoSection() {
                 card slides straight down and covers the old one, which sits
                 completely still underneath until fully covered. */}
             <div className="relative mt-8 rounded-[2rem] border-2 border-green-200 bg-black/40 p-2 sm:mt-10">
-              <div className="relative aspect-[4/3] sm:aspect-[16/11] overflow-hidden rounded-[1.5rem]">
+              <div className="relative grid overflow-hidden rounded-[1.5rem]">
                 {/* Static bottom layer — the outgoing card, no animation at all */}
                 {previous && (
-                  <div className="absolute inset-0 z-0">
-                    <CarouselCardFace item={previous} />
+                  <div className="col-start-1 row-start-1 z-0">
+                    <WhatWeDoCardFace item={previous} />
                   </div>
                 )}
 
@@ -779,9 +692,9 @@ function WhatWeDoSection() {
                   animate={{ y: "0%" }}
                   transition={{ duration: PUSH_DURATION_S, ease: [0.65, 0, 0.35, 1] }}
                   onAnimationComplete={() => setPrevIndex(null)}
-                  className="absolute inset-0 z-10"
+                  className="col-start-1 row-start-1 z-10"
                 >
-                  <CarouselCardFace item={current} />
+                  <WhatWeDoCardFace item={current} />
                 </motion.div>
               </div>
             </div>
@@ -1465,6 +1378,8 @@ export default function HomePageClient() {
 
       {/* Event timeline — condensed to 4 items */}
       <EventTimelineSection />
+
+      <ConventionsSection />
 
       {/* Become a member */}
       <MembershipCtaSection />

@@ -7,6 +7,8 @@ import Button from "@/components/ui/Button";
 import type { Event } from "@/lib/models";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatters";
+import Recaptcha from "@/components/membership/Recaptcha";
+import { useAuth } from "@/context/AuthContext";
 
 /* ─── Types ───────────────────────────────────────────── */
 interface FormValues {
@@ -29,7 +31,7 @@ type SubmitState = "idle" | "submitting" | "success" | "error";
 
 interface RSVPFormProps {
   event: Event;
-  confirmedCount: number;
+  onDone?: () => void;
 }
 
 /* ─── Validation ──────────────────────────────────────── */
@@ -54,13 +56,18 @@ function validate(values: FormValues): FormErrors {
 }
 
 /* ─── RSVPForm ────────────────────────────────────────── */
-export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
+export default function RSVPForm({ event, onDone }: RSVPFormProps) {
   const { add } = useRSVP();
+  const { currentUser } = useAuth();
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
+  const [submitError, setSubmitError] = useState("");
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
 
   const [values, setValues] = useState<FormValues>({
-    name: "",
-    email: "",
-    phone: "",
+    name: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "",
+    email: currentUser?.email ?? "",
+    phone: currentUser?.phone ?? "",
     guestCount: 0,
     notes: "",
   });
@@ -70,14 +77,11 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
   const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
 
   const now = new Date();
-  const eventDate = new Date(event.date);
-  const isEventPast = eventDate < now;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const isEventPast = (event.endDate || event.date).slice(0, 10) < today;
   const isDeadlinePassed = event.registrationDeadline
-    ? new Date(event.registrationDeadline) < now
+    ? event.registrationDeadline.length === 10 ? event.registrationDeadline < today : new Date(event.registrationDeadline) < now
     : false;
-  const spotsLeft =
-    event.maxAttendees != null ? event.maxAttendees - confirmedCount : null;
-  const isFull = spotsLeft != null && spotsLeft <= 0;
   function handleBlur(field: keyof FormValues) {
     setTouched((prev) => ({ ...prev, [field]: true }));
     const errs = validate(values);
@@ -105,13 +109,16 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
     const errs = validate(values);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
+    if (!captchaToken) {
+      setSubmitError("Please complete the reCAPTCHA verification.");
+      setSubmitState("error");
+      return;
+    }
 
     setSubmitState("submitting");
     try {
-      // Simulate a short async delay (localStorage is sync, but UX polish)
-      await new Promise((r) => setTimeout(r, 800));
-
       const rsvp = await add({
+        recaptchaToken: captchaToken,
         eventId: event.id,
         name: values.name.trim(),
         email: values.email.trim().toLowerCase(),
@@ -121,9 +128,14 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
       });
 
       setConfirmationId(rsvp.id);
+      setConfirmationEmailSent(rsvp.confirmationEmailSent === true);
       setSubmitState("success");
-    } catch {
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Registration could not be completed. Please try again.");
       setSubmitState("error");
+    } finally {
+      setCaptchaToken("");
+      setCaptchaAttempt(attempt => attempt + 1);
     }
   }
 
@@ -133,6 +145,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
     setTouched({});
     setSubmitState("idle");
     setConfirmationId("");
+    setSubmitError("");
   }
 
   /* ─── Blocked states ────────────────────────────────── */
@@ -151,15 +164,6 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
         <p className="text-xs text-(--color-neutral-400) mt-1">
           Closed on {formatDate(event.registrationDeadline!)}
         </p>
-      </div>
-    );
-  }
-
-  if (isFull) {
-    return (
-      <div className="rounded-xl border border-orange-200 p-5 bg-orange-50 text-center">
-        <p className="text-sm text-orange-700 font-medium">This event is fully booked.</p>
-        <p className="text-xs text-orange-500 mt-1">All {event.maxAttendees} spots have been filled.</p>
       </div>
     );
   }
@@ -199,7 +203,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
               </p>
             </div>
             <p className="text-xs text-(--color-neutral-500)">
-              A confirmation has been saved. Please check your email for further updates.
+              {confirmationEmailSent ? "A confirmation email has been sent. Please check your inbox." : "Your registration is saved, but we could not send the confirmation email. Please save your confirmation ID and contact the club if you need help."}
             </p>
             <button
               onClick={handleReset}
@@ -207,6 +211,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
             >
               Register another person
             </button>
+            {onDone && <button onClick={onDone} className="text-sm text-green-700 underline">Back to events</button>}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -216,12 +221,6 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
   /* ─── Form ───────────────────────────────────────────── */
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {spotsLeft != null && spotsLeft <= 20 && spotsLeft > 0 && (
-        <p className="text-xs font-semibold text-orange-600 bg-orange-50 rounded-lg px-3 py-2">
-          ⚡ Only {spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} remaining!
-        </p>
-      )}
-
       {/* Name */}
       <div className="space-y-1">
         <label htmlFor="rsvp-name" className="block text-sm font-semibold text-(--color-neutral-700)">
@@ -345,10 +344,12 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
 
       {/* Error banner */}
       {submitState === "error" && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          Something went wrong. Please try again.
+        <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          {submitError}
         </div>
       )}
+
+      <Recaptcha key={captchaAttempt} onChange={setCaptchaToken} />
 
       <Button
         type="submit"
@@ -361,7 +362,7 @@ export default function RSVPForm({ event, confirmedCount }: RSVPFormProps) {
       </Button>
 
       <p className="text-xs text-(--color-neutral-400) text-center">
-        Your data is stored locally and used only for this event.
+        Your details are used to manage your registration and send event updates.
       </p>
     </form>
   );

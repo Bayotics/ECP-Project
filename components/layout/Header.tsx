@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cn";
+import MembershipActions from "@/components/layout/MembershipActions";
 
 /* ─── Navigation definition ────────────────────────── */
 const PRIMARY_LINKS = [
@@ -17,6 +18,7 @@ const GET_INVOLVED_LINKS = [
   { href: "/programs", label: "Programs", desc: "Recurring initiatives that serve Philadelphia year-round" },
   { href: "/projects", label: "Projects", desc: "Completed and ongoing community projects" },
   { href: "/events", label: "Events", desc: "Galas, meetups, and volunteer days on the calendar" },
+  { href: "/volunteer", label: "Volunteer", desc: "Offer your time and skills, or help at a specific event" },
 ] as const;
 
 const TRAILING_LINKS = [
@@ -25,7 +27,7 @@ const TRAILING_LINKS = [
   { href: "/store", label: "Store" },
 ] as const;
 
-/* Scroll distance past which the header compacts and the logo/login/donate
+/* Scroll distance past which the header compacts and the logo
    fade out — restored once the user scrolls back above this point. */
 const SCROLL_THRESHOLD = 60;
 
@@ -76,7 +78,7 @@ function Logo({ dark, onClick }: { dark: boolean; onClick?: () => void }) {
         quality={100}
         priority
         className={cn(
-          "h-16 w-16 shrink-0 transition-transform duration-300 group-hover:scale-105 sm:h-20 sm:w-20 lg:h-[150px] lg:w-[150px]",
+          "h-10 w-10 shrink-0 transition-transform duration-300 group-hover:scale-105 sm:h-20 sm:w-20 lg:h-[150px] lg:w-[150px]",
           dark && "drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]"
         )}
       />
@@ -216,6 +218,10 @@ function DonatePill({
 /* ─── Header ────────────────────────────────────────── */
 export default function Header() {
   const pathname = usePathname();
+  return <HeaderContent key={pathname} pathname={pathname} />;
+}
+
+function HeaderContent({ pathname }: { pathname: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileInvolvedOpen, setMobileInvolvedOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -228,7 +234,7 @@ export default function Header() {
      (never plain transparent once scrolled, and always glass on pages
      whose first section is ordinary light content). */
   const showGlass = !hasFullBleedHero || scrolled;
-  /* Logo + Login + Donate declutter while scrolled, and return once the
+  /* The logo declutters while scrolled, and returns once the
      user is back at the top of the page. */
   const showExtras = !scrolled;
 
@@ -248,9 +254,6 @@ export default function Header() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
-
-  /* Close menu on route change */
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   /* Close drawer on outside click */
   useEffect(() => {
@@ -307,7 +310,7 @@ export default function Header() {
           showExtras ? "h-24 sm:h-28 lg:h-[168px]" : "h-16 sm:h-[68px] lg:h-[76px]"
         )}
       >
-        <div className="container-app relative flex h-full items-center justify-between gap-4">
+        <div className="container-app relative flex h-full items-center justify-between gap-2 max-sm:[--spacing-gutter:0.75rem] xl:gap-3">
           {/* Logo — hides while scrolled */}
           <div
             className={cn(
@@ -323,7 +326,7 @@ export default function Header() {
           <nav
             aria-label="Primary navigation"
             className={cn(
-              "hidden items-center gap-1 rounded-full px-2 py-1.5 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
+              "hidden shrink-0 items-center gap-1 rounded-full px-2 py-1.5 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] xl:flex",
               showGlass
                 ? "border border-black/5 bg-white/75 shadow-sm backdrop-blur-xl"
                 : "border border-transparent bg-transparent"
@@ -338,28 +341,10 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Desktop actions — hide while scrolled */}
-          <div
-            className={cn(
-              "hidden items-center gap-3 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
-              showExtras ? "opacity-100 translate-x-0" : "pointer-events-none translate-x-3 opacity-0"
-            )}
-          >
-            <Link
-              href="/auth/login"
-              className={cn(
-                "text-sm font-medium transition-colors duration-300",
-                showGlass ? "text-neutral-700 hover:text-[#059669]" : "text-white/85 hover:text-white"
-              )}
-            >
-              Login
-            </Link>
-            <DonatePill />
-          </div>
-
-          {/* Mobile actions — always reachable (hamburger must never hide) */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <DonatePill />
+          {/* Membership actions stay visible at every size and while scrolling. */}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <div className="hidden sm:block"><DonatePill /></div>
+            <MembershipActions />
             <button
               ref={hamburgerRef}
               onClick={() => setMenuOpen((o) => !o)}
@@ -367,7 +352,7 @@ export default function Header() {
               aria-controls="mobile-drawer"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+                "flex h-11 w-9 shrink-0 items-center justify-center rounded-lg transition-colors xl:hidden",
                 showGlass ? "text-neutral-800 hover:bg-black/5" : "text-white hover:bg-white/10",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]"
               )}
@@ -415,7 +400,7 @@ export default function Header() {
               transition={{ duration: 0.3 }}
               onClick={() => setMenuOpen(false)}
               aria-hidden="true"
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm xl:hidden"
             />
 
             {/* Drawer */}
@@ -431,7 +416,7 @@ export default function Header() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 288, opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-white p-6 lg:hidden"
+              className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-white p-6 xl:hidden"
             >
               {/* Drawer header */}
               <div className="mb-4 flex items-center justify-between">
@@ -535,7 +520,7 @@ export default function Header() {
                   onClick={() => setMenuOpen(false)}
                   className="block border-b border-neutral-100 py-5 text-lg font-medium text-neutral-800 transition-colors hover:text-[#059669] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669] focus-visible:ring-inset"
                 >
-                  Login
+                  Members Login
                 </Link>
               </nav>
 

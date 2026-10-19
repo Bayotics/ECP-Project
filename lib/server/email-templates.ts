@@ -9,6 +9,10 @@
  * body is HTML and a display name is not to be trusted.
  */
 
+import type { Event, RSVP } from "@/lib/models";
+import type { Volunteer } from "@/lib/models/volunteer";
+import { formatSummaryEventDate } from "@/lib/event-summary";
+
 const EKO = {
   green: "#059669",
   red: "#dc2626",
@@ -83,6 +87,55 @@ function button(href: string, label: string): string {
 
 function heading(text: string): string {
   return `<h1 style="margin:0 0 16px;font:500 26px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-0.02em;color:${INK};">${escapeHtml(text)}</h1>`;
+}
+
+export function volunteerEmail(options: {
+  volunteer: Pick<Volunteer, "name" | "email" | "phone" | "interests" | "notes">;
+  status: "general" | "confirmed" | "waitlisted" | "cancelled";
+  reference: string;
+  event?: Event;
+  audience: "volunteer" | "staff";
+  url: string;
+}): { subject: string; html: string } {
+  const { volunteer, event, status, audience, reference, url } = options;
+  const subject = audience === "staff"
+    ? `Volunteer ${status === "waitlisted" ? "waitlist sign-up" : status === "cancelled" ? "sign-up cancelled" : "sign-up"}${event ? `: ${event.title}` : ": general interest"}`
+    : status === "waitlisted" ? `You’re on the volunteer waitlist${event ? `: ${event.title}` : ""}`
+    : status === "cancelled" ? `Volunteer sign-up cancelled${event ? `: ${event.title}` : ""}`
+    : event ? `Volunteer place confirmed: ${event.title}` : "Thank you for volunteering with Eko Club Philadelphia";
+  const explanation = audience === "staff" ? "The volunteer record below has been saved. Open the admin portal to manage the sign-up."
+    : status === "waitlisted" ? "Your volunteer waitlist sign-up is saved. You do not have a confirmed place yet. We will email you if a place is confirmed."
+    : status === "cancelled" ? "Your volunteer sign-up has been cancelled. Contact the club if you need help with this change."
+    : event ? "Your volunteer place is confirmed. Thank you for helping us serve the community."
+    : "Your interest in volunteering with the club has been recorded. Thank you for offering your time and skills.";
+  const details = event ? `<p><strong>Event:</strong> ${escapeHtml(event.title)}<br><strong>Date:</strong> ${escapeHtml(formatSummaryEventDate(event))}${event.time ? `<br><strong>Time:</strong> ${escapeHtml(event.time)} (Philadelphia time)` : ""}<br><strong>Location:</strong> ${escapeHtml(event.location)}${event.venue ? ` — ${escapeHtml(event.venue)}` : ""}</p>` : "";
+  const staffDetails = audience === "staff" ? `<p><strong>Name:</strong> ${escapeHtml(volunteer.name)}<br><strong>Email:</strong> ${escapeHtml(volunteer.email)}${volunteer.phone ? `<br><strong>Phone:</strong> ${escapeHtml(volunteer.phone)}` : ""}</p>${volunteer.interests ? `<p><strong>Interests:</strong> ${escapeHtml(volunteer.interests)}</p>` : ""}${volunteer.notes ? `<p><strong>Notes:</strong> ${escapeHtml(volunteer.notes)}</p>` : ""}` : `<p>Hello ${escapeHtml(volunteer.name)},</p>`;
+  return { subject, html: layout({ title: subject, preheader: explanation, body: `${heading(subject)}${staffDetails}<p>${explanation}</p>${details}<p><strong>Reference:</strong> ${escapeHtml(reference)}</p>${button(url, audience === "staff" ? "Manage volunteers" : event ? "View event details" : "Visit the volunteer page")}` }) };
+}
+
+export function eventEmail(event: Event, kind: "confirmation" | "admin" | "announcement" | "reminder" | "cancellation", eventUrl: string, rsvp?: RSVP): { subject: string; html: string } {
+  const titles = {
+    confirmation: `Registration confirmed: ${event.title}`,
+    admin: `New event registration: ${event.title}`,
+    announcement: `New event: ${event.title}`,
+    reminder: `Reminder: ${event.title} is coming up`,
+    cancellation: `Event cancelled: ${event.title}`,
+  };
+  const subject = titles[kind];
+  const date = new Date(event.date.length === 10 ? `${event.date}T12:00:00Z` : event.date).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const introduction = kind === "confirmation" ? "Your registration is confirmed. Please save your confirmation ID. We look forward to seeing you."
+    : kind === "admin" ? "A new registration has been received. View the event in the admin portal to manage registrations."
+    : kind === "reminder" ? "This is a reminder about the following upcoming club event."
+    : kind === "cancellation" ? "This event has been cancelled. We apologise for any inconvenience."
+    : "Join us at this upcoming club event.";
+  const body = `${heading(subject)}<p>${introduction}</p>
+    <p><strong>Event:</strong> ${escapeHtml(event.title)}<br>
+    <strong>Date:</strong> ${escapeHtml(date)}${event.time ? ` at ${escapeHtml(event.time)}` : ""}<br>
+    <strong>Location:</strong> ${escapeHtml(event.location)}${event.venue ? ` — ${escapeHtml(event.venue)}` : ""}</p>
+    ${rsvp ? `<p><strong>Name:</strong> ${escapeHtml(rsvp.name)}<br><strong>Email:</strong> ${escapeHtml(rsvp.email)}<br><strong>Confirmation ID:</strong> ${escapeHtml(rsvp.id)}<br><strong>Additional guests:</strong> ${rsvp.guestCount ?? 0}</p>` : ""}
+    ${rsvp && kind === "admin" && rsvp.notes ? `<p><strong>Notes:</strong> ${escapeHtml(rsvp.notes)}</p>` : ""}
+    ${button(eventUrl, kind === "admin" ? "Manage event registrations" : "View event details")}`;
+  return { subject, html: layout({ title: subject, preheader: introduction, body }) };
 }
 
 export function accountStatusEmail(options: {

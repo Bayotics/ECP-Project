@@ -5,17 +5,18 @@ import type { Recipient } from "@/lib/server/notifications";
 import { sendEventNotifications } from "@/lib/server/notifications";
 import { ensureCoreIndexes, getCollection, serializeDocument, serializeDocuments } from "@/lib/server/collections";
 import { getSessionUser } from "@/lib/server/session";
+import { emailConfigured } from "@/lib/server/email";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await ensureCoreIndexes();
     const sessionUser = await getSessionUser(request);
     if (!sessionUser || (sessionUser.role !== "admin" && sessionUser.role !== "super-admin")) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
+    await ensureCoreIndexes();
 
     const { id } = await context.params;
     const body = (await request.json()) as {
@@ -25,9 +26,10 @@ export async function POST(
     };
 
     const { type, channel, targetAudience } = body;
-    if (!type || !channel || !targetAudience) {
-      return NextResponse.json({ ok: false, error: "type, channel, and targetAudience are required" }, { status: 400 });
+    if (!["announcement", "reminder", "cancellation"].includes(type) || !["email", "sms", "both"].includes(channel) || !["all", "members", "newsletter", "rsvps"].includes(targetAudience)) {
+      return NextResponse.json({ ok: false, error: "Select a valid notification type, delivery channel and audience." }, { status: 400 });
     }
+    if ((channel === "email" || channel === "both") && !emailConfigured) return NextResponse.json({ ok: false, error: "Email delivery is not configured. Set SENDRIDGE_API_KEY and EMAIL_FROM on the server before sending event notifications." }, { status: 503 });
 
     const eventsCollection = await getCollection("events");
     const event = serializeDocument(await eventsCollection.findOne({ $or: [{ id }, { slug: id }] }));
@@ -37,6 +39,10 @@ export async function POST(
 
     // Build recipients list based on audience
     const recipientsMap = new Map<string, Recipient>();
+    function addRecipient(recipient: Recipient) {
+      const email = recipient.email?.trim().toLowerCase();
+      if (email) recipientsMap.set(email, { ...recipientsMap.get(email), ...recipient, email });
+    }
 
     if (targetAudience === "members" || targetAudience === "all") {
       const usersCollection = await getCollection("users");
@@ -44,7 +50,7 @@ export async function POST(
         .find({ role: { $in: ["member", "admin", "super-admin"] }, status: "active" })
         .toArray();
       for (const u of members) {
-        recipientsMap.set(u.email, { email: u.email, name: u.displayName, phone: u.phone });
+        addRecipient({ email: u.email, name: u.displayName, phone: u.phone });
       }
     }
 
@@ -52,7 +58,7 @@ export async function POST(
       const nlCollection = await getCollection("newsletterSubscribers");
       const subscribers = await nlCollection.find({ status: "active" }).toArray();
       for (const s of subscribers) {
-        recipientsMap.set(s.email, { email: s.email, name: s.name, phone: s.phone });
+        addRecipient({ email: s.email, name: s.name, phone: s.phone });
       }
     }
 
@@ -62,7 +68,7 @@ export async function POST(
         await rsvpsCollection.find({ eventId: event.id, status: "confirmed" }).toArray()
       );
       for (const r of rsvps) {
-        recipientsMap.set(r.email, { email: r.email, name: r.name, phone: r.phone });
+        addRecipient({ email: r.email, name: r.name, phone: r.phone });
       }
     }
 
@@ -83,7 +89,7 @@ export async function POST(
       sentAt: new Date().toISOString(),
       sentBy: sessionUser.id,
       subject: event.title,
-      summary: `${type} sent to ${recipients.length} recipients`,
+      summary: `${type}: ${batchResult.emailSent} emails sent, ${batchResult.emailFailed} emails failed; ${batchResult.smsSent} SMS sent, ${batchResult.smsFailed} SMS failed`,
     };
     await logsCollection.insertOne(log);
 

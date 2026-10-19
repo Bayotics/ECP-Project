@@ -10,7 +10,13 @@
     "test:membership": "node --test scripts/test-membership.mjs",
     "test:social-profiles": "node --test scripts/test-social-profiles.mjs",
     "test:dues": "node --test scripts/test-dues.mjs",
-    "test:account-access": "node --test scripts/test-account-access.mjs"
+    "test:account-access": "node --test scripts/test-account-access.mjs",
+    "test:events": "node --test scripts/test-events.mjs",
+    "test:homepage": "node --test scripts/test-homepage.mjs",
+    "test:event-summary": "node --test scripts/test-event-summary.mjs",
+    "test:conventions": "node --test scripts/test-conventions.mjs",
+    "test:volunteers": "node --test scripts/test-volunteers.mjs",
+    "test:volunteers:integration": "node scripts/test-volunteers-integration.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",

@@ -18,10 +18,19 @@ import type {
   Product,
   RSVP,
   User,
+  Volunteer,
+  VolunteerSignup,
+  VolunteerMessage,
 } from "@/lib/models";
 import { getDb } from "@/lib/server/mongodb";
+import type { WhatWeDoDocument } from "@/lib/content/what-we-do";
+import type { ConventionsDocument } from "@/lib/content/conventions";
 
 export const COLLECTIONS = {
+  siteContent: "siteContent",
+  volunteers: "volunteers",
+  volunteerSignups: "volunteerSignups",
+  volunteerMessages: "volunteerMessages",
   users: "users",
   membershipApplications: "membershipApplications",
   events: "events",
@@ -43,6 +52,10 @@ export const COLLECTIONS = {
 } as const;
 
 export interface AppCollections {
+  siteContent: WhatWeDoDocument | ConventionsDocument;
+  volunteers: Volunteer;
+  volunteerSignups: VolunteerSignup;
+  volunteerMessages: VolunteerMessage;
   users: User;
   membershipApplications: MembershipApplication;
   events: Event;
@@ -71,6 +84,19 @@ type CollectionIndexMap = {
 };
 
 const COLLECTION_INDEXES: CollectionIndexMap = {
+  siteContent: [{ key: { id: 1 }, unique: true }],
+  volunteers: [{ key: { id: 1 }, unique: true }, { key: { email: 1 }, unique: true }],
+  volunteerSignups: [
+    { key: { id: 1 }, unique: true },
+    { key: { eventId: 1, volunteerId: 1 }, unique: true },
+    { key: { eventId: 1, status: 1, registeredAt: 1 } },
+    { key: { volunteerId: 1, registeredAt: -1 } },
+  ],
+  volunteerMessages: [
+    { key: { id: 1 }, unique: true },
+    { key: { status: 1, createdAt: 1 } },
+    { key: { volunteerId: 1, status: 1 } },
+  ],
   users: [
     { key: { id: 1 }, unique: true },
     { key: { email: 1 }, unique: true },
@@ -102,6 +128,7 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { id: 1 }, unique: true },
     { key: { eventId: 1 } },
     { key: { userId: 1 } },
+    { key: { registrationKey: 1 }, unique: true, partialFilterExpression: { registrationKey: { $type: "string" }, status: { $in: ["confirmed", "waitlisted"] } } },
   ],
   news: [
     { key: { id: 1 }, unique: true },

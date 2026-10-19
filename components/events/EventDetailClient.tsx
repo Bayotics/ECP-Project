@@ -4,7 +4,10 @@ import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useEvents, useRSVP } from "@/context";
+import { useEvents } from "@/context";
+import { registrationMode } from "@/lib/event-registration";
+import { getEventPlatformLinks } from "@/lib/event-platform-links";
+import VolunteerEventButton from "@/components/volunteers/VolunteerEventButton";
 import { useAuth } from "@/context/AuthContext";
 import EventCard from "@/components/cards/EventCard";
 import ShareButtons from "@/components/ui/ShareButtons";
@@ -14,7 +17,7 @@ import RSVPForm from "@/components/events/RSVPForm";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { formatDate } from "@/utils/formatters";
 import type { BadgeColor } from "@/components/ui/Badge";
-import type { Event, EventType as ModelEventType } from "@/lib/models";
+import type { EventType as ModelEventType } from "@/lib/models";
 
 type CardEventType = "town-hall" | "workshop" | "volunteer" | "meetup" | "seminar" | "other";
 
@@ -188,7 +191,7 @@ function TagIcon() {
 
 export default function EventDetailClient({ slug }: { slug: string }) {
   const { events, isLoading, getBySlug } = useEvents();
-  const { countConfirmed } = useRSVP();
+  const { currentUser } = useAuth();
 
   const event = getBySlug(slug);
   const now = new Date();
@@ -222,34 +225,20 @@ export default function EventDetailClient({ slug }: { slug: string }) {
     );
   }
 
-  const { currentUser } = useAuth();
-  const confirmedCount = countConfirmed(event.id);
-  const spotsLeft = event.maxAttendees != null ? event.maxAttendees - confirmedCount : null;
-  const isFull = spotsLeft != null && spotsLeft <= 0;
   const isUpcoming = new Date(event.date) >= now;
   const isMember = currentUser && (currentUser.role === "member" || currentUser.role === "admin" || currentUser.role === "super-admin");
   const membersOnlyBlocked = event.membersOnly && !isMember;
-  const showRSVP = event.registrationRequired && event.status === "published";
-  /* When the club runs sign-ups somewhere else, that link is the real
-     registration and the on-site RSVP form would compete with it. */
-  const externalRegistration = showRSVP ? event.registrationUrl?.trim() : undefined;
+  const mode = registrationMode(event);
+  const showRSVP = mode !== null && event.status === "published";
+  const externalRegistration = mode === "link" ? event.registrationUrl?.trim() : undefined;
+  const platformLinks = getEventPlatformLinks(event);
   const pageUrl = typeof window !== "undefined" ? window.location.href : `https://ekoclubphiladelphia.org/events/${event.slug}`;
 
   const statCards = [
     {
-      label: "Confirmed RSVPs",
-      value: confirmedCount.toLocaleString(),
-      color: EKO_GREEN,
-    },
-    {
       label: "Capacity",
       value: event.maxAttendees != null ? event.maxAttendees.toLocaleString() : "Open",
       color: EKO_RED,
-    },
-    {
-      label: "Spots left",
-      value: spotsLeft == null ? "Open" : Math.max(spotsLeft, 0).toLocaleString(),
-      color: EKO_BLUE,
     },
     {
       label: "Access",
@@ -332,7 +321,6 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                 )}
                 {event.isFeatured && <Badge color="gold">Featured</Badge>}
                 {event.isOnline && <Badge color="info">Online</Badge>}
-                {isFull && <Badge color="danger">Fully Booked</Badge>}
               </motion.div>
 
               <motion.div variants={riseIn} custom={0.32} className="mt-8 flex flex-wrap gap-3">
@@ -367,8 +355,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                   Everything a visitor needs before showing up.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/65">
-                  Date, access, capacity, RSVP, location, and related events are now presented in the
-                  same polished system as the rest of the site.
+                  Find the date, location, access details and registration information for this event.
                 </p>
               </div>
 
@@ -432,20 +419,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
 
                 {event.maxAttendees != null && (
                   <MetaItem icon={<UsersIcon />} label="Capacity">
-                    <span className="font-semibold text-neutral-950">{confirmedCount}</span>
-                    <span className="text-neutral-500"> / {event.maxAttendees} registered</span>
-                    {spotsLeft != null && spotsLeft > 0 && (
-                      <span className="ml-2 text-xs font-bold text-green-700">{spotsLeft} spots left</span>
-                    )}
-                    <div className="mt-3 h-2 w-full rounded-full bg-neutral-100">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Math.min((confirmedCount / event.maxAttendees) * 100, 100)}%`,
-                          background: EKO_GREEN,
-                        }}
-                      />
-                    </div>
+                    <span className="font-semibold text-neutral-950">{event.maxAttendees} attendees maximum</span>
                   </MetaItem>
                 )}
 
@@ -500,11 +474,9 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                       description={item.shortDescription ?? item.description.slice(0, 120)}
                       imageUrl={item.imageUrl}
                       organizer={item.organizerName}
-                      attendees={countConfirmed(item.id)}
                       maxAttendees={item.maxAttendees}
                       registrationUrl={`/events/${item.slug}`}
                       isFeatured={item.isFeatured}
-                      isFull={!!(item.maxAttendees && countConfirmed(item.id) >= item.maxAttendees)}
                       tags={item.tags}
                       layout="card"
                     />
@@ -520,10 +492,11 @@ export default function EventDetailClient({ slug }: { slug: string }) {
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-24">
+            <VolunteerEventButton eventId={event.id} />
             {showRSVP && (
               <div id="rsvp-panel" className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Reserve your spot</p>
-                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-neutral-950">RSVP for this event</h2>
+                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-neutral-950">Register for this event</h2>
                 {membersOnlyBlocked ? (
                   <div className="mt-5 rounded-xl bg-purple-50 border border-purple-200 p-5 text-center space-y-3">
                     <p className="text-2xl">🔒</p>
@@ -554,7 +527,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                       Complete your reservation to stay connected to this gathering and help us plan attendance well.
                     </p>
                     <div className="mt-5">
-                      <RSVPForm event={event} confirmedCount={confirmedCount} />
+                      <RSVPForm event={event} />
                     </div>
                   </>
                 )}
@@ -577,6 +550,17 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                 </div>
               </div>
             )}
+
+            {platformLinks.length > 0 && <section aria-labelledby="event-platform-links-heading" className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
+              <h2 id="event-platform-links-heading" className="text-lg font-semibold text-neutral-950">Also listed on</h2>
+              <ul className="mt-4 flex flex-wrap gap-3">
+                {platformLinks.map((link, index) => <li key={`${link.name}-${index}`} className="min-w-0 max-w-full">
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
+                    <span className="break-words">{link.name}</span><span aria-hidden="true">↗</span><span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>)}
+              </ul>
+            </section>}
 
             <div className="rounded-4xl border border-neutral-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.07)]">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Share this event</p>

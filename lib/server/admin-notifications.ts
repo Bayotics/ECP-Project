@@ -2,6 +2,7 @@ import { getCollection } from "@/lib/server/collections";
 import { sendEmail, siteUrl } from "@/lib/server/email";
 import { applicationFeeAdminEmail } from "@/lib/server/email-templates";
 import { APPLICATION_FEE_USD, type MembershipApplication } from "@/lib/models/membership";
+import type { ClientSession } from "mongodb";
 
 /* Telling the club's administrators that something needs their attention. */
 
@@ -13,10 +14,10 @@ export interface AdminRecipient {
 }
 
 /** Every active administrator with an email address. */
-export async function adminRecipients(): Promise<AdminRecipient[]> {
+export async function adminRecipients(session?: ClientSession): Promise<AdminRecipient[]> {
   const users = await getCollection("users");
   const rows = await users
-    .find({ role: { $in: ADMIN_ROLES }, status: { $ne: "suspended" } })
+    .find({ role: { $in: ADMIN_ROLES }, status: "active" }, session ? { session } : {})
     .toArray();
 
   /* De-duplicated on the address, in case two accounts share one inbox. */

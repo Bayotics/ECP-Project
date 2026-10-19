@@ -16,7 +16,10 @@ export interface RSVP {
   registeredAt: string;
   cancelledAt?: string;
   checkedInAt?: string;
+  /** Internal key for atomic duplicate protection on newly created registrations. */
+  registrationKey?: string;
+  confirmationEmailSent?: boolean;
 }
 
-export type CreateRSVPInput = Omit<RSVP, "id" | "registeredAt" | "status">;
+export type CreateRSVPInput = Omit<RSVP, "id" | "registeredAt" | "status" | "registrationKey" | "confirmationEmailSent"> & { recaptchaToken?: string };
 export type UpdateRSVPInput = Partial<Omit<RSVP, "id" | "registeredAt">>;
