@@ -11,7 +11,7 @@ export default function WhatWeDoCardFace({ item, preview = false }: { item: What
       <div className="flex-1 bg-neutral-950 px-5 py-5 sm:px-7 sm:py-6">
         <h3 className="mb-2 text-xl font-semibold text-white sm:text-2xl">{item.title}</h3>
         <p className="mb-4 max-w-md whitespace-pre-line text-sm leading-relaxed text-white sm:text-base">{item.description}</p>
-        {preview ? <span className="text-sm font-semibold text-white">{item.label} →</span> : <Link href={item.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white transition-colors hover:text-green-300">{item.label} →</Link>}
+        <div className="flex flex-wrap items-center gap-4">{preview ? <span className="text-sm font-semibold text-white">{item.label} →</span> : <Link href={item.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white transition-colors hover:text-green-300">{item.label} →</Link>}{item.id === "committees" && (preview ? <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-green-950">Volunteer with us</span> : <Link href="/volunteer" className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-green-950 hover:bg-green-100">Volunteer with us</Link>)}</div>
       </div>
     </div>
   );

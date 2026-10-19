@@ -16,6 +16,7 @@ const PRIMARY_LINKS = [
 
 const GET_INVOLVED_LINKS = [
   { href: "/programs", label: "Programs", desc: "Recurring initiatives that serve Philadelphia year-round" },
+  { href: "/committees", label: "Committees", desc: "Find a committee and volunteer to help its work" },
   { href: "/projects", label: "Projects", desc: "Completed and ongoing community projects" },
   { href: "/events", label: "Events", desc: "Galas, meetups, and volunteer days on the calendar" },
   { href: "/events/propose", label: "Propose an event", desc: "Share an idea for the club to review" },

@@ -1,3 +1,4 @@
+import { validateVolunteerCommittees } from "@/lib/server/volunteer-profile";
 import { nanoid } from "nanoid";
 import type { ClientSession } from "mongodb";
 import { createHash } from "crypto";
@@ -10,9 +11,8 @@ import { volunteerTransaction } from "@/lib/server/volunteer-transaction";
 import { queueVolunteerWelcome } from "@/lib/server/volunteer-notifications";
 import { queueVolunteerMessages } from "@/lib/server/volunteer-notifications";
 
-export class VolunteerError extends Error {
-  constructor(message: string, public status: number) { super(message); }
-}
+import { VolunteerError } from "@/lib/server/volunteer-error";
+export { VolunteerError } from "@/lib/server/volunteer-error";
 
 async function lockEvent(id: string, session: ClientSession) {
   const event = await (await getCollection("events")).findOneAndUpdate({ id }, { $inc: { volunteerRevision: 1 } }, { session, returnDocument: "after" });
@@ -32,7 +32,7 @@ async function promoteWaiting(event: Event, session: ClientSession) {
   const messages: string[] = [];
   for (const record of waiting) {
     const person = await people.findOne({ id: record.volunteerId }, { session });
-    if (!person) continue;
+    if (!person || person.status === "inactive") continue;
     const updated: VolunteerSignup = { ...record, status: "confirmed", updatedAt: new Date().toISOString() };
     await signups.updateOne({ id: record.id, status: "waitlisted" }, { $set: { status: "confirmed", updatedAt: updated.updatedAt } }, { session });
     messages.push(...await queueVolunteerMessages(person, updated, event, session));
@@ -57,26 +57,44 @@ export async function registerVolunteer(input: VolunteerInput, memberAccess: boo
       const previous = await references.findOne({ id: externalKey }, { session });
       if (previous && previous.email !== input.email) throw new VolunteerError("This external registration belongs to a different email. Review it before importing.", 409);
     }
-    const old = await people.findOne({ email: input.email }, { session });
-    // Unauthenticated sign-ups/imports never overwrite an existing person's contact
-    // details or consent. They can change those through their private email link.
-    const person = await people.findOneAndUpdate({ email: input.email }, {
-      $set: { updatedAt: now, source: old?.source ?? (old ? "website" : source) },
-      $addToSet: { sources: { $each: [...new Set([...(old?.sources ?? (old ? [old.source ?? "website"] : [])), source])] } },
-      $setOnInsert: { id: nanoid(), createdAt: now, name: input.name, phone: input.phone, interests: input.interests, notes: input.notes, opportunityEmails: false },
-    }, { upsert: true, returnDocument: "after", session });
+    const member = await (await getCollection("users")).findOne({email:input.email,role:{$in:["member","admin","super-admin"]}}, {session,collation:{locale:"en",strength:2}});
+    const byEmail=await people.findOne({email:input.email},{session});
+    const byMember=member?await people.findOne({userId:member.id},{session}):null;
+    if(byEmail&&byMember&&byEmail.id!==byMember.id)throw new VolunteerError("This member has two existing volunteer identities. Contact the club to combine the records.",409);
+    const old=byMember??byEmail;
+    if (old?.userId && member && old.userId !== member.id) throw new VolunteerError("This email is linked to another volunteer identity. Contact the club to review the records.",409);
+    await validateVolunteerCommittees(input.committeeIds,session,old?.committeeIds);
+    const addedCommittees = (input.committeeIds ?? []).filter(id => !old?.committeeIds?.includes(id));
+    const profile = {
+      ...(input.firstName ? {firstName:input.firstName,lastName:input.lastName} : {}),
+      city:input.city ?? "",zip:input.zip ?? "",availability:input.availability ?? "",heardAbout:input.heardAbout ?? "",
+      committeeIds:input.committeeIds ?? [],interestAreas:input.interestAreas ?? [],
+    };
+    // Contact details and consent on an existing profile can only be changed
+    // through its private link. A new committee selection records interest.
+    if (old && addedCommittees.length) delete (profile as Partial<typeof profile>).committeeIds;
+    const person = await people.findOneAndUpdate(old ? {id:old.id} : {email:input.email}, {
+      $set: {updatedAt:now,source:old?.source ?? (old?"website":source),...(member?{userId:member.id}:{})},
+      $addToSet: {sources:{$each:[...new Set([...(old?.sources ?? (old?[old.source??"website"]:[])),source])]},...(old&&addedCommittees.length?{committeeIds:{$each:addedCommittees}}:{})},
+      $setOnInsert: {id:nanoid(),email:input.email,createdAt:now,name:input.name,phone:input.phone,interests:input.interests,notes:input.notes,opportunityEmails:context.imported?false:input.opportunityEmails===true,consentUpdatedAt:now,status:"active",...profile},
+    }, {upsert:true,returnDocument:"after",session});
     if (!person) throw new Error("Volunteer upsert failed");
-    if (externalKey) await references.updateOne({ id: externalKey }, { $setOnInsert: { id: externalKey, volunteerId: person.id, email: person.email, source, externalId: context.externalId!, ...(event ? { eventId: event.id } : {}), createdAt: now } }, { upsert: true, session });
+    if (externalKey) await references.updateOne({ id: externalKey }, { $setOnInsert: { id: externalKey, volunteerId: person.id, email: input.email, source, externalId: context.externalId!, ...(event ? { eventId: event.id } : {}), createdAt: now } }, { upsert: true, session });
+    if (!old) await (await getCollection("volunteerChanges")).insertOne({id:nanoid(),volunteerId:person.id,action:"registered",at:now,emailConsent:person.opportunityEmails===true,changedFields:["profile","opportunityEmails"],toStatus:"active"},{session});
     const welcome: string[] = [];
+    if(old&&addedCommittees.length) {
+      await (await getCollection("volunteerChanges")).insertOne({id:nanoid(),volunteerId:person.id,action:"profile-updated",at:now,changedFields:["committeeIds"]},{session});
+      if(event)welcome.push(...await queueVolunteerMessages(person,undefined,undefined,session));
+    }
     if (context.imported && !person.importWelcomeQueuedAt) {
       welcome.push(...await queueVolunteerWelcome(person, session));
       await people.updateOne({ id: person.id }, { $set: { importWelcomeQueuedAt: now } }, { session });
     }
     if (!event) {
-      if (person.generalRegisteredAt) return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: true, messageIds: welcome };
-      await people.updateOne({ id: person.id }, { $set: { generalRegisteredAt: now } }, { session });
+      if (person.generalRegisteredAt && !addedCommittees.length) return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: true, messageIds: welcome };
+      await people.updateOne({ id: person.id }, { $set: { generalRegisteredAt: person.generalRegisteredAt ?? now } }, { session });
       const messageIds = [...welcome, ...await queueVolunteerMessages(person, undefined, undefined, session)];
-      return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: false, messageIds };
+      return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: Boolean(person.generalRegisteredAt), messageIds };
     }
     const signups = await getCollection("volunteerSignups");
     const existing = await signups.findOne({ eventId: event.id, volunteerId: person.id }, { session });

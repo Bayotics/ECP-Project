@@ -4,6 +4,9 @@ import type { Collection, IndexDescription } from "mongodb";
 import type {
   Cart,
   Committee,
+  CommitteeMembership,
+  CommitteeMembershipChange,
+  CommitteeMessage,
   CommitteeJoinRequest,
   Donation,
   DuesPayment,
@@ -12,6 +15,9 @@ import type {
   MembershipApplication,
   NewsPost,
   NewsletterSubscriber,
+  NewsletterMessage,
+  GalleryAlbum,
+  GalleryMedia,
   NotificationLog,
   Order,
   OrgDocument,
@@ -19,6 +25,7 @@ import type {
   RSVP,
   User,
   Volunteer,
+  VolunteerChange,
   VolunteerSignup,
   VolunteerMessage,
   VolunteerAccessToken,
@@ -36,6 +43,7 @@ import type { ConventionsDocument } from "@/lib/content/conventions";
 export const COLLECTIONS = {
   siteContent: "siteContent",
   volunteers: "volunteers",
+  volunteerChanges: "volunteerChanges",
   volunteerSignups: "volunteerSignups",
   volunteerMessages: "volunteerMessages",
   volunteerAccessTokens: "volunteerAccessTokens",
@@ -50,12 +58,18 @@ export const COLLECTIONS = {
   rsvps: "rsvps",
   news: "news",
   committees: "committees",
+  committeeMemberships: "committeeMemberships",
+  committeeMembershipChanges: "committeeMembershipChanges",
+  committeeMessages: "committeeMessages",
   products: "products",
   orders: "orders",
   donations: "donations",
   documents: "documents",
   carts: "carts",
   newsletterSubscribers: "newsletterSubscribers",
+  newsletterMessages: "newsletterMessages",
+  galleryAlbums: "galleryAlbums",
+  galleryMedia: "galleryMedia",
   notificationLogs: "notificationLogs",
   duesPayments: "duesPayments",
   duesReminders: "duesReminders",
@@ -67,6 +81,7 @@ export const COLLECTIONS = {
 export interface AppCollections {
   siteContent: WhatWeDoDocument | ConventionsDocument;
   volunteers: Volunteer;
+  volunteerChanges: VolunteerChange;
   volunteerSignups: VolunteerSignup;
   volunteerMessages: VolunteerMessage;
   volunteerAccessTokens: VolunteerAccessToken;
@@ -81,12 +96,18 @@ export interface AppCollections {
   rsvps: RSVP;
   news: NewsPost;
   committees: Committee;
+  committeeMemberships: CommitteeMembership;
+  committeeMembershipChanges: CommitteeMembershipChange;
+  committeeMessages: CommitteeMessage;
   products: Product;
   orders: Order;
   donations: Donation;
   documents: OrgDocument;
   carts: Cart;
   newsletterSubscribers: NewsletterSubscriber;
+  newsletterMessages: NewsletterMessage;
+  galleryAlbums: GalleryAlbum;
+  galleryMedia: GalleryMedia;
   notificationLogs: NotificationLog;
   duesPayments: DuesPayment;
   duesReminders: DuesReminder;
@@ -103,6 +124,12 @@ type CollectionIndexMap = {
 };
 
 const COLLECTION_INDEXES: CollectionIndexMap = {
+  galleryAlbums: [{ key: { id: 1 }, unique: true }, { key: { status: 1, updatedAt: -1 } }, { key: { eventId: 1 } }],
+  galleryMedia: [{ key: { id: 1 }, unique: true }, { key: { status: 1, addedAt: -1, id: -1 } }, { key: { albumId: 1, status: 1, addedAt: -1, id: -1 } }, { key: { albumId: 1, contentHash: 1 }, unique: true, partialFilterExpression: { contentHash: { $type: "string" } } }],
+  newsletterMessages: [{ key: { id: 1 }, unique: true }, { key: { subscriberId: 1, subscriptionVersion: 1 }, unique: true }, { key: { status: 1, createdAt: 1 } }],
+  committeeMemberships: [{ key: { id: 1 }, unique: true }, { key: { committeeId: 1, userId: 1 }, unique: true, partialFilterExpression: { userId: { $type: "string" } } }, { key: { committeeId: 1, volunteerId: 1 }, unique: true, partialFilterExpression: { volunteerId: { $type: "string" } } }],
+  committeeMembershipChanges: [{ key: { id: 1 }, unique: true }, { key: { userId: 1, at: -1 } }, { key: { volunteerId: 1, at: -1 } }, { key: { committeeId: 1, at: -1 } }],
+  committeeMessages: [{ key: { id: 1 }, unique: true }, { key: { status: 1, createdAt: 1 } }],
   volunteerAccessTokens: [{ key: { tokenHash: 1 }, unique: true }, { key: { volunteerId: 1 } }, { key: { expiresAt: 1 }, expireAfterSeconds: 0 }],
   volunteerExternalRegistrations: [{ key: { id: 1 }, unique: true }],
   volunteerImportBatches: [{ key: { id: 1 }, unique: true }, { key: { createdAt: -1 } }],
@@ -110,7 +137,8 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
   proposalMessages: [{ key: { id: 1 }, unique: true }, { key: { status: 1, createdAt: 1 } }, { key: { proposalId: 1 } }],
   clubSettings: [{ key: { id: 1 }, unique: true }],
   siteContent: [{ key: { id: 1 }, unique: true }],
-  volunteers: [{ key: { id: 1 }, unique: true }, { key: { email: 1 }, unique: true }],
+  volunteerChanges: [{ key: { id: 1 }, unique: true }, { key: { volunteerId: 1, at: -1 } }],
+  volunteers: [{ key: { id: 1 }, unique: true }, { key: { email: 1 }, unique: true }, { key: { userId: 1 }, unique: true, partialFilterExpression: { userId: { $type: "string" } } }, { key: { committeeIds: 1 } }, { key: { status: 1, resumeDate: 1 } }],
   volunteerSignups: [
     { key: { id: 1 }, unique: true },
     { key: { eventId: 1, volunteerId: 1 }, unique: true },
@@ -193,6 +221,7 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
   newsletterSubscribers: [
     { key: { id: 1 }, unique: true },
     { key: { email: 1 }, unique: true },
+    { key: { unsubscribeTokenHash: 1 }, unique: true, partialFilterExpression: { unsubscribeTokenHash: { $type: "string" } } },
     { key: { status: 1 } },
     { key: { source: 1 } },
   ],

@@ -166,6 +166,7 @@ const adminLinks = [
   { href: "/admin/events", label: "Events", icon: "calendar" },
   { href: "/admin/proposals", label: "Event proposals", icon: "documents" },
   { href: "/admin/volunteers", label: "Volunteers", icon: "people" },
+  { href: "/admin/gallery", label: "Gallery", icon: "gallery" },
   { href: "/admin/news", label: "News", icon: "news" },
   { href: "/admin/newsletter", label: "Newsletter", icon: "mail" },
   { href: "/admin/products", label: "Products", icon: "store" },

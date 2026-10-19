@@ -91,7 +91,12 @@ function heading(text: string): string {
 
 export function volunteerWelcomeEmail(name: string, preferencesUrl: string) {
   const subject = "Welcome to Eko Club Philadelphia volunteers";
-  return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>Hello ${escapeHtml(name)},</p><p>Your volunteer record has been saved. Thank you for offering your time and skills.</p><p>You can update your contact details, interests, and volunteer opportunity email preferences using your private link below. This link expires in 90 days. Keep it private.</p>${button(preferencesUrl, "Manage volunteer preferences")}` }) };
+  return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>Hello ${escapeHtml(name)},</p><p>Your volunteer record has been saved. Thank you for offering your time and skills.</p><p>You can update your contact details, interests, and volunteer opportunity email preferences using your private link below. This link expires in 90 days. Keep it private.</p>${button(preferencesUrl, "Manage my volunteering")}` }) };
+}
+
+export function newsletterConfirmationEmail(email: string, unsubscribeUrl: string) {
+  const subject = "You’re subscribed to the Eko Club Philadelphia newsletter";
+  return { subject, html: layout({ title: subject, preheader: "Thank you for subscribing. You can unsubscribe at any time.", body: `${heading("You’re subscribed!")}<p>Thank you for subscribing to the Eko Club Philadelphia newsletter.</p><p>We’ve added ${escapeHtml(email)} to our newsletter list for chapter news and event updates.</p><p>You can stop newsletter emails at any time using the link below. If you did not request this subscription, use the same link to remove it.</p>${button(unsubscribeUrl, "Unsubscribe from the newsletter")}` }) };
 }
 
 export function proposalEmail(options: { name: string; title: string; description: string; proposedDate: string; location: string; email: string; notes: string; estimatedBudgetCents?: number; reference: string; admin: boolean; url: string }) {
@@ -100,7 +105,14 @@ export function proposalEmail(options: { name: string; title: string; descriptio
   return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>${options.admin ? "A new proposal is ready for review." : `Hello ${e(options.name)}, thank you for your proposal. The club will review it. This acknowledgement does not confirm an event.`}</p><p><strong>Title:</strong> ${e(options.title)}<br><strong>Proposed date:</strong> ${e(options.proposedDate)}<br><strong>Location:</strong> ${e(options.location)}</p>${options.admin ? `<p><strong>Submitter:</strong> ${e(options.name)} (${e(options.email)})</p><p>${e(options.description).replace(/\n/g, "<br>")}</p>${options.estimatedBudgetCents !== undefined ? `<p>Estimated budget: $${(options.estimatedBudgetCents / 100).toFixed(2)}</p>` : ""}${options.notes ? `<p>Notes: ${e(options.notes)}</p>` : ""}` : ""}<p>Reference: ${e(options.reference)}</p>${button(options.url, options.admin ? "Review proposal" : "Visit the events page")}` }) };
 }
 
+export function volunteerChangeEmail(name: string, action: string, at: string, preferencesUrl: string, resumeDate?: string | null) {
+  const title = action === "paused" ? "Volunteer opportunities paused" : action === "unsubscribed" ? "You have unsubscribed from volunteer emails" : action === "deletion-requested" ? "Your volunteer data deletion request was received" : action === "resubscribed" || action === "resumed" ? "Your volunteering is active again" : "Your volunteering details were updated";
+  const description = action === "paused" ? `Opportunity emails are paused${resumeDate ? ` until ${resumeDate} (Philadelphia date)` : " until you resume them"}. Messages about existing event sign-ups can still be sent.` : action === "unsubscribed" ? "Your volunteer status is inactive. No further volunteer emails will be sent unless you request a private access link, make another preference change or resubscribe. Your existing event sign-ups have not been cancelled." : action === "deletion-requested" ? "The club has received your request and will review your volunteer data. Volunteer emails have been stopped. This is a request acknowledgement, not confirmation that deletion is complete. Your membership account is separate." : action === "resubscribed" || action === "resumed" ? "Your volunteer status is active again. You can manage email consent and your profile using the link below." : "Your changes have been saved. Use the private link below to manage your volunteering.";
+  return {subject:title,html:layout({title,preheader:title,body:`${heading(title)}<p>Hello ${escapeHtml(name)},</p><p>${escapeHtml(description)}</p><p>Saved at ${escapeHtml(new Date(at).toLocaleString("en-US",{timeZone:"America/New_York"}))} (Philadelphia time).</p>${button(preferencesUrl,"Manage my volunteering")}`})};
+}
+
 export function volunteerEmail(options: {
+  committeeNames?: string[];
   preferencesUrl?: string;
   volunteer: Pick<Volunteer, "name" | "email" | "phone" | "interests" | "notes">;
   status: "general" | "confirmed" | "waitlisted" | "cancelled";
@@ -122,7 +134,7 @@ export function volunteerEmail(options: {
     : "Your interest in volunteering with the club has been recorded. Thank you for offering your time and skills.";
   const details = event ? `<p><strong>Event:</strong> ${escapeHtml(event.title)}<br><strong>Date:</strong> ${escapeHtml(formatSummaryEventDate(event))}${event.time ? `<br><strong>Time:</strong> ${escapeHtml(event.time)} (Philadelphia time)` : ""}<br><strong>Location:</strong> ${escapeHtml(event.location)}${event.venue ? ` — ${escapeHtml(event.venue)}` : ""}</p>` : "";
   const staffDetails = audience === "staff" ? `<p><strong>Name:</strong> ${escapeHtml(volunteer.name)}<br><strong>Email:</strong> ${escapeHtml(volunteer.email)}${volunteer.phone ? `<br><strong>Phone:</strong> ${escapeHtml(volunteer.phone)}` : ""}</p>${volunteer.interests ? `<p><strong>Interests:</strong> ${escapeHtml(volunteer.interests)}</p>` : ""}${volunteer.notes ? `<p><strong>Notes:</strong> ${escapeHtml(volunteer.notes)}</p>` : ""}` : `<p>Hello ${escapeHtml(volunteer.name)},</p>`;
-  return { subject, html: layout({ title: subject, preheader: explanation, body: `${heading(subject)}${staffDetails}<p>${explanation}</p>${details}<p><strong>Reference:</strong> ${escapeHtml(reference)}</p>${button(url, audience === "staff" ? "Manage volunteers" : event ? "View event details" : "Visit the volunteer page")}${options.preferencesUrl ? button(options.preferencesUrl, "Manage volunteer preferences") : ""}` }) };
+  return { subject, html: layout({ title: subject, preheader: explanation, body: `${heading(subject)}${staffDetails}<p>${explanation}</p>${details}${options.committeeNames?.length ? `<p><strong>Committee interests:</strong> ${options.committeeNames.map(escapeHtml).join(", ")}. The club will follow up about helping these committees.</p>` : ""}<p><strong>Reference:</strong> ${escapeHtml(reference)}</p>${button(url, audience === "staff" ? "Manage volunteers" : event ? "View event details" : "Visit the volunteer page")}${options.preferencesUrl ? button(options.preferencesUrl, "Manage my volunteering") : ""}` }) };
 }
 
 export function eventEmail(event: Event, kind: "confirmation" | "admin" | "announcement" | "reminder" | "cancellation", eventUrl: string, rsvp?: RSVP): { subject: string; html: string } {

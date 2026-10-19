@@ -18,7 +18,13 @@
     "test:volunteers": "node --test scripts/test-volunteers.mjs",
     "test:volunteers:integration": "node scripts/test-volunteers-integration.mjs",
     "test:volunteer-imports": "node --test scripts/test-volunteer-imports-proposals.mjs",
-    "test:form-contrast": "node scripts/check-form-contrast.mjs"
+    "test:form-contrast": "node scripts/check-form-contrast.mjs",
+    "test:volunteer-management": "node --test scripts/test-volunteer-management.mjs",
+    "test:committees:integration": "node scripts/test-committee-memberships-integration.mjs",
+    "test:newsletter:integration": "node scripts/test-newsletter-integration.mjs",
+    "migrate:gallery": "node scripts/migrate-gallery.mjs",
+    "test:gallery:integration": "node scripts/test-gallery-integration.mjs",
+    "test:gallery:browser": "node scripts/check-gallery.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",

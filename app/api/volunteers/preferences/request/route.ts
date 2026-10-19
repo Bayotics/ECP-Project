@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       if (recent) return [];
       // Lock the person to serialize simultaneous requests and enforce cooldown.
       await people.updateOne({ id: person.id }, { $set: { updatedAt: new Date().toISOString() } }, { session });
-      return queueVolunteerWelcome(person, session);
+      return queueVolunteerWelcome(person, session, true);
     });
     try { await deliverVolunteerMessages(ids); } catch { /* durable retry */ }
     return NextResponse.json({ ok: true, data: { message: "If that email has a volunteer record, a private link will be sent. Check your inbox and spam folder. Please allow 15 minutes before requesting another link." } }, { headers: privateHeaders });

@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
-import { requireSession } from "@/lib/server/guards";
+import { getRequestSession, requireSession } from "@/lib/server/guards";
 import type { Filter } from "mongodb";
 import type { Committee, CreateCommitteeInput } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const viewer=await getRequestSession(request);
+  if(!viewer||!["admin","super-admin"].includes(viewer.role))return NextResponse.json({ok:false,error:"Administrator access required"},{status:403});
   try {
     await ensureCoreIndexes();
     const payload = (await request.json()) as Partial<CreateCommitteeInput>;

@@ -53,7 +53,10 @@ try {
   await context.route('**/api/**',async route=>{
    const req=route.request(),path=new URL(req.url()).pathname;let data=[];
    if(path==='/api/auth/session')data=adminMode?{...administrator,role:'super-admin'}:null;
+   if(path==='/api/committees/mine')data=null;
+   if(path==='/api/committees/access'){assert.equal(req.method(),'POST');return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,data:{verified:true}})});}
    if(path==='/api/cart')data={items:[],subtotal:0,total:0,shippingFee:0};
+   if(path==='/api/committees/public')data=[{id:'qa-committee',name:'QA Community Service',slug:'qa-community-service',description:'Community service',type:'standing'}];
    if(path==='/api/events'||path==='/api/volunteers/opportunities')data=[event];
    if(path==='/api/admin/proposals')data={proposals:[proposal],total:1,page:0,pageSize:25};
    if(path==='/api/admin/proposals/recipients')data={recipients:[{name:'President',email:'president@example.test'}]};
@@ -71,6 +74,7 @@ try {
   const publicForm=page.getByRole('form',{name:'Event proposal'});await publicForm.getByRole('heading',{name:'Tell us about your idea'}).waitFor();
   await contrast(publicForm,`Proposal form ${theme}`);
   if(colorScheme==='dark'&&width===1366)await page.screenshot({path:'tmp/proposal-dark-fixed.png',fullPage:true});
+  await page.goto(baseUrl+'/committees',{waitUntil:'domcontentloaded'});await page.getByRole('heading',{name:'Our committees',exact:true}).waitFor();await contrast(page.locator('main'),`Public committees ${theme}`);
   await page.goto(baseUrl+'/volunteer',{waitUntil:'domcontentloaded'});
   await page.getByRole('form',{name:'Volunteer sign-up'}).waitFor();await contrast(page.getByRole('form',{name:'Volunteer sign-up'}),`Volunteer form ${theme}`);
   await page.goto(baseUrl+'/volunteer/preferences#token='+'a'.repeat(64),{waitUntil:'domcontentloaded'});

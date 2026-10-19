@@ -1,95 +1,36 @@
-import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
-import { requireSession } from "@/lib/server/guards";
-import type { NewsletterSource, NewsletterSubscriber } from "@/lib/models";
-import { ensureCoreIndexes, getCollection, serializeDocuments } from "@/lib/server/collections";
 import { getSessionUser } from "@/lib/server/session";
-
-function badRequest(message: string) {
-  return NextResponse.json({ ok: false, error: message }, { status: 400 });
-}
-
+import { ensureCoreIndexes, getCollection } from "@/lib/server/collections";
+import { clubAdmin, clubError, privateHeaders } from "@/lib/server/club-api";
+import { newsletterBody, newsletterOrigin } from "@/lib/server/newsletter-api";
+import { NewsletterError, newsletterEmail, newsletterMetadata, newsletterSources, subscribeNewsletter, deliverNewsletterMessages, newsletterAdminRow } from "@/lib/server/newsletter";
+import type { NewsletterSource, NewsletterSubscriber } from "@/lib/models/newsletter";
 export async function GET(request: NextRequest) {
-  const { deny } = await requireSession(request);
-  if (deny) return deny;
-
   try {
+    await clubAdmin(request);
+    const status=request.nextUrl.searchParams.get("status"),source=request.nextUrl.searchParams.get("source");
+    if((status&&!["active","unsubscribed"].includes(status))||(source&&!newsletterSources.includes(source as NewsletterSource)))throw new NewsletterError("Select valid newsletter filters.",400);
     await ensureCoreIndexes();
-    const sessionUser = await getSessionUser(request);
-    if (!sessionUser || (sessionUser.role !== "admin" && sessionUser.role !== "super-admin")) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const collection = await getCollection("newsletterSubscribers");
-    const params = request.nextUrl.searchParams;
-    const status = params.get("status");
-    const source = params.get("source");
-
-    const filter: Record<string, unknown> = {};
-    if (status) filter.status = status;
-    if (source) filter.source = source;
-
-    const subscribers = serializeDocuments(
-      await collection.find(filter).sort({ subscribedAt: -1 }).toArray()
-    );
-    return NextResponse.json({ ok: true, data: subscribers });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch subscribers";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
+    const filter:Partial<NewsletterSubscriber>={...(status?{status:status as NewsletterSubscriber["status"]}:{}),...(source?{source:source as NewsletterSource}:{})};
+    const people=await (await getCollection("newsletterSubscribers")).find(filter).sort({subscribedAt:-1}).toArray();
+    const data=[];
+    // Keep database concurrency bounded for the delivery-status lookups.
+    for(let offset=0;offset<people.length;offset+=25)data.push(...await Promise.all(people.slice(offset,offset+25).map(newsletterAdminRow)));
+    return NextResponse.json({ok:true,data},{headers:privateHeaders});
+  } catch(error){return clubError(error);}
 }
-
 export async function POST(request: NextRequest) {
   try {
+    newsletterOrigin(request);
+    const body=newsletterBody(await request.json()),email=newsletterEmail(body.email);
+    if(body.website)throw new NewsletterError("Please submit the newsletter form directly.",400);
+    const user=await getSessionUser(request),admin=Boolean(user&&["admin","super-admin"].includes(user.role));
+    const source=admin?(body.source??"admin"):(body.source??"website");
+    if(!newsletterSources.includes(source as NewsletterSource)||(!admin&&!["website","footer"].includes(source as string)))throw new NewsletterError("Choose a valid subscription source.",400);
     await ensureCoreIndexes();
-    const payload = (await request.json()) as {
-      email?: string;
-      name?: string;
-      phone?: string;
-      source?: NewsletterSource;
-      tags?: string[];
-    };
-
-    if (!payload.email?.trim()) return badRequest("Email is required");
-    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRx.test(payload.email.trim())) return badRequest("Invalid email address");
-
-    const collection = await getCollection("newsletterSubscribers");
-    const email = payload.email.trim().toLowerCase();
-
-    // If already subscribed, re-activate if unsubscribed
-    const existing = await collection.findOne({ email });
-    if (existing) {
-      if (existing.status === "active") {
-        return NextResponse.json(
-          { ok: false, error: "This email is already subscribed." },
-          { status: 409 }
-        );
-      }
-      // Re-subscribe
-      await collection.updateOne(
-        { email },
-        { $set: { status: "active", unsubscribedAt: undefined, subscribedAt: new Date().toISOString() } }
-      );
-      const updated = await collection.findOne({ email });
-      return NextResponse.json({ ok: true, data: updated });
-    }
-
-    const subscriber: NewsletterSubscriber = {
-      id: nanoid(),
-      email,
-      name: payload.name?.trim(),
-      phone: payload.phone?.trim(),
-      source: payload.source ?? "website",
-      status: "active",
-      tags: payload.tags ?? [],
-      subscribedAt: new Date().toISOString(),
-    };
-
-    await collection.insertOne(subscriber);
-    return NextResponse.json({ ok: true, data: subscriber }, { status: 201 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to subscribe";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
+    const {person,messageId}=await subscribeNewsletter(email,source as NewsletterSource,admin?newsletterMetadata(body):{tags:[]});
+    try{await deliverNewsletterMessages([messageId]);}catch{/* Saved mail retries from the durable outbox. */}
+    const row=await newsletterAdminRow(person),confirmationEmailSent=row.confirmationStatus==="sent";
+    return NextResponse.json({ok:true,data:admin?row:{confirmationEmailSent,message:confirmationEmailSent?"You’re subscribed! Check your inbox for your confirmation and unsubscribe link.":"You’re subscribed. Your confirmation email and unsubscribe link are queued for delivery."}},{status:201,headers:privateHeaders});
+  } catch(error){return clubError(error);}
 }

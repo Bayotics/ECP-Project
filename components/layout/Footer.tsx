@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useId } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import { cn } from "@/utils/cn";
 
 /* ─── Social icons ──────────────────────────────────── */
@@ -79,119 +80,6 @@ const LEGAL_LINKS = [
   { href: "/cookies", label: "Cookie Policy" },
   { href: "/accessibility", label: "Accessibility" },
 ];
-
-/* ─── Newsletter form ───────────────────────────────── */
-const STORAGE_KEY = "ecp_newsletter_email";
-
-function NewsletterForm() {
-  const inputId = useId();
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "success" | "error" | "duplicate">("idle");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setStatus("error");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), source: "footer" }),
-      });
-      if (res.status === 409) {
-        setStatus("duplicate");
-      } else if (res.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (status === "success") {
-    return (
-      <div role="status" className="flex items-center gap-2 text-sm font-medium text-white">
-        <span className="text-(--color-green-400)" aria-hidden="true">✓</span>
-        You&apos;re subscribed — thank you!
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate aria-label="Newsletter signup form" className="w-full max-w-md">
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <label htmlFor={inputId} className="sr-only">
-            Email address
-          </label>
-          <input
-            id={inputId}
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (status === "error" || status === "duplicate") setStatus("idle");
-            }}
-            placeholder="Your email address"
-            autoComplete="email"
-            required
-            aria-describedby={
-              status === "error"
-                ? `${inputId}-error`
-                : status === "duplicate"
-                ? `${inputId}-dup`
-                : undefined
-            }
-            aria-invalid={status === "error" || status === "duplicate"}
-            className={cn(
-              "w-full rounded-full bg-white/10 border px-5 py-3 text-sm text-white placeholder-white/40 outline-none transition-colors",
-              "focus:ring-2 focus:ring-white/30 focus:border-white/30",
-              status === "error" || status === "duplicate" ? "border-red-500" : "border-white/15"
-            )}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className={cn(
-            "flex-shrink-0 rounded-full px-6 py-3 text-sm font-normal text-[#0a0a0a] transition-colors",
-            "bg-white hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-          )}
-        >
-          {loading ? (
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-label="Loading">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          ) : (
-            "Subscribe"
-          )}
-        </button>
-      </div>
-
-      {status === "error" && (
-        <p id={`${inputId}-error`} role="alert" className="mt-2 text-xs text-red-400">
-          Please enter a valid email address.
-        </p>
-      )}
-      {status === "duplicate" && (
-        <p id={`${inputId}-dup`} role="alert" className="mt-2 text-xs text-(--color-gold-400)">
-          This email is already subscribed.
-        </p>
-      )}
-    </form>
-  );
-}
 
 /* ─── FooterLink ────────────────────────────────────── */
 function FooterLink({ href, label }: { href: string; label: string }) {

@@ -12,7 +12,7 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ ok: false, error: "Send a valid volunteer form." }, { status: 400 }); }
-  const validation = validateVolunteerInput(body);
+  const validation = validateVolunteerInput(body, true);
   if ("error" in validation) return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
   const verification = await verifyRecaptcha((body as Record<string, unknown>).recaptchaToken);
   if (!verification.ok) return NextResponse.json({ ok: false, error: verification.error }, { status: verification.status });
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       await deliverVolunteerMessages([...new Set([...result.messageIds, ...ownIds])]);
       confirmationEmailSent = ownIds.length > 0 && await messages.countDocuments({ id: { $in: ownIds }, status: { $ne: "sent" } }) === 0;
     } catch (error) { console.error("[volunteers] Delivery deferred; saved messages will be retried", error); }
-    return NextResponse.json({ ok: true, data: { reference: result.reference, status: result.status, alreadyRegistered: result.alreadyRegistered, confirmationEmailSent } }, { status: result.alreadyRegistered ? 200 : 201 });
+    const person = await (await getCollection("volunteers")).findOne({id:result.volunteerId});
+    return NextResponse.json({ ok: true, data: { reference: result.reference, status: result.status, alreadyRegistered: result.alreadyRegistered, confirmationEmailSent, emailSuppressed: person?.status === "inactive" } }, { status: result.alreadyRegistered ? 200 : 201 });
   } catch (error) {
     if (error instanceof VolunteerError) return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
     console.error("[volunteers] Registration failed", error);

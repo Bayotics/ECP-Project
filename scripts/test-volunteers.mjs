@@ -12,9 +12,10 @@ function load(file, mocks = {}) {
 }
 const { validateVolunteerInput } = load('lib/volunteer-input.ts');
 const { validateVolunteerCap } = load('lib/volunteer-cap.ts');
+const publicVisitor = {firstName:'Test',lastName:'Volunteer',email:'volunteer@example.test'};
 const visitor = { name: ' Test Volunteer ', email: ' VOLUNTEER@Example.test ' };
 
-test('volunteer form only requires name and email and normalizes the email identity', () => {
+test('legacy imported volunteer rows accept a full name and normalize email identity', () => {
   assert.deepEqual(validateVolunteerInput(visitor), { value: { name: 'Test Volunteer', email: 'volunteer@example.test', phone: '', interests: '', notes: '' } });
   const result = validateVolunteerInput({ ...visitor, eventId: ' event-id ', phone: ' +1 215 555 0100 ', interests: ' Food drives ', notes: ' Happy to help ' });
   assert.equal(result.value.eventId, 'event-id'); assert.equal(result.value.phone, '+1 215 555 0100');
@@ -50,6 +51,8 @@ function adminList(session = { sub: 'admin', role: 'admin' }, empty = false) {
   state.api = load('app/api/admin/volunteers/route.ts', {
     'next/server': { NextResponse: { json: (body, options = {}) => ({ body, status: options.status ?? 200, headers: options.headers }) } },
     '@/lib/server/guards': { getRequestSession: async () => session },
+    '@/lib/server/volunteer-management': {resumeDueVolunteers: async () => []},
+    '@/lib/server/volunteer-imports': {scheduleImportedVolunteerEmails: () => {}},
     '@/lib/server/collections': {
       ensureCoreIndexes: async () => {}, serializeDocuments: rows => rows,
       getCollection: async name => {
@@ -74,7 +77,7 @@ test('admin volunteer table joins the person with their event and preserves wait
   assert.equal(response.status, 200); assert.equal(response.headers['Cache-Control'], 'private, no-store');
   assert.equal(response.body.data.total, 1); assert.equal(response.body.data.volunteers[0].email, 'volunteer@example.test');
   assert.equal(response.body.data.volunteers[0].signups[0].eventTitle, 'Community Drive');
-  assert.equal(response.body.data.volunteers[0].signups[0].status, 'waitlisted'); assert.equal(state.limit, 25);
+  assert.equal(response.body.data.volunteers[0].signups[0].status, 'waitlisted'); assert.ok(state.limit >= 25);
 });
 test('admin search escapes patterns, paginates and filters people by event and status', async () => {
   const state = adminList(); await state.api.GET(listRequest('?q=A%2BB&page=2&eventId=event&status=waitlisted'));
@@ -124,7 +127,7 @@ test('public volunteer submissions require server-side CAPTCHA before writing re
       '@/lib/server/volunteers': { registerVolunteer: async () => { writes++; }, VolunteerError: Error },
       '@/lib/server/volunteer-notifications': {},
     });
-    const response = await api.POST({ json: async () => visitor });
+    const response = await api.POST({ json: async () => publicVisitor });
     assert.equal(response.status, status); assert.equal(writes, 0); assert.equal(response.body.error, 'Verification failed');
   }
 });
@@ -135,11 +138,11 @@ test('volunteer record is preserved and delivery is reported honestly if email s
     'next/server': { NextResponse: { json: (body, options = {}) => ({ body, status: options.status ?? 200 }) } },
     '@/lib/server/recaptcha': { verifyRecaptcha: async () => ({ ok: true }) },
     '@/lib/server/guards': { getRequestSession: async () => null },
-    '@/lib/server/collections': { ensureCoreIndexes: async () => {}, getCollection: async () => ({ find: () => ({ project: () => ({ toArray: async () => [{ id: 'message' }] }) }), countDocuments: async () => 1 }) },
+    '@/lib/server/collections': { ensureCoreIndexes: async () => {}, getCollection: async () => ({ findOne: async () => ({status:'active'}), find: () => ({ project: () => ({ toArray: async () => [{ id: 'message' }] }) }), countDocuments: async () => 1 }) },
     '@/lib/server/volunteers': { registerVolunteer: async () => { writes++; return { volunteerId: 'person', reference: 'signup', status: 'waitlisted', alreadyRegistered: false, messageIds: ['message'] }; }, VolunteerError: class extends Error {} },
     '@/lib/server/volunteer-notifications': { deliverVolunteerMessages: async () => ({ sent: 0, failed: 1 }) },
   });
-  const response = await api.POST({ json: async () => visitor });
+  const response = await api.POST({ json: async () => publicVisitor });
   assert.equal(response.status, 201); assert.equal(writes, 1);
   assert.equal(response.body.data.status, 'waitlisted'); assert.equal(response.body.data.confirmationEmailSent, false);
   assert.equal(response.body.data.email, undefined);

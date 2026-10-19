@@ -12,4 +12,5 @@ export * from "./donation";
 export * from "./document";
 export * from "./cart";
 export * from "./newsletter";
+export * from "./gallery";
 export * from "./dues";

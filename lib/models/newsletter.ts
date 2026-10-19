@@ -11,9 +11,34 @@ export interface NewsletterSubscriber {
   tags: string[];
   subscribedAt: string;
   unsubscribedAt?: string;
+  updatedAt?: string;
+  subscriptionVersion?: string;
+  /** Never returned by public or admin APIs. */
+  unsubscribeTokenHash?: string;
 }
 
-export type CreateSubscriberInput = Omit<NewsletterSubscriber, "id" | "subscribedAt">;
+export interface NewsletterMessage {
+  id: string;
+  subscriberId: string;
+  subscriptionVersion: string;
+  to: string;
+  subject: string;
+  html: string;
+  status: "pending" | "sending" | "failed" | "sent" | "superseded";
+  attempts: number;
+  createdAt: string;
+  sentAt?: string;
+  leaseUntil?: string;
+  error?: string;
+}
+
+export interface NewsletterAdminRow extends Omit<NewsletterSubscriber, "unsubscribeTokenHash"> {
+  confirmationStatus: NewsletterMessage["status"] | "not-recorded";
+  confirmationSentAt?: string;
+  confirmationError?: string;
+}
+
+export type CreateSubscriberInput = Omit<NewsletterSubscriber, "id" | "subscribedAt" | "updatedAt" | "subscriptionVersion" | "unsubscribeTokenHash">;
 
 export interface NotificationLog {
   id: string;

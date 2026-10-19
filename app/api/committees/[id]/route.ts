@@ -1,8 +1,10 @@
+import { getRequestSession, requireSession } from "@/lib/server/guards";
 import { NextRequest, NextResponse } from "next/server";
 import type { UpdateCommitteeInput } from "@/lib/models";
 import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
 
-export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const {deny}=await requireSession(request);if(deny)return deny;
   try {
     await ensureCoreIndexes();
     const { id } = await context.params;
@@ -21,6 +23,8 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const viewer=await getRequestSession(request);
+  if(!viewer||!["admin","super-admin"].includes(viewer.role))return NextResponse.json({ok:false,error:"Administrator access required"},{status:403});
   try {
     await ensureCoreIndexes();
     const { id } = await context.params;
@@ -44,7 +48,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   }
 }
 
-export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const viewer=await getRequestSession(request);
+  if(!viewer||!["admin","super-admin"].includes(viewer.role))return NextResponse.json({ok:false,error:"Administrator access required"},{status:403});
   try {
     await ensureCoreIndexes();
     const { id } = await context.params;

@@ -7,7 +7,7 @@ import { type CsvMapping, type VolunteerCsvRow } from "@/lib/volunteer-csv";
 import { VOLUNTEER_SOURCES, VOLUNTEER_SOURCE_LABELS, type VolunteerSource } from "@/lib/volunteer-sources";
 import { AdminPageHeader, Btn } from "@/components/admin/AdminUI";
 const field = "mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 placeholder:text-neutral-700";
-const columns: Array<[keyof CsvMapping, string]> = [["name", "Full name"], ["firstName", "First name (if no full name)"], ["lastName", "Last name"], ["email", "Email (required)"], ["phone", "Phone"], ["interests", "Interests"], ["notes", "Notes"], ["externalId", "External registration ID"]];
+const columns: Array<[keyof CsvMapping, string]> = [["name", "Full name"], ["firstName", "First name (if no full name)"], ["lastName", "Last name"], ["email", "Email (required)"], ["phone", "Phone"], ["interests", "Interests"], ["notes", "Notes"], ["externalId", "External registration ID"], ["city", "City"], ["zip", "ZIP / postal code"], ["availability", "Availability"], ["heardAbout", "How they heard about us"]];
 type Result = {row: number; status?: string; duplicate?: boolean; error?: string; emailDeferred?: boolean};
 export default function VolunteerImportPage() {
   const { events } = useEvents();

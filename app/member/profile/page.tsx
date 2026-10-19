@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useUsers } from "@/context/UsersContext";
 import ImageUploader from "@/components/media/ImageUploader";
+import CommitteeMembershipPanel from "@/components/committees/CommitteeMembershipPanel";
 import ChangePasswordForm from "@/components/auth/ChangePasswordForm";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 
@@ -362,6 +363,7 @@ export default function ProfilePage() {
           </p>
         </div>
       )}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-6"><CommitteeMembershipPanel /></div>
     </div>
   );
 }

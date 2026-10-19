@@ -34,6 +34,8 @@ try {
   await Promise.all([
     db.collection('volunteers').createIndex({ email: 1 }, { unique: true }),
     db.collection('volunteers').createIndex({ id: 1 }, { unique: true }),
+    db.collection('volunteers').createIndex({userId:1},{unique:true,partialFilterExpression:{userId:{$type:'string'}}}),
+    db.collection('volunteerChanges').createIndex({id:1},{unique:true}),
     db.collection('volunteerSignups').createIndex({ eventId: 1, volunteerId: 1 }, { unique: true }),
     db.collection('volunteerAccessTokens').createIndex({ tokenHash: 1 }, { unique: true }),
     db.collection('volunteerExternalRegistrations').createIndex({ id: 1 }, { unique: true }),
@@ -42,6 +44,7 @@ try {
     db.collection('clubSettings').createIndex({ id: 1 }, { unique: true }),
     db.collection('volunteerMessages').createIndex({ id: 1 }, { unique: true }),
   ]);
+  await db.collection('committees').insertMany([{id:'committee-a',name:'Community Service',status:'active'},{id:'committee-old',name:'Old committee',status:'inactive'}]);
   const notifications = load('lib/server/volunteer-notifications.ts');
   mocks['@/lib/server/volunteer-notifications'] = { ...notifications, queueVolunteerMessages: async (...args) => { if (rejectQueue) throw Error('Mock transaction failure'); return notifications.queueVolunteerMessages(...args); } };
   const { registerVolunteer, cancelVolunteerSignup, reconcileVolunteerEvent } = load('lib/server/volunteers.ts');
@@ -168,6 +171,58 @@ try {
   const optional = await proposals.submitProposal(noBudget);
   assert.equal(Object.hasOwn(await db.collection('proposals').findOne({id: optional.proposal.id}), 'estimatedBudgetCents'), false);
   console.log('PASS: default/editable recipients, idempotent proposals and acknowledgements, optional budget storage, approval guard and concurrent single draft conversion.');
+
+  await db.collection('users').insertOne({id:'linked-member',displayName:'Member Volunteer',firstName:'Member',lastName:'Volunteer',role:'member',status:'active',email:'MEMBER-VOL@Example.test'});
+  const structured={...input('member-vol@example.test',''),name:'Member Volunteer',firstName:'Member',lastName:'Volunteer',city:'Philadelphia',zip:'19104',committeeIds:['committee-a'],interestAreas:['Mentoring','Food drives'],availability:'Sunday afternoons',heardAbout:'A friend',opportunityEmails:true};
+  const linked=await registerVolunteer(structured,false);
+  let linkedPerson=await people.findOne({id:linked.volunteerId});
+  assert.equal(linkedPerson.userId,'linked-member'); assert.equal(linkedPerson.firstName,'Member'); assert.equal(linkedPerson.city,'Philadelphia');assert.equal(linkedPerson.opportunityEmails,true);
+  assert.deepEqual(linkedPerson.committeeIds,['committee-a']);
+  await assert.rejects(registerVolunteer({...structured,email:'bad-committee@example.test',committeeIds:['committee-old']},false),/no longer open/);
+  assert.equal(await people.countDocuments({email:'bad-committee@example.test'}),0);
+  await db.collection('users').updateOne({id:'linked-member'},{$set:{email:'changed-member@example.test'}});
+  const linkedAgain=await registerVolunteer({...structured,email:'changed-member@example.test'},false);
+  assert.equal(linkedAgain.volunteerId,linked.volunteerId);assert.equal(await people.countDocuments({userId:'linked-member'}),1);
+  await people.updateOne({id:alice.volunteerId},{$set:{generalRegisteredAt:'2025-01-01T12:00:00Z'}});
+  const moreInterest=await registerVolunteer({...input('alice@example.test',''),committeeIds:['committee-a']},false);
+  assert.equal(moreInterest.alreadyRegistered,true);assert.equal((await people.findOne({id:alice.volunteerId})).generalRegisteredAt,'2025-01-01T12:00:00Z');assert.deepEqual((await people.findOne({id:alice.volunteerId})).committeeIds,['committee-a']);
+  console.log('PASS: structured fields, consent, committee validation and member linking survive email changes; new committee interest preserves original signup dates.');
+
+  const management=load('lib/server/volunteer-management.ts');
+  const tx=load('lib/server/volunteer-transaction.ts').volunteerTransaction;
+  const url=await tx(session=>load('lib/server/volunteer-access.ts').volunteerPreferencesUrl(linked.volunteerId,session));
+  let authorization='Bearer '+url.match(/#token=([a-f0-9]{64})/)[1];
+  const change=await management.manageVolunteering(authorization,{...structured,city:'New city',action:'profile'});
+  assert.equal(change.person.city,'New city');assert.ok(change.messageIds.length);
+  const unsubscribeResults=await Promise.all([management.manageVolunteering(authorization,{action:'unsubscribe'}),management.manageVolunteering(authorization,{action:'unsubscribe'})]);
+  assert.equal(await db.collection('volunteerChanges').countDocuments({volunteerId:linked.volunteerId,action:'unsubscribed'}),1);
+  assert.equal((await people.findOne({id:linked.volunteerId})).status,'inactive');
+  const unsubscribed=unsubscribeResults.find(result=>!result.unchanged);
+  const unsubMail=await messages.findOne({id:unsubscribed.messageIds[0]});assert.match(unsubMail.html,/Manage my volunteering/);assert.match(unsubMail.html,/Philadelphia time/);
+  await messages.insertOne({id:'blocked-opportunity',volunteerId:linked.volunteerId,audience:'volunteer',kind:'opportunity',to:structured.email,subject:'Must not send',html:'Test only',status:'pending',createdAt:new Date().toISOString(),attempts:0});
+  const beforeSuppression=delivered.length;await notifications.deliverVolunteerMessages(['blocked-opportunity']);assert.equal(delivered.length,beforeSuppression);assert.equal((await messages.findOne({id:'blocked-opportunity'})).status,'superseded');
+  await notifications.deliverVolunteerMessages(unsubscribed.messageIds);assert.ok(delivered.some(message=>/unsubscribed/.test(message.subject)));
+  await management.manageVolunteering(authorization,{action:'resubscribe'});
+  assert.equal((await people.findOne({id:linked.volunteerId})).opportunityEmails,true);
+  await management.manageVolunteering(authorization,{action:'pause',resumeDate:'2099-12-31'});
+  assert.equal((await people.findOne({id:linked.volunteerId})).status,'paused');assert.deepEqual(await management.resumeVolunteerIfDue(linked.volunteerId),[]);
+  const today=load('lib/dues.ts').clubDate();await people.updateOne({id:linked.volunteerId},{$set:{resumeDate:today}});
+  await Promise.all([management.resumeVolunteerIfDue(linked.volunteerId),management.resumeVolunteerIfDue(linked.volunteerId)]);
+  assert.equal((await people.findOne({id:linked.volunteerId})).status,'active');assert.equal(await db.collection('volunteerChanges').countDocuments({volunteerId:linked.volunteerId,action:'resumed'}),1);
+  await management.manageVolunteering(authorization,{action:'request-deletion'});
+  linkedPerson=await people.findOne({id:linked.volunteerId});assert.equal(linkedPerson.status,'inactive');assert.ok(linkedPerson.deletionRequestedAt);
+  assert.ok(await db.collection('users').findOne({id:'linked-member'}));assert.ok(await people.findOne({id:linked.volunteerId}));
+  assert.equal(await db.collection('volunteerChanges').countDocuments({volunteerId:linked.volunteerId,action:'deletion-requested'}),1);
+  assert.ok(await messages.countDocuments({volunteerId:linked.volunteerId,audience:'staff',subject:/deletion request/}));
+  const beforeRepeat=await messages.countDocuments({volunteerId:linked.volunteerId});await management.manageVolunteering(authorization,{action:'request-deletion'});assert.equal(await messages.countDocuments({volunteerId:linked.volunteerId}),beforeRepeat);
+  console.log('PASS: dated profile changes, concurrent unsubscribe idempotency, send-time suppression, management confirmations, resubscription, scheduled resume, and deletion review preserve the linked membership.');
+
+  mocks['@/lib/server/guards']={getRequestSession:async()=>({sub:'admin',role:'admin'})};
+  const exportRoute=load('app/api/admin/volunteers/export/route.ts');
+  const exported=await exportRoute.GET({method:'GET',headers:new Headers(),nextUrl:new URL('https://example.test/api/admin/volunteers/export?committeeId=committee-a&state=inactive')});
+  assert.equal(exported.status,200);assert.match(exported.headers.get('content-type'),/text\/csv/);
+  const csv=await exported.text();assert.match(csv,/Member ID/);assert.match(csv,/linked-member/);assert.match(csv,/Community Service/);assert.match(csv,/19104/);assert.match(csv,/New city/);assert.doesNotMatch(csv,/alice@example.test/);
+  console.log('PASS: real MongoDB CSV lookup and streaming export includes linked member, committee and profile fields and respects filters.');
 
 } finally {
   assert.equal(db.databaseName, databaseName);

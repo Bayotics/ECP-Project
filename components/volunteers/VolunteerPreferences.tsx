@@ -1,62 +1,44 @@
 "use client";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/client/api";
+import CommitteeMembershipPanel from "@/components/committees/CommitteeMembershipPanel";
 import Recaptcha from "@/components/membership/Recaptcha";
-interface Preferences {name: string; email: string; phone: string; interests: string; opportunityEmails: boolean}
-const field = "mt-2 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-950";
+import VolunteerProfileFields,{type VolunteerProfileValues,volunteerField} from "@/components/volunteers/VolunteerProfileFields";
+interface Preferences extends VolunteerProfileValues {name:string;opportunityEmails:boolean;status:"active"|"paused"|"inactive";resumeDate:string|null;deletionRequestedAt:string|null;updatedAt:string}
+function normalize(data:Preferences):Preferences {
+  const parts=(data.name??"").split(/\s+/);
+  return {...data,firstName:data.firstName??parts[0]??"",lastName:data.lastName??parts.slice(1).join(" "),city:data.city??"",zip:data.zip??"",committeeIds:data.committeeIds??[],interestAreas:data.interestAreas??[],availability:data.availability??"",heardAbout:data.heardAbout??"",status:data.status??"active",resumeDate:data.resumeDate??null,deletionRequestedAt:data.deletionRequestedAt??null};
+}
+const date=(value:string)=>new Date(value).toLocaleString("en-US",{timeZone:"America/New_York"});
 export default function VolunteerPreferences() {
-  const [token, setToken] = useState("");
-  const [data, setData] = useState<Preferences | null>(null);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [requestEmail, setRequestEmail] = useState("");
-  const [captcha, setCaptcha] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    let live = true;
-    async function load() {
-      const access = new URLSearchParams(window.location.hash.slice(1)).get("token") || "";
-      if (!access) { if (live) setLoaded(true); return; }
-      try {
-        const values = await apiRequest<Preferences>("/api/volunteers/preferences", { headers: { Authorization: `Bearer ${access}` } });
-        if (live) { setData(values); setToken(access); }
-      } catch (error) { if (live) setError(error instanceof Error ? error.message : "Could not open your preferences."); }
-      finally { if (live) setLoaded(true); }
-    }
-    void load(); return () => { live = false; };
-  }, []);
-  async function save(event: React.FormEvent) {
-    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+  const [token,setToken]=useState("");
+  const [data,setData]=useState<Preferences|null>(null);
+  const [error,setError]=useState("");const [notice,setNotice]=useState("");const [busy,setBusy]=useState(false);
+  const [requestEmail,setRequestEmail]=useState("");const [captcha,setCaptcha]=useState("");const [attempt,setAttempt]=useState(0);const [loaded,setLoaded]=useState(false);
+  const [resumeDate,setResumeDate]=useState("");
+  useEffect(()=>{let live=true;async function load(){const access=new URLSearchParams(window.location.hash.slice(1)).get("token")||"";if(!access){if(live)setLoaded(true);return;}
+    try{const values=await apiRequest<Preferences>("/api/volunteers/preferences",{headers:{Authorization:`Bearer ${access}`}});if(live){setData(normalize(values));setResumeDate(values.resumeDate??"");setToken(access);}}
+    catch(error){if(live)setError(error instanceof Error?error.message:"Could not open your volunteering details.");}finally{if(live)setLoaded(true);}}
+    void load();return()=>{live=false;};},[]);
+  async function update(action:string) {
+    setBusy(true);setError("");setNotice("");
     try {
-      const result = await apiRequest<{preferences: Preferences; emailChanged: boolean; emailSent: boolean}>("/api/volunteers/preferences", { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
-      if (result.emailChanged) {
-        setData(null); setToken(""); window.history.replaceState(null, "", window.location.pathname);
-        setNotice(`Preferences saved. Your old private links have been retired. ${result.emailSent ? "A fresh link has been emailed to your new address." : "Your new link is queued for email delivery. Contact the club if it does not arrive."}`);
-      } else { setData(result.preferences); setNotice("Your volunteer preferences have been saved."); }
-    } catch (error) { setError(error instanceof Error ? error.message : "Could not save your preferences."); }
-    finally { setBusy(false); }
+      const body=action==="profile"?{...data,committeeIds:undefined,action}:{action,...(action==="pause"?{resumeDate}: {})};
+      const result=await apiRequest<{preferences:Preferences;emailChanged:boolean;emailSent:boolean;unchanged:boolean}>("/api/volunteers/preferences",{method:"PATCH",headers:{Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
+      if(result.emailChanged){setData(null);setToken("");window.history.replaceState(null,"",window.location.pathname);setNotice(`Changes saved. Old private links have been retired. ${result.emailSent?"A fresh management link has been emailed to your new address.":"Your confirmation and new management link are queued for email delivery."}`);}
+      else{setData(normalize(result.preferences));setResumeDate(result.preferences.resumeDate??"");setNotice(result.unchanged?"No changes were needed.":`Your volunteering changes have been saved. ${result.emailSent?"A confirmation email has been sent.":"Your confirmation email is queued for delivery."}`);}
+    }catch(error){setError(error instanceof Error?error.message:"Could not save your changes.");}finally{setBusy(false);}
   }
-  async function requestLink(event: React.FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
-    try { const result = await apiRequest<{message: string}>("/api/volunteers/preferences/request", { method: "POST", body: JSON.stringify({ email: requestEmail, recaptchaToken: captcha }) }); setNotice(result.message); }
-    catch (error) { setError(error instanceof Error ? error.message : "Could not request a link."); }
-    finally { setBusy(false); setCaptcha(""); setAttempt(value => value + 1); }
-  }
-  return <section className="mx-auto max-w-xl rounded-3xl border border-neutral-200 bg-white text-neutral-900 [color-scheme:light] p-6 shadow-sm sm:p-9">
-    <h1 className="text-3xl font-semibold text-neutral-950">Volunteer preferences</h1>
-    <p className="mt-4 text-neutral-700">Update your contact details, interests and volunteer opportunity emails.</p>
-    {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}
-    {notice && <p role="status" className="mt-5 rounded-xl bg-green-50 p-4 text-green-900">{notice}</p>}
-    {!loaded ? <p className="mt-6">Opening your preferences…</p> : data ? <form onSubmit={save} className="mt-6 space-y-5"><fieldset disabled={busy} className="space-y-5"><legend className="sr-only">Contact and email preferences</legend>
-      <label className="block">Name *<input required maxLength={150} autoComplete="name" className={field} value={data.name} onChange={e => setData({...data, name: e.target.value})} /></label>
-      <label className="block">Email *<input required type="email" maxLength={254} autoComplete="email" className={field} value={data.email} onChange={e => setData({...data, email: e.target.value})} /></label>
-      <label className="block">Phone<input type="tel" maxLength={40} autoComplete="tel" className={field} value={data.phone} onChange={e => setData({...data, phone: e.target.value})} /></label>
-      <label className="block">Interests<textarea aria-label="Interests" rows={4} maxLength={500} className={field} value={data.interests} onChange={e => setData({...data, interests: e.target.value})} /></label>
-      <label className="flex items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 accent-green-800" checked={data.opportunityEmails} onChange={e => setData({...data, opportunityEmails: e.target.checked})} /><span>Email me about volunteer opportunities. Event confirmations and changes to my existing sign-ups will still be sent.</span></label>
-      <p className="text-sm text-neutral-700">Changing your email retires existing private links and sends a fresh link to your new address.</p>
-      <button disabled={busy} className="rounded-full bg-green-800 px-6 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : "Save preferences"}</button>
-    </fieldset></form> : <form onSubmit={requestLink} className="mt-6 space-y-5"><h2 className="text-xl font-semibold text-gray-700">Request a private link</h2><label className="block text-gray-600">Your volunteer email<input required type="email" autoComplete="email" maxLength={254} className={field} value={requestEmail} onChange={e => setRequestEmail(e.target.value)} /></label><Recaptcha key={attempt} onChange={setCaptcha} /><button disabled={busy || !captcha} className="rounded-full bg-green-800 px-6 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Sending…" : "Email my preference link"}</button></form>}
+  async function requestLink(event:React.FormEvent){event.preventDefault();setBusy(true);setError("");try{const result=await apiRequest<{message:string}>("/api/volunteers/preferences/request",{method:"POST",body:JSON.stringify({email:requestEmail,recaptchaToken:captcha})});setNotice(result.message);}catch(error){setError(error instanceof Error?error.message:"Could not request a link.");}finally{setBusy(false);setCaptcha("");setAttempt(value=>value+1);}}
+  return <section className="mx-auto max-w-2xl rounded-3xl border border-neutral-200 bg-white p-6 text-neutral-900 shadow-sm [color-scheme:light] sm:p-9">
+    <h1 className="text-3xl font-semibold text-neutral-950">Manage my volunteering</h1><p className="mt-4 text-neutral-700">Manage your details, interests, availability and emails. Your private link works without signing in.</p>
+    {error&&<p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}{notice&&<p role="status" className="mt-5 rounded-xl bg-green-50 p-4 text-green-950">{notice}</p>}
+    {!loaded?<p className="mt-6">Opening your volunteering details…</p>:data?<>
+      <section className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-5"><h2 className="text-lg font-semibold">Your volunteer status: <span className="capitalize">{data.status}</span></h2>{data.status==="paused"&&<p className="mt-2 text-sm">Opportunity emails are paused {data.resumeDate?`until ${data.resumeDate} (Philadelphia date).`:"until you resume them."} Updates about existing event sign-ups can still be sent.</p>}{data.status==="inactive"&&<p className="mt-2 text-sm">Volunteer emails are stopped. You can resubscribe below. Confirmations of changes you request and private access links can still be sent.</p>}{data.updatedAt&&<p className="mt-2 text-xs text-neutral-700">Last updated: {date(data.updatedAt)} (Philadelphia time).</p>}{data.deletionRequestedAt&&<p className="mt-3 text-sm font-semibold text-amber-900">Data deletion requested {date(data.deletionRequestedAt)} (Philadelphia time). The request is awaiting club review.</p>}</section>
+      <form className="mt-7 space-y-5" onSubmit={e=>{e.preventDefault();void update("profile");}}><fieldset disabled={busy} className="space-y-5"><legend className="sr-only">Volunteer details</legend><VolunteerProfileFields value={data} onChange={patch=>setData(previous=>previous?{...previous,...patch}:null)} prefix="manage-volunteer" showCommitteeInterests={false} /><label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-green-800" checked={data.opportunityEmails} onChange={e=>setData({...data,opportunityEmails:e.target.checked})} /><span>I agree to receive volunteer opportunity emails. {data.status==="inactive"?"Use Resubscribe below to reactivate volunteering emails.":"Registration confirmations and updates about my existing sign-ups can still be sent."}</span></label><p className="text-sm text-neutral-700">Changing your email retires previous private links and sends a fresh link to your new address.</p><button disabled={busy} className="rounded-full bg-green-800 px-6 py-3 font-semibold text-white disabled:opacity-50">{busy?"Saving…":"Save preferences"}</button></fieldset></form>
+      <div className="mt-8 border-t border-neutral-200 pt-7"><CommitteeMembershipPanel accessToken={token} /></div>
+      <section className="mt-8 space-y-5 border-t border-neutral-200 pt-7"><h2 className="text-xl font-semibold">Email and volunteering controls</h2>{data.status!=="inactive"?<><div><label htmlFor="volunteer-resume-date" className="text-sm font-semibold">Optional resume date</label><input id="volunteer-resume-date" type="date" className={volunteerField} value={resumeDate} disabled={busy} onChange={e=>setResumeDate(e.target.value)} /><p className="mt-2 text-xs text-neutral-700">Opportunity emails resume on this Philadelphia calendar date. Leave blank to pause until you resume them.</p></div><div className="flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={()=>void update("pause")} className="rounded-full border border-green-800 px-5 py-3 text-sm font-semibold text-green-950 disabled:opacity-50">{data.status==="paused"?"Update pause":"Pause opportunities"}</button>{data.status==="paused"&&<button type="button" disabled={busy} onClick={()=>void update("resume")} className="rounded-full bg-green-800 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Resume opportunities</button>}</div><div><p className="mb-3 text-sm text-neutral-700">Unsubscribing makes your volunteer status inactive and stops volunteer emails. It does not cancel your existing event sign-ups.</p><button type="button" disabled={busy} onClick={()=>void update("unsubscribe")} className="rounded-full border border-red-800 px-5 py-3 text-sm font-semibold text-red-900 disabled:opacity-50">Unsubscribe from volunteer emails</button></div></>:<div><p className="mb-3 text-sm">Resubscribing reactivates your volunteer record and consents to volunteer opportunity emails.</p><button type="button" disabled={busy} onClick={()=>void update("resubscribe")} className="rounded-full bg-green-800 px-5 py-3 font-semibold text-white disabled:opacity-50">Resubscribe</button></div>}</section>
+      <section className="mt-8 border-t border-neutral-200 pt-7"><h2 className="text-xl font-semibold">Your data</h2><p className="mt-3 text-sm text-neutral-700">Ask the club to review deletion of your volunteer data. This stops volunteer emails and submits a request for review; it does not delete your membership account.</p><button type="button" disabled={busy||Boolean(data.deletionRequestedAt)} onClick={()=>{if(window.confirm("Request deletion of your volunteer data? The club will review your request. Your membership account is separate."))void update("request-deletion");}} className="mt-4 rounded-full border border-red-800 px-5 py-3 text-sm font-semibold text-red-900 disabled:opacity-50">{data.deletionRequestedAt?"Deletion request submitted":"Request deletion of my volunteer data"}</button></section>
+    </>:<form onSubmit={requestLink} className="mt-6 space-y-5"><h2 className="text-xl font-semibold">Request a private link</h2><div><label htmlFor="volunteer-access-email" className="block text-sm font-semibold">Your volunteer email</label><input id="volunteer-access-email" required type="email" autoComplete="email" maxLength={254} className={volunteerField} value={requestEmail} onChange={e=>setRequestEmail(e.target.value)} /></div><Recaptcha key={attempt} onChange={setCaptcha} /><button disabled={busy||!captcha} className="rounded-full bg-green-800 px-6 py-3 font-semibold text-white disabled:opacity-50">{busy?"Sending…":"Email my preference link"}</button></form>}
   </section>;
 }

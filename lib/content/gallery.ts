@@ -6,19 +6,16 @@
    lib/content/projects.ts) or describe only what the frame plainly shows.
    Nothing is dated or located beyond that.
 
-   The Lagos album is the exception worth naming: those are pictures of
-   Lagos itself, not of club activity, and the album says so. */
+   The source includes only the albums retained by the club. Removed
+   portraits and the albums below the requested gallery cutoff are excluded. */
 
 import { EKO } from "@/lib/content/programs";
-import { WEBINARS, type MediaItem } from "@/lib/content/projects";
+import type { MediaItem } from "@/lib/content/projects";
 
 export type GalleryCategory =
   | "Community service"
   | "Education"
-  | "Culture"
-  | "Health"
-  | "Leadership"
-  | "Lagos";
+  | "Culture";
 
 export type Album = {
   id: string;
@@ -40,27 +37,10 @@ const img = (src: string, alt: string, w: number, h: number, caption?: string): 
   caption,
 });
 
-/* Pixel sizes of the webinar flyers as stored in /public, so the viewer lays
-   each one out at its true proportions (several are square). Kept here as
-   well as on /projects because both pages open the same files. */
-const FLYER_SIZE: Record<string, { w: number; h: number }> = {
-  "/gallery/projects/health/flyer-back-pain-2025-09.jpg": { w: 1300, h: 1600 },
-  "/gallery/projects/health/flyer-dementia-2026-02.jpg": { w: 1230, h: 1600 },
-  "/gallery/projects/health/flyer-healthy-lifestyle-2025-06.jpg": { w: 1300, h: 1600 },
-  "/gallery/projects/health/flyer-stroke-2025-05.jpg": { w: 1300, h: 1600 },
-  "/gallery/projects/health/flyer-heart-health-2025-01.jpg": { w: 1600, h: 1600 },
-  "/gallery/projects/health/flyer-colon-cancer-2024-12.jpg": { w: 1600, h: 1600 },
-  "/gallery/projects/health/flyer-gynecologic-2025-03.jpg": { w: 1600, h: 1600 },
-  "/gallery/projects/health/flyer-preventive-medicine-2026-04.jpg": { w: 1576, h: 1600 },
-};
-
 export const GALLERY_CATEGORIES: GalleryCategory[] = [
   "Community service",
   "Education",
   "Culture",
-  "Health",
-  "Leadership",
-  "Lagos",
 ];
 
 export const ALBUMS: Album[] = [
@@ -147,31 +127,6 @@ export const ALBUMS: Album[] = [
     ],
   },
   {
-    id: "highway",
-    title: "Adopt-a-Highway",
-    category: "Community service",
-    accent: EKO.green,
-    href: "/projects#adopt-a-highway",
-    blurb:
-      "Two miles of Big Oak Road in Bucks County, Pennsylvania, adopted by the club and walked in teams since 2016. The road sign carries the club's name.",
-    media: [
-      img("/gallery/projects/highway/banner.jpg", "ECP members holding the club banner beneath the Adopt-a-Highway sign", 1600, 1200),
-      img("/gallery/projects/highway/group-at-sign.jpg", "ECP members in club shirts with filled litter bags beside the sign", 1600, 1200),
-      img("/gallery/event1.JPG", "A crew in orange club polos gathered under the road sign", 1600, 1200),
-      img("/gallery/projects/highway/spring-crew.jpg", "A cleanup crew in safety vests with collected trash bags", 1600, 1200),
-      img("/gallery/event5.JPG", "A crew in safety vests with bags and litter pickers at the roadside on a grey morning", 1600, 1200),
-      img("/gallery/projects/highway/crew-at-sign.jpg", "Four volunteers in safety vests with litter pickers at the sign", 1600, 1200),
-      img("/gallery/event6.JPG", "Four volunteers with litter pickers beneath the Adopt-a-Highway sign", 1200, 1600),
-      img("/gallery/projects/highway/litter-pick.jpg", "A volunteer picking up litter along the roadside", 1200, 1600),
-      img("/gallery/projects/highway/pointing-at-sign.jpg", "Members pointing up at the Eko Club Philadelphia road sign", 1200, 1600),
-      img("/gallery/programs/adopt-a-highway.jpg", "A selfie of the crew in club caps and safety vests under the road sign", 1051, 1400),
-      img("/gallery/projects/highway/selfie-under-sign.jpg", "A selfie of volunteers under the Adopt-a-Highway sign", 1336, 1002),
-      img("/gallery/event2.JPG", "Volunteers in safety vests at the sign post, litter pickers in hand", 1600, 1200),
-      img("/gallery/projects/highway/bags-collected.jpg", "Volunteers in safety vests with the bags they filled", 1600, 1200),
-      img("/gallery/projects/highway/banner-roadside.jpg", "The club banner held up at the roadside", 1600, 1200),
-    ],
-  },
-  {
     id: "thanksgiving",
     title: "Thanksgiving turkey giveaway",
     category: "Community service",
@@ -228,27 +183,6 @@ export const ALBUMS: Album[] = [
     ],
   },
   {
-    id: "back-to-school",
-    title: "Back to school with HomeFront",
-    category: "Education",
-    accent: EKO.blue,
-    href: "/projects#back-to-school",
-    blurb:
-      "Backpacks, uniforms, sneakers and supplies for children sponsored through HomeFront in Lawrenceville, New Jersey.",
-    media: [
-      img(
-        "/gallery/projects/homefront/homefront-donation.jpg",
-        "ECP members, a young student and a HomeFront representative with donated supplies",
-        1200,
-        1600,
-        "From left: Hon. Paseda, Master Fuad Abdullateef, Ms. Sydney Gecha, Hon. Okoya & Mrs. Abdullateef",
-      ),
-      img("/gallery/projects/homefront/back-to-school-bags.jpg", "Filled bags beneath a “Let’s Send Them Back to School” sign", 1200, 1600),
-      img("/gallery/projects/homefront/supplies.jpg", "Backpacks, sneakers and school supplies ready for delivery", 1200, 1600),
-      img("/gallery/projects/homefront/homefront-team.jpg", "ECP members with the HomeFront representative", 1200, 1600),
-    ],
-  },
-  {
     id: "school-outreach",
     title: "School outreach, June 2026",
     category: "Education",
@@ -265,100 +199,7 @@ export const ALBUMS: Album[] = [
       ),
     ],
   },
-  {
-    id: "health",
-    title: "Health education",
-    category: "Health",
-    accent: EKO.red,
-    href: "/projects#health-education",
-    blurb:
-      "The Health Education Team's webinar series with physicians and specialists, many of them from Capital Health. Every session flyer and every recording.",
-    media: [
-      ...WEBINARS.filter((w) => w.flyer).map((w) =>
-        img(w.flyer as string, `Flyer for the ${w.title} webinar`, FLYER_SIZE[w.flyer as string].w, FLYER_SIZE[w.flyer as string].h, `${w.title} · ${w.date}`),
-      ),
-      ...WEBINARS.map(
-        (w): MediaItem => ({
-          kind: "youtube",
-          id: w.id,
-          title: w.title,
-          caption: `${w.title} · ${w.speakers} · ${w.dateKind === "held" ? w.date : `published ${w.date}`}`,
-        }),
-      ),
-    ],
-  },
-  {
-    id: "leadership",
-    title: "Executive Council and patrons",
-    category: "Leadership",
-    accent: EKO.blue,
-    href: "/about#patrons",
-    blurb:
-      "The officers serving the club: the Executive Council, the Board of Trustees, and the matrons and patrons who stand behind them. The full roster of members, with years of service and biographies, lives in the member portal.",
-    media: [
-      img("/gallery/excos/olabisi-dabiri-okoya.png", "Hon. Olabisi Dabiri-Okoya, President", 2000, 2000, "Hon. Olabisi Dabiri-Okoya · President"),
-      img("/gallery/excos/adebimpe-daniells.png", "Hon. Adebimpe Daniells, Vice President", 2000, 2000, "Hon. Adebimpe Daniells · Vice President"),
-      img(
-        "/gallery/excos/olabisi-lawal.png",
-        "Hon. Olabisi Lawal, Treasurer and Financial Secretary",
-        2000,
-        2000,
-        "Hon. Olabisi Lawal · Treasurer / Financial Secretary",
-      ),
-      img(
-        "/gallery/excos/folashade-adedeji.png",
-        "Hon. Folashade Adedeji, PRO and Social Secretary",
-        2000,
-        2000,
-        "Hon. Folashade Adedeji · PRO / Social Secretary",
-      ),
-      img("/gallery/excos/bola-okoya.png", "Hon. Bola Okoya, Chairman of the Board of Trustees", 2000, 2000, "Hon. Bola Okoya · Chairman, Board of Trustees"),
-      img(
-        "/gallery/excos/modupe-mabinuori-olageshin.png",
-        "Hon. Elder Modupe Mabinuori-Olageshin, Vice Chairwoman and Treasurer of the Board of Trustees",
-        2000,
-        2000,
-        "Hon. Elder Modupe Mabinuori-Olageshin · Vice Chairwoman / Treasurer, Board of Trustees",
-      ),
-      img(
-        "/gallery/excos/saheed-abdullateef.png",
-        "Hon. Saheed Abdullateef, Secretary of the Board of Trustees",
-        2000,
-        2000,
-        "Hon. Saheed Abdullateef · Secretary, Board of Trustees",
-      ),
-      img("/gallery/patrons/tj-abass.png", "Otunba TJ Abass, Grand Patron", 2000, 2000, "Otunba TJ Abass · Grand Patron"),
-      img("/gallery/patrons/ganiyu-mimiko.png", "Dr. Ganiyu Mimiko, Patron", 2000, 2000, "Dr. Ganiyu Mimiko · Patron"),
-      img("/gallery/patrons/maryanne-onitolo.png", "Chief (Dr.) Maryanne Onitolo, Matron", 2000, 2000, "Chief (Dr.) Maryanne Onitolo · Matron"),
-      img("/gallery/patrons/risikat-oshilaja.png", "Alhaja Risikat Oshilaja, Matron", 2000, 2000, "Alhaja Risikat Oshilaja · Matron"),
-    ],
-  },
-  {
-    id: "lagos",
-    title: "Lagos, our roots",
-    category: "Lagos",
-    accent: EKO.yellow,
-    href: "/about#lagos-history",
-    blurb:
-      "Pictures of the city itself rather than of the club: the five divisions of Lagos State, and the streets, water and landmarks our members grew up with.",
-    media: [
-      img("/gallery/about/ibile/ibile-main.png", "The five divisions of Lagos State: Ikeja, Badagry, Ikorodu, Lagos Island, Epe", 1016, 846, "IBILE, the five divisions of Lagos State"),
-      img("/gallery/about/ibile/ikeja-heritage.jpg", "Ikeja heritage", 801, 534, "Ikeja"),
-      img("/gallery/about/ibile/badagry-heritage.jpg", "Badagry heritage", 1280, 720, "Badagry"),
-      img("/gallery/about/ibile/ikorodu-heritage.jpg", "Ikorodu heritage", 898, 601, "Ikorodu"),
-      img("/gallery/about/ibile/lagos-island-heritage.jpg", "Lagos Island heritage", 1170, 694, "Lagos Island"),
-      img("/gallery/about/ibile/epe-heritage.jpg", "Epe heritage", 868, 486, "Epe"),
-      img("/gallery/hero-bgs/eyo-2025.jpg", "Eyo masquerades gathered before a dais of officials at a Lagos State ceremony", 1280, 856, "Eyo at a Lagos State ceremony, 2025"),
-      img("/gallery/eko/eko-4.jpeg", "Lagos Island seen across the lagoon", 2048, 1366),
-      img("/gallery/hero-bgs/lagos-island.jpg", "The Lagos waterfront at Civic Centre Towers, seen from the air", 4028, 2265),
-      img("/gallery/hero-bgs/national-theatre_standard.jpg", "The National Arts Theatre, Iganmu, Lagos", 764, 573),
-      img("/gallery/eko/eko-1.jpeg", "A landscaped roundabout and city traffic on Lagos Island", 2048, 1440),
-      img("/gallery/eko/eko-2.jpeg", "A Lagos Carnival float dressed as an Eyo masquerade", 2048, 1365),
-      img("/gallery/eko/eko-3.jpeg", "Costumed performers in green and white at the Lagos Carnival", 2048, 1365),
-      img("/gallery/eko/eko-5.jpeg", "A Lagos Blue Line train at Marina Station", 2048, 1366),
-      img("/gallery/eko/eko-6.jpeg", "Boats moored at a Lagos ferry terminal on the lagoon", 1280, 853),
-    ],
-  },
+
 ];
 
 export const ALL_MEDIA: MediaItem[] = ALBUMS.flatMap((a) => a.media);

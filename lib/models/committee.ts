@@ -2,6 +2,7 @@ export type SocialPlatform = "twitter" | "linkedin" | "email" | "facebook" | "in
 
 export interface CommitteeMemberProfile {
   userId?: string; // link to user record if exists
+  volunteerId?: string;
   name: string;
   role: string; // "Chairperson", "Secretary", "Member", etc.
   bio?: string;
@@ -10,6 +11,47 @@ export interface CommitteeMemberProfile {
   isViceChair: boolean;
   joinedCommitteeAt: string;
   socialLinks?: Array<{ platform: SocialPlatform; url: string }>;
+}
+
+export interface CommitteeMembership {
+  id: string;
+  committeeId: string;
+  userId?: string;
+  volunteerId?: string;
+  status: "active" | "left";
+  role: string;
+  joinedAt: string;
+  updatedAt: string;
+}
+
+export interface CommitteeMembershipChange {
+  id: string;
+  committeeId: string;
+  committeeName: string;
+  userId?: string;
+  volunteerId?: string;
+  name: string;
+  action: "join" | "leave";
+  status: "active" | "left";
+  role: string;
+  at: string;
+}
+
+export interface CommitteeMessage {
+  id: string;
+  changeId: string;
+  volunteerId?: string;
+  userId?: string;
+  audience: "person" | "lead";
+  to: string;
+  subject: string;
+  html: string;
+  status: "pending" | "sending" | "failed" | "sent" | "superseded";
+  attempts: number;
+  createdAt: string;
+  leaseUntil?: string;
+  sentAt?: string;
+  error?: string;
 }
 
 export type CommitteeType =

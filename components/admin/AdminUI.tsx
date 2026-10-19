@@ -440,7 +440,7 @@ export function AdminFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search"
-          className="w-full rounded-full border border-neutral-300 bg-white py-2.5 pl-11 pr-4 text-sm font-normal text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-200"
+          className="w-full rounded-full border border-neutral-300 bg-white py-2.5 pl-11 pr-4 text-sm font-normal text-neutral-800 placeholder:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-green-200"
         />
       </div>
       {filters}
@@ -585,7 +585,7 @@ export function FormField({
 }
 
 const fieldBase =
-  "w-full rounded-xl border px-4 py-2.5 text-sm font-normal text-neutral-800 placeholder:text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200";
+  "w-full rounded-xl border px-4 py-2.5 text-sm font-normal text-neutral-800 placeholder:text-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-200";
 
 export function FormInput(props: React.InputHTMLAttributes<HTMLInputElement> & { hasError?: boolean }) {
   const { hasError, className, ...rest } = props;

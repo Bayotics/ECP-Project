@@ -1,6 +1,6 @@
 import { validateVolunteerInput, type VolunteerInput } from "@/lib/volunteer-input";
 
-export interface CsvMapping { name?: string; firstName?: string; lastName?: string; email: string; phone?: string; interests?: string; notes?: string; externalId?: string }
+export interface CsvMapping { name?: string; firstName?: string; lastName?: string; email: string; phone?: string; interests?: string; notes?: string; externalId?: string; city?: string; zip?: string; availability?: string; heardAbout?: string }
 export interface VolunteerCsvRow { row: number; value?: VolunteerInput; externalId?: string; error?: string; duplicate?: boolean }
 
 /** RFC 4180 quoting, escaped quotes, CRLF, BOM and quoted newlines. No evaluation. */
@@ -34,7 +34,7 @@ export function parseVolunteerCsv(csv: string): { headers: string[]; rows: strin
 
 export function suggestCsvMapping(headers: string[]): CsvMapping {
   const find = (...names: string[]) => headers.find(header => names.includes(header.toLowerCase().replace(/[^a-z0-9]/g, "")));
-  return { name: find("name", "fullname", "attendeename"), firstName: find("firstname", "first"), lastName: find("lastname", "last", "surname"), email: find("email", "emailaddress", "attendeeemail") || "", phone: find("phone", "phonenumber", "mobile"), interests: find("interests", "skills"), notes: find("notes", "comments"), externalId: find("externalid", "attendeeid", "registrationid") };
+  return { name: find("name", "fullname", "attendeename"), firstName: find("firstname", "first"), lastName: find("lastname", "last", "surname"), email: find("email", "emailaddress", "attendeeemail") || "", phone: find("phone", "phonenumber", "mobile"), interests: find("interests", "skills"), notes: find("notes", "comments"), externalId: find("externalid", "attendeeid", "registrationid"), city: find("city"), zip: find("zip", "zipcode", "postalcode"), availability: find("availability"), heardAbout: find("heardabout", "howdidyouhearaboutus") };
 }
 
 export function previewVolunteerCsv(csv: string, mapping: CsvMapping, eventId?: string): VolunteerCsvRow[] {
@@ -44,7 +44,7 @@ export function previewVolunteerCsv(csv: string, mapping: CsvMapping, eventId?: 
   const seen = new Set<string>();
   return rows.map((row, index) => {
     const value = (key: keyof CsvMapping) => mapping[key] ? row[headers.indexOf(mapping[key]!)]?.trim() || "" : "";
-    const result = validateVolunteerInput({ name: value("name") || [value("firstName"), value("lastName")].filter(Boolean).join(" "), email: value("email"), phone: value("phone"), interests: value("interests"), notes: value("notes"), eventId });
+    const result = validateVolunteerInput({ name: value("name") || [value("firstName"), value("lastName")].filter(Boolean).join(" "), email: value("email"), ...(value("firstName")&&value("lastName")?{firstName:value("firstName"),lastName:value("lastName")}:{}), phone: value("phone"), interests: value("interests"), notes: value("notes"), ...(mapping.city?{city:value("city")}:{}), ...(mapping.zip?{zip:value("zip")}:{}), ...(mapping.availability?{availability:value("availability")}:{}), ...(mapping.heardAbout?{heardAbout:value("heardAbout")}:{}), eventId });
     if ("error" in result) return { row: index + 2, error: result.error };
     if (seen.has(result.value.email)) return { row: index + 2, duplicate: true, error: "Duplicate email in this file; the first row will be used." };
     seen.add(result.value.email);

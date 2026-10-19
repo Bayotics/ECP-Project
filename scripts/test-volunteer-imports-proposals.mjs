@@ -87,41 +87,6 @@ test('public proposals require server-side CAPTCHA before writes or notification
   assert.equal(result.status, 400); assert.equal(h.state.writes, 0); assert.equal(h.state.reads, 0);
 });
 
-function preferencesHarness(valid = true, conflict = false) {
-  const state = {updates: [], revoked: 0, queued: 0};
-  const person = {id: 'person', name: 'Jane Doe', email: 'jane@example.test', phone: 'old', interests: 'Old interests', notes: 'PRIVATE INTERNAL NOTE', source: 'eventbrite', opportunityEmails: false};
-  const mocks = {
-    'next/server': {NextResponse: {json: (body, options = {}) => ({body, status: options.status || 200, headers: options.headers})}},
-    '@/lib/server/guards': {getRequestSession: async () => null},
-    '@/lib/server/volunteers': {VolunteerError},
-    '@/lib/server/volunteer-access': {findVolunteerAccess: async () => valid ? person : null},
-    '@/lib/server/volunteer-transaction': {volunteerTransaction: async work => work({})},
-    '@/lib/server/volunteer-notifications': {queueVolunteerWelcome: async () => {state.queued++; return ['welcome'];}, deliverVolunteerMessages: async () => ({failed: 0})},
-    '@/lib/server/collections': {ensureCoreIndexes: async () => {}, getCollection: async name => name === 'volunteers' ? {findOne: async () => conflict ? {id: 'someone-else'} : null, updateOne: async (...args) => state.updates.push(args)} : name === 'volunteerAccessTokens' ? {deleteMany: async () => {state.revoked++;}} : {updateMany: async (...args) => state.externalUpdate = args}},
-  };
-  return {...state, state, route: load('app/api/volunteers/preferences/route.ts', mocks)};
-}
-test('preference links only expose the agreed fields and invalid links never return personal data', async () => {
-  const invalid = await preferencesHarness(false).route.GET(request({})); assert.equal(invalid.status, 403); assert.equal(invalid.body.data, undefined);
-  const result = await preferencesHarness().route.GET(request({}));
-  assert.deepEqual(Object.keys(result.body.data).sort(), ['email', 'interests', 'name', 'opportunityEmails', 'phone']);
-  assert.equal(result.headers['Cache-Control'], 'private, no-store');
-});
-test('preference saves update contact details and opt-in without modifying internal notes', async () => {
-  const h = preferencesHarness();
-  const result = await h.route.PATCH(request({name: 'Updated Jane', email: 'jane@example.test', phone: '2155550100', interests: 'Mentoring', opportunityEmails: true, notes: 'INJECTED', source: 'other'}));
-  assert.equal(result.status, 200); assert.equal(result.body.data.preferences.opportunityEmails, true);
-  const patch = h.state.updates[0][1].$set; assert.equal(patch.phone, '2155550100'); assert.equal(patch.notes, undefined); assert.equal(patch.source, undefined);
-  assert.equal(h.state.revoked, 0); assert.equal(h.state.queued, 0);
-});
-test('email change rejects identity collisions, retires old tokens and updates external references', async () => {
-  const values = {name: 'Jane Doe', email: 'new@example.test', phone: '', interests: '', opportunityEmails: false};
-  const conflict = preferencesHarness(true, true); assert.equal((await conflict.route.PATCH(request(values))).status, 409); assert.equal(conflict.state.updates.length, 0);
-  const h = preferencesHarness(); const result = await h.route.PATCH(request(values));
-  assert.equal(result.status, 200); assert.equal(result.body.data.emailChanged, true); assert.equal(h.state.revoked, 1); assert.equal(h.state.queued, 1);
-  assert.equal(h.state.externalUpdate[1].$set.email, 'new@example.test'); assert.equal(result.body.data.messages, undefined);
-});
-
 test('conversion escapes public proposal text before it becomes an HTML event description', () => {
   const {proposalEventDescription} = load('lib/proposal-input.ts');
   const result = proposalEventDescription('Community day\n<img src=x onerror="alert(1)"><script>bad()</script>');

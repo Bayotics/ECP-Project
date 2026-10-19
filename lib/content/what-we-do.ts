@@ -31,8 +31,8 @@ export const DEFAULT_WHAT_WE_DO: WhatWeDoSlide[] = [
     imageUrl: "/gallery/projects/highway/spring-crew.jpg", imageAlt: "Eko Club Philadelphia highway cleanup volunteers",
   },
   {
-    id: "committees", color: "#dc2626", title: "Committees", href: "/member/committees", label: "Browse committees",
-    description: "Ten committees are how the work gets done, each with a chair and a month in the calendar. Joining one is how members find their place.",
+    id: "committees", color: "#dc2626", title: "Committees", href: "/committees", label: "Browse committees",
+    description: "Our committees bring community programs to life. Members and volunteers can join in and put their time and skills to work.",
     imageUrl: "/gallery/committee-slider.jpg", imageAlt: "Eko Club Philadelphia committee members",
   },
   {

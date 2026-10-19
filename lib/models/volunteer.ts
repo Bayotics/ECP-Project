@@ -1,8 +1,34 @@
 import type { VolunteerSource } from "@/lib/volunteer-sources";
 
+export type VolunteerStatus = "active" | "paused" | "inactive";
+export interface VolunteerChange {
+  id: string;
+  volunteerId: string;
+  action: "registered" | "profile-updated" | "paused" | "resumed" | "unsubscribed" | "resubscribed" | "deletion-requested";
+  at: string;
+  changedFields: string[];
+  emailConsent?: boolean;
+  resumeDate?: string | null;
+  fromStatus?: VolunteerStatus;
+  toStatus?: VolunteerStatus;
+}
+
 export interface Volunteer {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  userId?: string;
+  city?: string;
+  zip?: string;
+  committeeIds?: string[];
+  interestAreas?: string[];
+  availability?: string;
+  heardAbout?: string;
+  status?: VolunteerStatus;
+  resumeDate?: string | null;
+  deletionRequestedAt?: string;
+  consentUpdatedAt?: string;
   /** Normalized email is the person's unique volunteer identity. */
   email: string;
   phone: string;
@@ -24,6 +50,7 @@ export interface VolunteerMessage {
   eventId?: string;
   signupStatus?: VolunteerSignupStatus;
   audience: "volunteer" | "staff";
+  kind?: "signup" | "welcome" | "access" | "management" | "opportunity";
   to: string;
   subject: string;
   html: string;
@@ -92,6 +119,9 @@ export interface VolunteerImportBatch {
 
 export interface VolunteerAdminRow extends Volunteer {
   emailIssues?: number;
+  member?: { id: string; name: string };
+  committeeNames?: string[];
+  changes?: VolunteerChange[];
   signups: Array<VolunteerSignup & { eventTitle: string; eventSlug?: string; eventDate?: string }>;
 }
 

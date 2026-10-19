@@ -2,13 +2,12 @@
 
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import { useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { HEADER_OFFSET } from "@/components/layout/Header";
-import { EASE, HIDDEN, SHIFT, useIsClient, useReveal } from "@/components/gsap/useReveal";
+import { EASE, HIDDEN, SHIFT, useReveal } from "@/components/gsap/useReveal";
 import { useEvents } from "@/context";
 import type { Event, EventType } from "@/lib/models";
 import { cn } from "@/utils/cn";
@@ -271,170 +270,6 @@ function EventRow({ event }: { event: Event }) {
   );
 }
 
-/* ─── Propose a project ─────────────────────────────────────────────────── */
-
-type FormState = "idle" | "submitting" | "success" | "error";
-
-/* Portalled to <body>: the page transition wrapper and the reveal
-   animations both put transforms on ancestors, which would otherwise make
-   `position: fixed` resolve against them instead of the viewport. */
-function AdoptProjectModal({ onClose }: { onClose: () => void }) {
-  const isClient = useIsClient();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [idea, setIdea] = useState("");
-  const [formState, setFormState] = useState<FormState>("idle");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  function validate() {
-    const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Name is required.";
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = "A valid email is required.";
-    if (!idea.trim() || idea.trim().length < 20) e.idea = "Please describe your idea in at least 20 characters.";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-    setFormState("submitting");
-    try {
-      const res = await fetch("https://formspree.io/f/xpwroval", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ _subject: "Adopt a Project Proposal", name, email, phone, idea }),
-      });
-      setFormState(res.ok ? "success" : "error");
-    } catch {
-      setFormState("error");
-    }
-  }
-
-  const field = (bad: boolean) =>
-    cn(
-      "w-full rounded-xl border px-4 py-2.5 text-sm text-neutral-800 transition-colors focus:outline-none focus:ring-2",
-      bad ? "border-red-400 bg-red-50 focus:ring-red-200" : "border-neutral-300 bg-white focus:ring-green-200",
-    );
-
-  if (!isClient) return null;
-
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Propose a project"
-      data-lenis-prevent
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 [animation:viewer-in_220ms_ease-out]"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-neutral-950/70 backdrop-blur-sm" />
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[1.75rem] bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex h-1.5 w-full" aria-hidden="true">
-          {QUAD.map((c) => (
-            <div key={c} className="flex-1" style={{ background: c }} />
-          ))}
-        </div>
-        <div className="p-6 sm:p-8">
-          {formState === "success" ? (
-            <div className="py-6 text-center">
-              <h2 className="text-2xl font-normal tracking-[-0.02em] text-neutral-950">Proposal sent</h2>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-neutral-700">
-                The President will read your idea and come back to you within a few business days.
-              </p>
-              <button
-                onClick={onClose}
-                className="mt-6 inline-flex items-center rounded-full px-7 py-3 text-sm font-normal text-white"
-                style={{ background: EKO.green }}
-              >
-                Close
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-normal uppercase tracking-[0.22em] text-neutral-500">Adopt a project</p>
-                  <h2 className="mt-2 text-2xl font-normal tracking-[-0.02em] text-neutral-950">Propose a community project</h2>
-                  <p className="mt-2 text-sm leading-7 text-neutral-700">It goes straight to the President.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Close"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors hover:bg-neutral-200"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <path d="M6 6l12 12M18 6 6 18" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="adopt-name" className="mb-1.5 block text-xs font-normal uppercase tracking-[0.14em] text-neutral-600">
-                    Name
-                  </label>
-                  <input id="adopt-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={field(!!errors.name)} />
-                  {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-                </div>
-                <div>
-                  <label htmlFor="adopt-email" className="mb-1.5 block text-xs font-normal uppercase tracking-[0.14em] text-neutral-600">
-                    Email
-                  </label>
-                  <input id="adopt-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" className={field(!!errors.email)} />
-                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="adopt-phone" className="mb-1.5 block text-xs font-normal uppercase tracking-[0.14em] text-neutral-600">
-                  Phone <span className="text-neutral-400">(optional)</span>
-                </label>
-                <input id="adopt-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (215) 000 0000" className={field(false)} />
-              </div>
-
-              <div>
-                <label htmlFor="adopt-idea" className="mb-1.5 block text-xs font-normal uppercase tracking-[0.14em] text-neutral-600">
-                  Your idea
-                </label>
-                <textarea
-                  id="adopt-idea"
-                  rows={4}
-                  value={idea}
-                  onChange={(e) => setIdea(e.target.value)}
-                  placeholder="What the project is, who it helps, and when you imagine running it."
-                  className={cn(field(!!errors.idea), "resize-none leading-7")}
-                />
-                {errors.idea && <p className="mt-1 text-xs text-red-600">{errors.idea}</p>}
-              </div>
-
-              {formState === "error" && (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  Something went wrong. Please try again, or email us directly.
-                </p>
-              )}
-
-              <input type="text" name="_gotcha" className="hidden" tabIndex={-1} aria-hidden="true" />
-
-              <button
-                type="submit"
-                disabled={formState === "submitting"}
-                className="w-full rounded-full py-3.5 text-sm font-normal text-white transition-opacity disabled:opacity-60"
-                style={{ background: EKO.green }}
-              >
-                {formState === "submitting" ? "Sending…" : "Send the proposal"}
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function EventsPageClient() {
@@ -445,7 +280,6 @@ export default function EventsPageClient() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("upcoming");
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("card");
-  const [showModal, setShowModal] = useState(false);
 
   /* Read once per mount rather than on every render, so the filters below
      memoise properly. Nothing derived from it is rendered before the event
@@ -567,7 +401,6 @@ export default function EventsPageClient() {
 
   return (
     <div ref={pageRef} className="bg-white text-neutral-950">
-      {showModal && <AdoptProjectModal onClose={() => setShowModal(false)} />}
 
       {/* ─── Hero ─── */}
       <section className={`relative isolate overflow-hidden bg-neutral-950 ${HEADER_OFFSET.padding}`}>
@@ -616,12 +449,12 @@ export default function EventsPageClient() {
                 >
                   Browse events
                 </Link>
-                <button
-                  onClick={() => setShowModal(true)}
+                <Link
+                  href="/event/propose"
                   className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"
                 >
-                  Adopt a project
-                </button>
+                  Propose an event
+                </Link>
                 <Link
                   href="/programs"
                   className="inline-flex items-center rounded-full border border-white/25 bg-white/8 px-7 py-3.5 text-sm font-normal text-white backdrop-blur-md transition-colors hover:bg-white/12"

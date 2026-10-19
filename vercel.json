@@ -1,7 +1,20 @@
 {
   "crons": [
-    { "path": "/api/cron/dues-reminders", "schedule": "30 4 * * *" },
-    { "path": "/api/cron/account-status-notifications", "schedule": "35 4 * * *" },
-    { "path": "/api/cron/volunteer-notifications", "schedule": "40 4 * * *" }
+    {
+      "path": "/api/cron/dues-reminders",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/account-status-notifications",
+      "schedule": "35 4 * * *"
+    },
+    {
+      "path": "/api/cron/volunteer-notifications",
+      "schedule": "40 8 * * *"
+    },
+    {
+      "path": "/api/cron/newsletter-notifications",
+      "schedule": "45 8 * * *"
+    }
   ]
 }
