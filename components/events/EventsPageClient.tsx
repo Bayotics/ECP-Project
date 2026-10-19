@@ -10,7 +10,6 @@ import { gsap } from "gsap";
 import { HEADER_OFFSET } from "@/components/layout/Header";
 import { EASE, HIDDEN, SHIFT, useIsClient, useReveal } from "@/components/gsap/useReveal";
 import { useEvents } from "@/context";
-import EventCalendarSummary from "@/components/events/EventCalendarSummary";
 import type { Event, EventType } from "@/lib/models";
 import { cn } from "@/utils/cn";
 import { EKO } from "@/lib/content/programs";
@@ -490,6 +489,8 @@ export default function EventsPageClient() {
     [filtered, dateFilter],
   );
 
+  const upcomingCount = useMemo(() => published.filter((event) => new Date(event.date) >= now).length, [published, now]);
+
   const hasFilters = search !== "" || typeFilter !== "all" || dateFilter !== "upcoming" || organizerFilter !== "all";
   /* The list opens on "Upcoming", so an empty result with nothing else
      narrowed means the calendar is simply between events rather than
@@ -501,6 +502,12 @@ export default function EventsPageClient() {
     setDateFilter("upcoming");
     setOrganizerFilter("all");
   }
+
+  const stats = [
+    { value: published.length, label: "Published events", color: EKO.green },
+    { value: upcomingCount, label: "Coming up", color: EKO.red },
+    { value: featured.length, label: "Featured", color: EKO.blue },
+  ];
 
   const pageRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
@@ -583,7 +590,7 @@ export default function EventsPageClient() {
         ))}
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-28 lg:px-8 lg:py-32">
-          <div className="grid items-start gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid items-end gap-14 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="max-w-3xl">
               <div ref={heroTextRef} data-reveal style={HIDDEN}>
                 <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
@@ -624,9 +631,21 @@ export default function EventsPageClient() {
               </div>
             </div>
 
-            <div ref={heroPanelRef} role="region" aria-labelledby="calendar-summary-heading" data-reveal className="rounded-4xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl" style={HIDDEN}>
-              <h2 id="calendar-summary-heading" className="text-xs font-normal uppercase tracking-[0.22em] text-white">On the calendar</h2>
-              <EventCalendarSummary />
+            <div ref={heroPanelRef} data-reveal className="rounded-4xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl" style={HIDDEN}>
+              <p className="text-xs font-normal uppercase tracking-[0.22em] text-white">On the calendar</p>
+              <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {stats.map((s) => (
+                  <div key={s.label} className="rounded-3xl border border-white/10 bg-black/20 p-5">
+                    <dt className="sr-only">{s.label}</dt>
+                    <dd>
+                      <span className="block text-4xl font-normal tracking-[-0.04em]" style={{ color: s.color }}>
+                        {isLoading ? "–" : s.value.toLocaleString()}
+                      </span>
+                      <span className="mt-2 block text-xs font-normal uppercase tracking-[0.16em] text-white">{s.label}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           </div>
         </div>
