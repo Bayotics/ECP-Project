@@ -35,6 +35,11 @@ try {
     db.collection('volunteers').createIndex({ email: 1 }, { unique: true }),
     db.collection('volunteers').createIndex({ id: 1 }, { unique: true }),
     db.collection('volunteerSignups').createIndex({ eventId: 1, volunteerId: 1 }, { unique: true }),
+    db.collection('volunteerAccessTokens').createIndex({ tokenHash: 1 }, { unique: true }),
+    db.collection('volunteerExternalRegistrations').createIndex({ id: 1 }, { unique: true }),
+    db.collection('proposals').createIndex({ submissionId: 1 }, { unique: true }),
+    db.collection('proposalMessages').createIndex({ id: 1 }, { unique: true }),
+    db.collection('clubSettings').createIndex({ id: 1 }, { unique: true }),
     db.collection('volunteerMessages').createIndex({ id: 1 }, { unique: true }),
   ]);
   const notifications = load('lib/server/volunteer-notifications.ts');
@@ -59,7 +64,7 @@ try {
   assert.equal(bob.status, 'waitlisted'); assert.equal(charlie.status, 'waitlisted');
   const repeat = await registerVolunteer({ ...input('alice@example.test'), name: 'Updated Alice' }, false);
   assert.equal(repeat.alreadyRegistered, true); assert.equal(await signups.countDocuments({ volunteerId: alice.volunteerId, eventId: 'one' }), 1);
-  assert.equal((await people.findOne({ id: alice.volunteerId })).name, 'Updated Alice');
+  assert.equal((await people.findOne({ id: alice.volunteerId })).name, 'Test Volunteer');
   const general = await registerVolunteer(input('alice@example.test', ''), false);
   assert.equal(general.volunteerId, alice.volunteerId); assert.equal(general.status, 'general');
   assert.ok((await people.findOne({ id: alice.volunteerId })).generalRegisteredAt);
@@ -101,6 +106,69 @@ try {
   assert.ok(delivered.some(message => message.to === 'bob@example.test' && /place confirmed/.test(message.subject)));
   assert.ok(!delivered.some(message => message.to === 'inactive@example.test'));
   console.log('PASS: transaction rollback, restricted/closed events, durable email retries, no resending delivered jobs. Real MongoDB; email provider mocked.');
+  // Imports reuse the same allocator, preserve preferences and deduplicate both
+  // email identities and external delivery retries.
+  await people.updateOne({ id: bob.volunteerId }, { $set: { phone: '215-555-0199', opportunityEmails: false } });
+  const importedBob = await registerVolunteer({...input('bob@example.test'), name: 'Do not overwrite', interests: ''}, true, {source: 'eventbrite', imported: true, externalId: 'attendee-bob'});
+  assert.equal(importedBob.alreadyRegistered, true);
+  const preservedBob = await people.findOne({id: bob.volunteerId});
+  assert.equal(preservedBob.phone, '215-555-0199'); assert.equal(preservedBob.opportunityEmails, false);
+  assert.equal(preservedBob.name, 'Test Volunteer'); assert.equal(preservedBob.source, 'website');
+  assert.deepEqual(preservedBob.sources.sort(), ['eventbrite', 'website']);
+  const welcomeCount = await messages.countDocuments({volunteerId: bob.volunteerId, subject: 'Welcome to Eko Club Philadelphia volunteers'});
+  await registerVolunteer(input('bob@example.test'), true, {source: 'eventbrite', imported: true, externalId: 'attendee-bob'});
+  assert.equal(await messages.countDocuments({volunteerId: bob.volunteerId, subject: 'Welcome to Eko Club Philadelphia volunteers'}), welcomeCount);
+  await assert.rejects(registerVolunteer(input('wrong@example.test'), true, {source: 'eventbrite', imported: true, externalId: 'attendee-bob'}), /different email/);
+  assert.equal(await people.countDocuments({email: 'wrong@example.test'}), 0);
+  const ext = await registerVolunteer(input('external@example.test', 'one'), true, {source: 'partiful', imported: true});
+  assert.equal(ext.status, 'waitlisted');
+  await cancelVolunteerSignup(ext.reference);
+  const replay = await registerVolunteer(input('external@example.test', 'one'), true, {source: 'partiful', imported: true});
+  assert.equal(replay.status, 'cancelled');
+  await registerVolunteer(input('external@example.test', 'one'), false);
+  const rejoined = await signups.findOne({id: ext.reference});
+  assert.equal(rejoined.source, 'partiful'); assert.deepEqual(rejoined.sources.sort(), ['partiful', 'website']);
+  const rawWelcome = await messages.findOne({volunteerId: bob.volunteerId, subject: 'Welcome to Eko Club Philadelphia volunteers'});
+  const token = rawWelcome.html.match(/#token=([a-f0-9]{64})/)[1];
+  const {findVolunteerAccess} = load('lib/server/volunteer-access.ts');
+  assert.equal((await findVolunteerAccess(`Bearer ${token}`)).id, bob.volunteerId);
+  assert.equal(await findVolunteerAccess('Bearer ' + 'a'.repeat(64)), null);
+  const access = await db.collection('volunteerAccessTokens').findOne({volunteerId: bob.volunteerId});
+  assert.ok(access.tokenHash); assert.equal(access.token, undefined);
+  await db.collection('volunteerAccessTokens').updateMany({volunteerId: bob.volunteerId}, {$set: {expiresAt: new Date(0)}});
+  assert.equal(await findVolunteerAccess(`Bearer ${token}`), null);
+  console.log('PASS: external import deduplication, provenance, consent/contact preservation, cancelled replay, capacity and hashed expiring links.');
+
+  await db.collection('users').insertMany([
+    {id: 'president', displayName: 'President', role: 'member', status: 'active', title: 'President', email: 'president@example.test'},
+    {id: 'vp', displayName: 'VP', role: 'member', status: 'active', title: 'Vice President', email: 'vp@example.test'},
+    {id: 'former', displayName: 'Former President', role: 'member', status: 'active', title: 'Former President', email: 'former@example.test'}
+  ]);
+  const proposals = load('lib/server/proposals.ts');
+  assert.deepEqual((await proposals.proposalRecipients()).map(person => person.email).sort(), ['admin@example.test', 'president@example.test', 'vp@example.test']);
+  const proposalInput = {submissionId: randomUUID(), name: 'Proposer', email: 'proposer@example.test', title: 'Community day', description: 'An event to bring everyone together.', proposedDate: '2099-12-10', location: 'Club Hall', estimatedBudgetCents: 12500, notes: ''};
+  const [p1, p2] = await Promise.all([proposals.submitProposal(proposalInput), proposals.submitProposal(proposalInput)]);
+  assert.equal(p1.proposal.id, p2.proposal.id);
+  assert.equal(await db.collection('proposals').countDocuments({submissionId: proposalInput.submissionId}), 1);
+  assert.equal(await db.collection('proposalMessages').countDocuments({proposalId: p1.proposal.id}), 4);
+  await assert.rejects(proposals.submitProposal({...proposalInput, title: 'Changed payload'}), /already used/);
+  const admin = {sub: 'admin', email: 'admin@example.test'};
+  await assert.rejects(proposals.convertProposal(p1.proposal.id, admin), /Approve the proposal/);
+  await db.collection('proposals').updateOne({id: p1.proposal.id}, {$set: {status: 'approved'}});
+  const [draftA, draftB] = await Promise.all([proposals.convertProposal(p1.proposal.id, admin), proposals.convertProposal(p1.proposal.id, admin)]);
+  assert.equal(draftA.id, draftB.id);
+  assert.equal(await events.countDocuments({proposalId: p1.proposal.id}), 1);
+  const draft = await events.findOne({id: draftA.id});
+  assert.equal(draft.status, 'draft'); assert.equal(draft.registrationRequired, false); assert.equal(draft.location, 'Club Hall');
+  await proposals.deliverProposalMessages(p1.proposal.id);
+  const sentBefore = delivered.length; await proposals.deliverProposalMessages(p1.proposal.id); assert.equal(delivered.length, sentBefore);
+  await db.collection('clubSettings').insertOne({id: 'proposal-recipients', recipients: [{name: 'Reviewer', email: 'reviewer@example.test'}]});
+  assert.deepEqual((await proposals.proposalRecipients()).map(person => person.email), ['reviewer@example.test']);
+  const noBudget = {...proposalInput, submissionId: randomUUID()}; delete noBudget.estimatedBudgetCents;
+  const optional = await proposals.submitProposal(noBudget);
+  assert.equal(Object.hasOwn(await db.collection('proposals').findOne({id: optional.proposal.id}), 'estimatedBudgetCents'), false);
+  console.log('PASS: default/editable recipients, idempotent proposals and acknowledgements, optional budget storage, approval guard and concurrent single draft conversion.');
+
 } finally {
   assert.equal(db.databaseName, databaseName);
   assert.ok(databaseName.startsWith('ecp_volunteer_test_'));

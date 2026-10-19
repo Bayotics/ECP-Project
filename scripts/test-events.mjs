@@ -267,3 +267,14 @@ test('event volunteer caps persist independently, can be cleared and reject inva
   }
   assert.equal(state.writes, writes);
 });
+
+
+test('draft event details stay private until an admin publishes the event', async () => {
+  for (const session of [null, {sub: 'member', role: 'member'}]) {
+    const state = listingRoutes(session); state.document.status = 'draft';
+    const result = await state.detail.GET({}, context);
+    assert.equal(result.status, 404); assert.equal(result.body.data, undefined);
+  }
+  const state = listingRoutes(); state.document.status = 'draft';
+  const result = await state.detail.GET({}, context); assert.equal(result.status, 200); assert.equal(result.body.data.status, 'draft');
+});

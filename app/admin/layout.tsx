@@ -26,7 +26,7 @@ export default async function AdminLayout({
   return (
     <AdminGuard>
       <PortalScrollHandler>
-        <div className="flex h-screen overflow-hidden bg-(--color-neutral-100)">
+        <div className="flex h-screen overflow-hidden bg-(--color-neutral-100) text-neutral-900 [color-scheme:light]">
           <Sidebar role="admin" />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Navbar isAdmin />

@@ -21,6 +21,13 @@ import type {
   Volunteer,
   VolunteerSignup,
   VolunteerMessage,
+  VolunteerAccessToken,
+  VolunteerExternalRegistration,
+  VolunteerImportBatch,
+  EventProposal,
+  ProposalMessage,
+  ProposalRecipientsSettings,
+  VolunteerIntegrationSettings,
 } from "@/lib/models";
 import { getDb } from "@/lib/server/mongodb";
 import type { WhatWeDoDocument } from "@/lib/content/what-we-do";
@@ -31,6 +38,12 @@ export const COLLECTIONS = {
   volunteers: "volunteers",
   volunteerSignups: "volunteerSignups",
   volunteerMessages: "volunteerMessages",
+  volunteerAccessTokens: "volunteerAccessTokens",
+  volunteerExternalRegistrations: "volunteerExternalRegistrations",
+  volunteerImportBatches: "volunteerImportBatches",
+  proposals: "proposals",
+  proposalMessages: "proposalMessages",
+  clubSettings: "clubSettings",
   users: "users",
   membershipApplications: "membershipApplications",
   events: "events",
@@ -56,6 +69,12 @@ export interface AppCollections {
   volunteers: Volunteer;
   volunteerSignups: VolunteerSignup;
   volunteerMessages: VolunteerMessage;
+  volunteerAccessTokens: VolunteerAccessToken;
+  volunteerExternalRegistrations: VolunteerExternalRegistration;
+  volunteerImportBatches: VolunteerImportBatch;
+  proposals: EventProposal;
+  proposalMessages: ProposalMessage;
+  clubSettings: ProposalRecipientsSettings | VolunteerIntegrationSettings;
   users: User;
   membershipApplications: MembershipApplication;
   events: Event;
@@ -84,6 +103,12 @@ type CollectionIndexMap = {
 };
 
 const COLLECTION_INDEXES: CollectionIndexMap = {
+  volunteerAccessTokens: [{ key: { tokenHash: 1 }, unique: true }, { key: { volunteerId: 1 } }, { key: { expiresAt: 1 }, expireAfterSeconds: 0 }],
+  volunteerExternalRegistrations: [{ key: { id: 1 }, unique: true }],
+  volunteerImportBatches: [{ key: { id: 1 }, unique: true }, { key: { createdAt: -1 } }],
+  proposals: [{ key: { id: 1 }, unique: true }, { key: { submissionId: 1 }, unique: true }, { key: { status: 1, createdAt: -1 } }],
+  proposalMessages: [{ key: { id: 1 }, unique: true }, { key: { status: 1, createdAt: 1 } }, { key: { proposalId: 1 } }],
+  clubSettings: [{ key: { id: 1 }, unique: true }],
   siteContent: [{ key: { id: 1 }, unique: true }],
   volunteers: [{ key: { id: 1 }, unique: true }, { key: { email: 1 }, unique: true }],
   volunteerSignups: [
@@ -120,6 +145,7 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
   events: [
     { key: { id: 1 }, unique: true },
     { key: { slug: 1 }, unique: true },
+    { key: { proposalId: 1 }, unique: true, partialFilterExpression: { proposalId: { $type: "string" } } },
     { key: { date: 1 } },
     { key: { status: 1 } },
     { key: { type: 1 } },
@@ -254,6 +280,11 @@ export async function ensureCoreIndexes(): Promise<void> {
             }
           }
           await Promise.all(indexes.map((index) => collection.createIndex(index.key, index)));
+          // Before external imports existed, all volunteer records came from
+          // the club website. Backfill that known origin once, never overwrite it.
+          if (name === "volunteers" || name === "volunteerSignups") {
+            await (await getCollection(name)).updateMany({ source: { $exists: false } }, { $set: { source: "website", sources: ["website"] } });
+          }
         })
       );
     })().catch(error => { indexesPromise = null; throw error; });

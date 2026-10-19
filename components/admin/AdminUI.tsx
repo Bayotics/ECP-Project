@@ -142,7 +142,7 @@ export function AdminModal({
         /* Capped height with the body scrolling inside it, so the title and
            the close button stay put however long the form is. */
         className={cn(
-          "relative my-8 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[1.5rem] bg-white shadow-2xl",
+          "relative my-8 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[1.5rem] bg-white text-neutral-900 shadow-2xl [color-scheme:light]",
           widths[size],
         )}
         role="dialog"

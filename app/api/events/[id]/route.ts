@@ -22,6 +22,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     }
 
     const viewer = await getRequestSession(request);
+    if (event.status === "draft" && (!viewer || !["admin", "super-admin"].includes(viewer.role))) return NextResponse.json({ok: false, error: "Event not found"}, {status: 404});
     return NextResponse.json({ ok: true, data: publicVolunteerEvent(event, Boolean(viewer && ["admin", "super-admin"].includes(viewer.role))) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch event";

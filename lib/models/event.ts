@@ -41,6 +41,7 @@ export interface Event {
   volunteerLeadIds?: string[];
   /** Serializes capacity decisions in volunteer transactions. */
   volunteerRevision?: number;
+  proposalId?: string;
   registrationRequired: boolean;
   /** Only an explicit form selection enables on-site registration. */
   registrationMode?: "link" | "form";

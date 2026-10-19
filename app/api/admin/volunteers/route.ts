@@ -1,3 +1,4 @@
+import { volunteerSource } from "@/lib/volunteer-sources";
 import { NextRequest, NextResponse } from "next/server";
 import type { Filter } from "mongodb";
 import type { Volunteer, VolunteerSignup, VolunteerAdminList } from "@/lib/models/volunteer";
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
   const query = (params.get("q") || "").trim();
   const eventId = params.get("eventId") || "";
   const status = params.get("status") || "";
+  const source = params.get("source") || "";
+  if (source && !volunteerSource(source)) return NextResponse.json({ok: false, error: "Invalid volunteer source."}, {status: 400});
   const scope = params.get("scope") || "";
   if (scope && !["general", "event"].includes(scope)) return NextResponse.json({ ok: false, error: "Invalid volunteer list." }, { status: 400 });
   if (!Number.isSafeInteger(page) || page < 0 || page > 100000 || query.length > 100 || eventId.length > 100 || (status && !["confirmed", "waitlisted", "cancelled"].includes(status))) return NextResponse.json({ ok: false, error: "Invalid volunteer filters." }, { status: 400 });
@@ -21,6 +24,7 @@ export async function GET(request: NextRequest) {
     await ensureCoreIndexes();
     const [people, signups, events] = await Promise.all([getCollection("volunteers"), getCollection("volunteerSignups"), getCollection("events")]);
     const filter: Filter<Volunteer> = {};
+    if (source) filter.$and = [{ $or: [{ sources: volunteerSource(source)! }, { source: volunteerSource(source)! }, ...(source === "website" ? [{source: {$exists: false}}] : [])] }];
     if (scope === "general") filter.generalRegisteredAt = { $exists: true };
     if (query) {
       const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

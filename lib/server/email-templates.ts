@@ -89,7 +89,19 @@ function heading(text: string): string {
   return `<h1 style="margin:0 0 16px;font:500 26px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-0.02em;color:${INK};">${escapeHtml(text)}</h1>`;
 }
 
+export function volunteerWelcomeEmail(name: string, preferencesUrl: string) {
+  const subject = "Welcome to Eko Club Philadelphia volunteers";
+  return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>Hello ${escapeHtml(name)},</p><p>Your volunteer record has been saved. Thank you for offering your time and skills.</p><p>You can update your contact details, interests, and volunteer opportunity email preferences using your private link below. This link expires in 90 days. Keep it private.</p>${button(preferencesUrl, "Manage volunteer preferences")}` }) };
+}
+
+export function proposalEmail(options: { name: string; title: string; description: string; proposedDate: string; location: string; email: string; notes: string; estimatedBudgetCents?: number; reference: string; admin: boolean; url: string }) {
+  const e = escapeHtml;
+  const subject = options.admin ? `New event proposal: ${options.title}` : `Event proposal received: ${options.title}`;
+  return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>${options.admin ? "A new proposal is ready for review." : `Hello ${e(options.name)}, thank you for your proposal. The club will review it. This acknowledgement does not confirm an event.`}</p><p><strong>Title:</strong> ${e(options.title)}<br><strong>Proposed date:</strong> ${e(options.proposedDate)}<br><strong>Location:</strong> ${e(options.location)}</p>${options.admin ? `<p><strong>Submitter:</strong> ${e(options.name)} (${e(options.email)})</p><p>${e(options.description).replace(/\n/g, "<br>")}</p>${options.estimatedBudgetCents !== undefined ? `<p>Estimated budget: $${(options.estimatedBudgetCents / 100).toFixed(2)}</p>` : ""}${options.notes ? `<p>Notes: ${e(options.notes)}</p>` : ""}` : ""}<p>Reference: ${e(options.reference)}</p>${button(options.url, options.admin ? "Review proposal" : "Visit the events page")}` }) };
+}
+
 export function volunteerEmail(options: {
+  preferencesUrl?: string;
   volunteer: Pick<Volunteer, "name" | "email" | "phone" | "interests" | "notes">;
   status: "general" | "confirmed" | "waitlisted" | "cancelled";
   reference: string;
@@ -110,7 +122,7 @@ export function volunteerEmail(options: {
     : "Your interest in volunteering with the club has been recorded. Thank you for offering your time and skills.";
   const details = event ? `<p><strong>Event:</strong> ${escapeHtml(event.title)}<br><strong>Date:</strong> ${escapeHtml(formatSummaryEventDate(event))}${event.time ? `<br><strong>Time:</strong> ${escapeHtml(event.time)} (Philadelphia time)` : ""}<br><strong>Location:</strong> ${escapeHtml(event.location)}${event.venue ? ` — ${escapeHtml(event.venue)}` : ""}</p>` : "";
   const staffDetails = audience === "staff" ? `<p><strong>Name:</strong> ${escapeHtml(volunteer.name)}<br><strong>Email:</strong> ${escapeHtml(volunteer.email)}${volunteer.phone ? `<br><strong>Phone:</strong> ${escapeHtml(volunteer.phone)}` : ""}</p>${volunteer.interests ? `<p><strong>Interests:</strong> ${escapeHtml(volunteer.interests)}</p>` : ""}${volunteer.notes ? `<p><strong>Notes:</strong> ${escapeHtml(volunteer.notes)}</p>` : ""}` : `<p>Hello ${escapeHtml(volunteer.name)},</p>`;
-  return { subject, html: layout({ title: subject, preheader: explanation, body: `${heading(subject)}${staffDetails}<p>${explanation}</p>${details}<p><strong>Reference:</strong> ${escapeHtml(reference)}</p>${button(url, audience === "staff" ? "Manage volunteers" : event ? "View event details" : "Visit the volunteer page")}` }) };
+  return { subject, html: layout({ title: subject, preheader: explanation, body: `${heading(subject)}${staffDetails}<p>${explanation}</p>${details}<p><strong>Reference:</strong> ${escapeHtml(reference)}</p>${button(url, audience === "staff" ? "Manage volunteers" : event ? "View event details" : "Visit the volunteer page")}${options.preferencesUrl ? button(options.preferencesUrl, "Manage volunteer preferences") : ""}` }) };
 }
 
 export function eventEmail(event: Event, kind: "confirmation" | "admin" | "announcement" | "reminder" | "cancellation", eventUrl: string, rsvp?: RSVP): { subject: string; html: string } {

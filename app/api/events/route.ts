@@ -70,6 +70,8 @@ export async function GET(request: NextRequest) {
     const membersOnly = searchParams.get("membersOnly");
     const limit = Number(searchParams.get("limit") ?? "0");
 
+    const viewer = await getRequestSession(request);
+    const isAdmin = Boolean(viewer && ["admin", "super-admin"].includes(viewer.role));
     const filter: Filter<Event> = {};
 
     if (status) filter.status = status as Event["status"];
@@ -80,13 +82,13 @@ export async function GET(request: NextRequest) {
     if (membersOnly === "false") filter.membersOnly = { $ne: true };
     if (upcoming === "true") filter.date = { $gte: new Date().toISOString() };
 
+    if (!isAdmin) filter.$and = [{ status: { $ne: "draft" } }];
     const cursor = collection.find(filter).sort({ date: 1, createdAt: -1 });
     if (Number.isFinite(limit) && limit > 0) {
       cursor.limit(limit);
     }
 
     const events = serializeDocuments(await cursor.toArray());
-    const viewer = await getRequestSession(request);
     return NextResponse.json({ ok: true, data: events.map(event => publicVolunteerEvent(event, Boolean(viewer && ["admin", "super-admin"].includes(viewer.role)))) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch events";

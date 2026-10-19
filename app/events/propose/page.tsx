@@ -1,0 +1,4 @@
+import type { Metadata } from "next";
+import ProposalForm from "@/components/events/ProposalForm";
+export const metadata: Metadata = { title: "Propose an event", description: "Share an event proposal with Eko Club Philadelphia." };
+export default function Page() { return <div className="bg-[#f4f7f3] px-4 py-14 sm:py-20"><div className="mx-auto grid max-w-6xl items-start gap-10 lg:grid-cols-[0.8fr_1.2fr]"><section><p className="text-xs font-semibold uppercase tracking-widest text-green-800">Get involved</p><h1 className="mt-5 text-4xl font-semibold text-neutral-950 sm:text-5xl">Propose an event</h1><p className="mt-6 text-lg leading-relaxed text-neutral-700">Have an idea that brings our community together? Share the details for the club to review. You’ll receive an acknowledgement by email.</p></section><ProposalForm /></div></div>; }

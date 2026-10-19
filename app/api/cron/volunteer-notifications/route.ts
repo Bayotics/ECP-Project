@@ -1,3 +1,4 @@
+import { deliverProposalMessages } from "@/lib/server/proposals";
 import { NextRequest, NextResponse } from "next/server";
 import { validCronSecret } from "@/lib/server/dues-reminders";
 import { getCollection } from "@/lib/server/collections";
@@ -12,7 +13,9 @@ export async function GET(request: NextRequest) {
     const waitingEvents = await (await getCollection("volunteerSignups")).distinct("eventId", { status: "waitlisted" });
     const available = await (await getCollection("events")).find({ id: { $in: waitingEvents }, status: "published" }).project({ id: 1 }).toArray();
     for (const event of available) await reconcileVolunteerEvent(event.id);
-    const result = await deliverVolunteerMessages();
+    const volunteers = await deliverVolunteerMessages();
+    const proposals = await deliverProposalMessages();
+    const result = { sent: volunteers.sent + proposals.sent, failed: volunteers.failed + proposals.failed, volunteers, proposals };
     return NextResponse.json({ ok: result.failed === 0, data: result }, { status: result.failed ? 503 : 200, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[volunteers] Scheduled retry failed", error);

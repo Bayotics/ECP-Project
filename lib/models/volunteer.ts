@@ -1,3 +1,5 @@
+import type { VolunteerSource } from "@/lib/volunteer-sources";
+
 export interface Volunteer {
   id: string;
   name: string;
@@ -7,6 +9,10 @@ export interface Volunteer {
   interests: string;
   notes: string;
   generalRegisteredAt?: string;
+  source?: VolunteerSource;
+  sources?: VolunteerSource[];
+  opportunityEmails?: boolean;
+  importWelcomeQueuedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,10 +54,40 @@ export interface VolunteerSignup {
   id: string;
   volunteerId: string;
   eventId: string;
+  source?: VolunteerSource;
+  sources?: VolunteerSource[];
   status: VolunteerSignupStatus;
   registeredAt: string;
   queueOrder?: number;
   updatedAt: string;
+}
+
+export interface VolunteerAccessToken {
+  tokenHash: string;
+  volunteerId: string;
+  createdAt: string;
+  expiresAt: Date;
+}
+
+export interface VolunteerExternalRegistration {
+  id: string;
+  volunteerId: string;
+  email: string;
+  source: VolunteerSource;
+  externalId: string;
+  eventId?: string;
+  createdAt: string;
+}
+
+export interface VolunteerImportBatch {
+  id: string;
+  source: VolunteerSource;
+  eventId?: string;
+  createdBy: string;
+  createdAt: string;
+  imported: number;
+  updated: number;
+  failed: number;
 }
 
 export interface VolunteerAdminRow extends Volunteer {

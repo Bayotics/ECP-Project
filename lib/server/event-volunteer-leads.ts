@@ -3,8 +3,8 @@ import type { Event } from "@/lib/models/event";
 
 export function publicVolunteerEvent(event: Event, isAdmin: boolean): Event {
   if (isAdmin) return event;
-  const { volunteerLeadIds: _leads, volunteerRevision: _revision, ...visible } = event;
-  void _leads; void _revision;
+  const { volunteerLeadIds: _leads, volunteerRevision: _revision, proposalId: _proposal, ...visible } = event;
+  void _leads; void _revision; void _proposal;
   return visible;
 }
 

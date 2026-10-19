@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useEffectEvent } from "react";
 import { useEvents } from "@/context/EventsContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -147,6 +147,15 @@ export default function AdminEventsPage() {
     });
     loadRsvps(ev.id);
   }
+
+  const openLinkedEvent = useEffectEvent((event: Event) => openModal(event));
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("event");
+    if (!id) return;
+    const controller = new AbortController();
+    apiRequest<Event>(`/api/events/${encodeURIComponent(id)}`, {signal: controller.signal}).then(event => { if (!controller.signal.aborted) openLinkedEvent(event); }).catch(() => { /* list remains available if a linked event was removed */ });
+    return () => controller.abort();
+  }, []);
 
   function closeModal() {
     setSelected(null);

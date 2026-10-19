@@ -1,3 +1,4 @@
+import { volunteerSource } from "@/lib/volunteer-sources";
 import { NextRequest, NextResponse } from "next/server";
 import { validateVolunteerInput } from "@/lib/volunteer-input";
 import { verifyRecaptcha } from "@/lib/server/recaptcha";
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     await ensureCoreIndexes();
     const session = await getRequestSession(request);
-    const result = await registerVolunteer(validation.value, Boolean(session && ["member", "admin", "super-admin"].includes(session.role)));
+    const result = await registerVolunteer(validation.value, Boolean(session && ["member", "admin", "super-admin"].includes(session.role)), { source: volunteerSource((body as Record<string, unknown>).source) ?? "website" });
     const messages = await getCollection("volunteerMessages");
     const ownFilter = { volunteerId: result.volunteerId, ...(result.status === "general" ? { signupId: { $exists: false } } : { signupId: result.reference, signupStatus: result.status }), audience: "volunteer" as const, status: { $ne: "superseded" as const } };
     const ownMessages = await messages.find(ownFilter).project({ id: 1 }).toArray();

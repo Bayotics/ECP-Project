@@ -16,7 +16,9 @@
     "test:event-summary": "node --test scripts/test-event-summary.mjs",
     "test:conventions": "node --test scripts/test-conventions.mjs",
     "test:volunteers": "node --test scripts/test-volunteers.mjs",
-    "test:volunteers:integration": "node scripts/test-volunteers-integration.mjs"
+    "test:volunteers:integration": "node scripts/test-volunteers-integration.mjs",
+    "test:volunteer-imports": "node --test scripts/test-volunteer-imports-proposals.mjs",
+    "test:form-contrast": "node scripts/check-form-contrast.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.0.0",

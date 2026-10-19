@@ -1,10 +1,13 @@
 import { nanoid } from "nanoid";
 import type { ClientSession } from "mongodb";
+import { createHash } from "crypto";
+import type { VolunteerSource } from "@/lib/volunteer-sources";
 import type { Event, VolunteerSignup } from "@/lib/models";
 import type { VolunteerInput } from "@/lib/volunteer-input";
 import { volunteerEventClosedReason } from "@/lib/volunteer-events";
 import { getCollection } from "@/lib/server/collections";
 import { volunteerTransaction } from "@/lib/server/volunteer-transaction";
+import { queueVolunteerWelcome } from "@/lib/server/volunteer-notifications";
 import { queueVolunteerMessages } from "@/lib/server/volunteer-notifications";
 
 export class VolunteerError extends Error {
@@ -37,7 +40,9 @@ async function promoteWaiting(event: Event, session: ClientSession) {
   return messages;
 }
 
-export async function registerVolunteer(input: VolunteerInput, memberAccess: boolean) {
+export async function registerVolunteer(input: VolunteerInput, memberAccess: boolean, context: { source?: VolunteerSource; imported?: boolean; externalId?: string } = {}) {
+  const source = context.source ?? "website";
+  const externalKey = context.imported && context.externalId ? createHash("sha256").update(JSON.stringify([source, input.eventId || "general", context.externalId])).digest("hex") : undefined;
   return volunteerTransaction(async session => {
     const event = input.eventId ? await lockEvent(input.eventId, session) : undefined;
     if (event) {
@@ -47,32 +52,49 @@ export async function registerVolunteer(input: VolunteerInput, memberAccess: boo
     }
     const people = await getCollection("volunteers");
     const now = new Date().toISOString();
-    const { eventId: _eventId, ...details } = input;
-    void _eventId;
-    const person = await people.findOneAndUpdate({ email: input.email }, { $set: { ...details, updatedAt: now }, $setOnInsert: { id: nanoid(), createdAt: now } }, { upsert: true, returnDocument: "after", session });
+    const references = await getCollection("volunteerExternalRegistrations");
+    if (externalKey) {
+      const previous = await references.findOne({ id: externalKey }, { session });
+      if (previous && previous.email !== input.email) throw new VolunteerError("This external registration belongs to a different email. Review it before importing.", 409);
+    }
+    const old = await people.findOne({ email: input.email }, { session });
+    // Unauthenticated sign-ups/imports never overwrite an existing person's contact
+    // details or consent. They can change those through their private email link.
+    const person = await people.findOneAndUpdate({ email: input.email }, {
+      $set: { updatedAt: now, source: old?.source ?? (old ? "website" : source) },
+      $addToSet: { sources: { $each: [...new Set([...(old?.sources ?? (old ? [old.source ?? "website"] : [])), source])] } },
+      $setOnInsert: { id: nanoid(), createdAt: now, name: input.name, phone: input.phone, interests: input.interests, notes: input.notes, opportunityEmails: false },
+    }, { upsert: true, returnDocument: "after", session });
     if (!person) throw new Error("Volunteer upsert failed");
+    if (externalKey) await references.updateOne({ id: externalKey }, { $setOnInsert: { id: externalKey, volunteerId: person.id, email: person.email, source, externalId: context.externalId!, ...(event ? { eventId: event.id } : {}), createdAt: now } }, { upsert: true, session });
+    const welcome: string[] = [];
+    if (context.imported && !person.importWelcomeQueuedAt) {
+      welcome.push(...await queueVolunteerWelcome(person, session));
+      await people.updateOne({ id: person.id }, { $set: { importWelcomeQueuedAt: now } }, { session });
+    }
     if (!event) {
-      if (person.generalRegisteredAt) return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: true, messageIds: [] as string[] };
+      if (person.generalRegisteredAt) return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: true, messageIds: welcome };
       await people.updateOne({ id: person.id }, { $set: { generalRegisteredAt: now } }, { session });
-      const messageIds = await queueVolunteerMessages(person, undefined, undefined, session);
+      const messageIds = [...welcome, ...await queueVolunteerMessages(person, undefined, undefined, session)];
       return { volunteerId: person.id, reference: person.id, status: "general" as const, alreadyRegistered: false, messageIds };
     }
     const signups = await getCollection("volunteerSignups");
     const existing = await signups.findOne({ eventId: event.id, volunteerId: person.id }, { session });
     const promotedMessages = await promoteWaiting(event, session);
-    if (existing && existing.status !== "cancelled") {
+    if (existing) await signups.updateOne({ id: existing.id }, { $set: { source: existing.source ?? "website" }, $addToSet: { sources: { $each: [existing.source ?? "website", source] } } }, { session });
+    if (existing && (existing.status !== "cancelled" || context.imported)) {
       const current = await signups.findOne({ id: existing.id }, { session });
-      return { volunteerId: person.id, reference: existing.id, status: current!.status, alreadyRegistered: true, messageIds: promotedMessages };
+      return { volunteerId: person.id, reference: existing.id, status: current!.status, alreadyRegistered: true, messageIds: [...welcome, ...promotedMessages] };
     }
     const count = await signups.countDocuments({ eventId: event.id, status: "confirmed" }, { session });
     // Existing waiters get first refusal, including when a cap increase needs
     // more than one reconciliation batch. New arrivals cannot skip the queue.
     const queued = await signups.countDocuments({ eventId: event.id, status: "waitlisted" }, { session });
     const status = queued > 0 || (event.volunteerCap != null && count >= event.volunteerCap) ? "waitlisted" as const : "confirmed" as const;
-    const record: VolunteerSignup = { id: existing?.id ?? nanoid(), volunteerId: person.id, eventId: event.id, status, registeredAt: now, queueOrder: event.volunteerRevision, updatedAt: now };
+    const record: VolunteerSignup = { id: existing?.id ?? nanoid(), volunteerId: person.id, eventId: event.id, status, registeredAt: now, queueOrder: event.volunteerRevision, updatedAt: now, source: existing?.source ?? source, sources: [...new Set([...(existing?.sources ?? (existing ? [existing.source ?? "website"] : [])), source])] };
     if (existing) await signups.updateOne({ id: existing.id }, { $set: record }, { session });
     else await signups.insertOne(record, { session });
-    const messageIds = [...promotedMessages, ...await queueVolunteerMessages(person, record, event, session)];
+    const messageIds = [...welcome, ...promotedMessages, ...await queueVolunteerMessages(person, record, event, session)];
     return { volunteerId: person.id, reference: record.id, status, alreadyRegistered: false, messageIds };
   });
 }
