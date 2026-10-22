@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
+import { getCollection, serializeDocument } from "@/lib/server/collections";
 import { getRequestSession } from "@/lib/server/guards";
+import { documentVisible, safeDocumentURL } from "@/lib/server/document-access";
 
 /* Downloads, proxied.
  *
@@ -14,7 +15,7 @@ import { getRequestSession } from "@/lib/server/guards";
  * file arrives with its real club filename rather than a slugified public id.
  */
 
-const ADMIN_ROLES = ["admin", "super-admin"];
+
 
 const CONTENT_TYPES: Record<string, string> = {
   pdf: "application/pdf",
@@ -25,12 +26,11 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 function fail(message: string, status: number) {
-  return NextResponse.json({ ok: false, error: message }, { status });
+  return NextResponse.json({ ok: false, error: message }, { status, headers:{"Cache-Control":"private, no-store"} });
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await ensureCoreIndexes();
     const { id } = await context.params;
 
     const collection = await getCollection("documents");
@@ -39,16 +39,10 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     if (!document.url) return fail("No file is attached to this document", 404);
 
     const session = await getRequestSession(request);
-    const isAdmin = ADMIN_ROLES.includes(session?.role ?? "");
+    if (!documentVisible(document,session)) return fail("Sign in with an authorized account to download this document",session?403:401);
+    if (!safeDocumentURL(document.url)) return fail("The document file is unavailable. Please contact the club.",503);
 
-    if (document.access === "admin-only" && !isAdmin) {
-      return fail("That document is for administrators only", 403);
-    }
-    if (document.access === "members-only" && !session) {
-      return fail("Sign in to download this document", 401);
-    }
-
-    const upstream = await fetch(document.url, { cache: "no-store" });
+    const upstream = await fetch(document.url, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
     if (!upstream.ok || !upstream.body) {
       /* Cloudinary refuses to deliver PDFs until "PDF and ZIP files
          delivery" is enabled under Settings > Security. Say so plainly

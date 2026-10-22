@@ -1,63 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { UpdateDocumentInput } from "@/lib/models";
-import { ensureCoreIndexes, getCollection, serializeDocument } from "@/lib/server/collections";
-
-export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  try {
-    await ensureCoreIndexes();
-    const { id } = await context.params;
-    const collection = await getCollection("documents");
-    const document = serializeDocument(await collection.findOne({ id }));
-
-    if (!document) {
-      return NextResponse.json({ ok: false, error: "Document not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ ok: true, data: document });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch document";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
+import { getCollection, serializeDocument } from "@/lib/server/collections";
+import { getRequestSession } from "@/lib/server/guards";
+import { clubAdmin, clubError, privateHeaders } from "@/lib/server/club-api";
+import { documentVisible, documentMetadata, documentPayload } from "@/lib/server/document-access";
+import { VolunteerError } from "@/lib/server/volunteer-error";
+type Context={params:Promise<{id:string}>};
+export async function GET(request:NextRequest,context:Context){
+  try{
+    const {id}=await context.params,session=await getRequestSession(request),document=serializeDocument(await(await getCollection("documents")).findOne({id}));
+    if(!document||!documentVisible(document,session))throw new VolunteerError("Document not found or unavailable for public access.",404);
+    return NextResponse.json({ok:true,data:documentMetadata(document,session)},{headers:privateHeaders});
+  }catch(error){return clubError(error);}
 }
-
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  try {
-    await ensureCoreIndexes();
-    const { id } = await context.params;
-    const payload = (await request.json()) as UpdateDocumentInput;
-    const collection = await getCollection("documents");
-    const result = await collection.findOneAndUpdate(
-      { id },
-      { $set: { ...payload, updatedAt: new Date().toISOString() } },
-      { returnDocument: "after" }
-    );
-
-    const document = serializeDocument(result);
-    if (!document) {
-      return NextResponse.json({ ok: false, error: "Document not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ ok: true, data: document });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to update document";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
+export async function PATCH(request:NextRequest,context:Context){
+  try{
+    await clubAdmin(request);const {id}=await context.params,payload=documentPayload(await request.json());
+    const document=serializeDocument(await(await getCollection("documents")).findOneAndUpdate({id},{$set:{...payload,updatedAt:new Date().toISOString()}},{returnDocument:"after"}));
+    if(!document)throw new VolunteerError("Document not found.",404);
+    return NextResponse.json({ok:true,data:document},{headers:privateHeaders});
+  }catch(error){return clubError(error);}
 }
-
-export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  try {
-    await ensureCoreIndexes();
-    const { id } = await context.params;
-    const collection = await getCollection("documents");
-    const result = await collection.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ ok: false, error: "Document not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to delete document";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
+export async function DELETE(request:NextRequest,context:Context){
+  try{
+    await clubAdmin(request);const {id}=await context.params,result=await(await getCollection("documents")).deleteOne({id});
+    if(!result.deletedCount)throw new VolunteerError("Document not found.",404);
+    return NextResponse.json({ok:true},{headers:privateHeaders});
+  }catch(error){return clubError(error);}
 }
