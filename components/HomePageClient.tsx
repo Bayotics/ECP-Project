@@ -94,7 +94,7 @@ function MagneticButton({
 }
 
 /* ══════════════════════════════════════════════════════
-   2. HERO — cinematic Lagos backdrop · Ken Burns · parallax
+   2. HERO — Philadelphia photograph with clear foreground lettering
    ══════════════════════════════════════════════════════ */
 function CountUp({ to, suffix = "", prefix = "" }: { to: number; suffix?: string; prefix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -115,150 +115,66 @@ function CountUp({ to, suffix = "", prefix = "" }: { to: number; suffix?: string
 }
 
 function HeroSection() {
-  const heroRef = useRef<HTMLElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const introDone = useIntroDone();
-
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-
-    const ctx = gsap.context(() => {
-      // Ken Burns: slow infinite scale on the image
-      gsap.to(imageRef.current, {
-        scale: 1.07,
-        duration: 8,
-        ease: "none",
-        yoyo: true,
-        repeat: -1,
-      });
-
-      // Parallax: content drifts up slightly as user scrolls
-      gsap.to(contentRef.current, {
-        yPercent: -15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
-    });
-
-    return () => ctx.revert();
-  }, []);
 
   return (
     <section
-      ref={heroRef}
-      className="relative h-[calc(90vh_+_20px)] min-h-[600px] overflow-hidden bg-[#0a0a0a] flex items-end"
+      className="relative isolate overflow-hidden bg-[#071c16] lg:min-h-[max(620px,calc(22vw_+_320px))] lg:h-[100svh]"
       aria-label="Eko Club Philadelphia hero"
     >
-      {/* Background image with Ken Burns */}
-      <div
-        ref={imageRef}
-        className="absolute inset-0 will-change-transform"
-        style={{ transformOrigin: "center center" }}
-      >
+      {/* One full-width photograph; its natural framing keeps the entire sign.
+          Fading its upper edge removes any seam on taller screens. */}
+      <div className="absolute inset-x-0 bottom-0 aspect-[16/9]" style={{ maskImage: "linear-gradient(to bottom, transparent, black 32%)" }}>
         <Image
           src={GALLERY.hero}
-          alt="Lagos Island skyline over Five Cowrie Creek, Nigeria"
+          alt="The I love Philly sculpture in front of Philadelphia City Hall"
           fill
           priority
           className="object-cover"
           sizes="100vw"
         />
       </div>
-
-      {/* Solid overlay */}
-      <div className="absolute inset-0 bg-[#0a0a0a]/62" />
-
-      {/* Bottom blend — fades the photo into the deep green of the section
-          below so the two sections read as one continuous surface, no seam. */}
       <div
-        className="absolute inset-x-0 bottom-0 h-1/2"
-        style={{ background: `linear-gradient(to bottom, transparent 0%, ${DEEP_GREEN} 100%)` }}
+        className="pointer-events-none absolute inset-0 hidden lg:block"
+        style={{ background: "linear-gradient(to bottom, rgba(7,28,22,0.7) 0%, rgba(7,28,22,0.65) 38%, rgba(7,28,22,0.3) 53%, transparent 65%)" }}
         aria-hidden="true"
       />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6" style={{ background: `linear-gradient(to bottom, transparent, ${DEEP_GREEN})` }} aria-hidden="true" />
 
-      {/* Content — anchored bottom-left */}
-      <div
-        ref={contentRef}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6  pb-8 sm:px-10 sm:pb-10 lg:px-16 lg:pb-12"
-      >
-        {/* Eyebrow */}
+      {/* The introduction sits above the sculpture rather than across it. */}
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-[calc(56.25vw_+_3rem)] text-center sm:px-10 sm:pt-36 lg:px-16 lg:pt-[176px] lg:pb-[max(260px,22vw)]">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/55 mb-4 sm:text-xs sm:tracking-[0.2em] sm:mb-5"
+          className="mx-auto mb-4 max-w-2xl text-[10px] font-semibold uppercase tracking-[0.15em] text-white/85 sm:text-xs sm:tracking-[0.2em] lg:mb-3"
         >
           Eko Club Philadelphia · A Chapter of Eko Club International
         </motion.p>
-
-        {/* Main headline */}
         <motion.h1
           initial={{ opacity: 0, y: 28 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
           transition={{ duration: 0.85, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.05] font-medium tracking-tight text-white max-w-3xl"
+          className="mx-auto max-w-4xl text-[2.25rem] leading-[1.08] font-medium tracking-tight text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.3)] sm:text-5xl lg:max-w-none lg:whitespace-nowrap lg:text-[clamp(2rem,3vw,3rem)]"
         >
-          Heritage, community,{" "}
-          <span style={{ color: "#059669" }}>and service</span>{" "}
-          in Philadelphia.
+          <span className="block lg:inline">Heritage, community,</span>{" "}
+          <span className="text-[#6ee7b7]">and service</span>{" "}in Philadelphia.
         </motion.h1>
-
-        {/* Subline */}
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.75, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-4 text-sm sm:mt-6 sm:text-base lg:text-lg text-white/65 max-w-xl leading-relaxed font-normal"
+          transition={{ duration: 0.75, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto mt-6 flex justify-center lg:mt-4"
         >
-          Bringing the pride of Lagos to the heart of Philadelphia
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={introDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-          transition={{ duration: 0.7, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap"
-        >
-          <Link
-            href="/events"
-            className="inline-flex w-full items-center justify-center gap-2 bg-white text-[#0a0a0a] text-sm font-semibold px-6 py-3 sm:w-auto sm:px-7 sm:py-3.5 rounded-full hover:bg-white/90 transition-colors"
-          >
-            Upcoming events
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-          <Link
-            href="/donate"
-            className="inline-flex w-full items-center justify-center gap-2 bg-[#059669] text-white text-sm font-semibold px-6 py-3 sm:w-auto sm:px-7 sm:py-3.5 rounded-full hover:bg-[#047857] transition-colors"
-          >
-            Donate
-          </Link>
+          <div className="flex shrink-0 flex-wrap justify-center gap-3">
+            <Link href="/events" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#0a0a0a] transition-colors hover:bg-white/90 sm:px-7 sm:py-3.5">
+              Upcoming events
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </Link>
+            <Link href="/donate" className="inline-flex items-center justify-center rounded-full bg-[#059669] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#047857] sm:px-7 sm:py-3.5">Donate</Link>
+          </div>
         </motion.div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={introDone ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ delay: 1.1, duration: 0.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
-        aria-hidden="true"
-      >
-        <span className="text-[10px] font-medium uppercase tracking-widest text-white/35">Scroll</span>
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          className="w-px h-8 bg-white/20"
-        />
-      </motion.div>
     </section>
   );
 }
