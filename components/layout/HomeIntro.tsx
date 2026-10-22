@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 /**
  * Homepage intro splash: a plain green screen with the club logo gently
@@ -23,8 +23,8 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
  * what guarantee the splash goes away.
  */
 let introHasPlayed = false;
-const FLICKER_MS = 1900;
-const IRIS_MS = 1250;
+const FLICKER_MS = 950;
+const IRIS_MS = 625;
 /** The explicit total: flicker, THEN the iris fully closes, THEN reveal. */
 const TOTAL_INTRO_MS = FLICKER_MS + IRIS_MS;
 
@@ -52,20 +52,20 @@ export default function HomeIntro({ children }: { children: React.ReactNode }) {
 
   /**
    * Whether THIS mount is the one that plays the splash, decided on the first
-   * render and held in a ref.
+   * render and held in state.
    *
    * It deliberately does not re-read `introHasPlayed` inside the effect.
    * React Strict Mode mounts a component, runs its effects, unmounts it and
    * mounts it again in development; the first pass would set the flag and arm
    * the timers, the unmount would clear them, and a flag-based guard would
    * then take an early return on the second pass, leaving nothing to close
-   * the splash. A ref survives that remount with its original value.
+   * the splash. The initial state survives that effect replay with its original value.
    */
-  const shouldPlay = useRef(!introHasPlayed);
+  const [shouldPlay] = useState(() => !introHasPlayed);
 
   useEffect(() => {
     // Client-side navigation back to the homepage: nothing to play.
-    if (!shouldPlay.current) return;
+    if (!shouldPlay) return;
     introHasPlayed = true;
 
     document.body.style.overflow = "hidden";
@@ -80,7 +80,7 @@ export default function HomeIntro({ children }: { children: React.ReactNode }) {
       clearTimeout(revealTimer);
       document.body.style.overflow = "";
     };
-  }, []);
+  }, [shouldPlay]);
 
   return (
     <>
@@ -129,7 +129,7 @@ export default function HomeIntro({ children }: { children: React.ReactNode }) {
           client-side route back it is simply present, with no entrance. */}
       <div
         style={
-          shouldPlay.current
+          shouldPlay
             ? {
                 opacity: playing ? 0 : 1,
                 transform: playing ? "scale(1.04)" : "scale(1)",

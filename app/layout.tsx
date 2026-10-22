@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppProvider } from "@/context/AppProvider";
 import AIChatWidget from "@/components/ai/AIChatWidget";
@@ -79,6 +80,7 @@ export default function RootLayout({
           {children}
           <AIChatWidget />
         </AppProvider>
+        <Analytics />
       </body>
     </html>
   );
