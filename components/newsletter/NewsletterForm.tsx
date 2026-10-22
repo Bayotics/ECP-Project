@@ -5,6 +5,7 @@ export default function NewsletterForm() {
   const id = useId();
   const [captcha, setCaptcha] = useState(""), [attempt, setAttempt] = useState(0);
   const [email, setEmail] = useState(""), [website, setWebsite] = useState("");
+  const showCaptcha = email.trim().length > 0;
   const [busy, setBusy] = useState(false), [done, setDone] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   async function subscribe(event: React.FormEvent) {
     event.preventDefault(); setError("");
@@ -22,9 +23,12 @@ export default function NewsletterForm() {
   }
   if (done) return <div className="max-w-md space-y-3 text-sm text-white"><p role="status">{notice}</p><button type="button" className="font-semibold text-white underline" onClick={()=>{setDone(false);setError("");}}>Subscribe another email</button></div>;
   return <form onSubmit={subscribe} noValidate aria-label="Newsletter signup form" className="w-full max-w-md text-white [color-scheme:dark]">
-    <div className="flex gap-2"><div className="min-w-0 flex-1"><label htmlFor={id} className="sr-only">Email address</label><input id={id} type="email" required maxLength={254} autoComplete="email" disabled={busy} placeholder="Your email address" value={email} onChange={event=>{setEmail(event.target.value);setError("");}} aria-invalid={Boolean(error)} aria-describedby={error?`${id}-error`:`${id}-help`} className="w-full min-w-0 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm text-white outline-none placeholder:text-white/70 focus:border-white focus:ring-2 focus:ring-white/40 disabled:opacity-60" /></div><button type="submit" disabled={busy || !captcha} className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-950 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-wait disabled:opacity-60">{busy?"Subscribing…":"Subscribe"}</button></div>
+    <div className="grid grid-cols-1 items-start gap-x-2 gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="col-start-1 row-start-1 min-w-0"><label htmlFor={id} className="sr-only">Email address</label><input id={id} type="email" required maxLength={254} autoComplete="email" disabled={busy} placeholder="Your email address" value={email} onChange={event=>{setEmail(event.target.value);setError("");if(!event.target.value.trim())setCaptcha("");}} aria-invalid={Boolean(error)} aria-describedby={error?`${id}-error`:`${id}-help`} className="w-full min-w-0 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm text-white outline-none placeholder:text-white/70 focus:border-white focus:ring-2 focus:ring-white/40 disabled:opacity-60" /></div>
+      {showCaptcha && <div className="col-start-1 row-start-2 min-w-0" aria-label="Newsletter verification"><Recaptcha key={attempt} onChange={setCaptcha} dark fitWidth /></div>}
+      <button type="submit" disabled={busy || !showCaptcha || !captcha} className={`col-start-1 ${showCaptcha ? "row-start-3" : "row-start-2"} rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-950 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60 sm:col-start-2 sm:row-start-1`}>{busy?"Subscribing…":"Subscribe"}</button>
+    </div>
     <div hidden aria-hidden="true"><label htmlFor={`${id}-website`}>Leave this field blank</label><input id={`${id}-website`} type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={event=>setWebsite(event.target.value)} /></div>
-    <div className="mt-4"><Recaptcha key={attempt} onChange={setCaptcha} dark /></div>
     <p id={`${id}-help`} className="mt-3 text-xs leading-relaxed text-white/80">We’ll email you a confirmation link. Your subscription starts only after you confirm your email. You can unsubscribe at any time.</p>
     {error&&<p id={`${id}-error`} role="alert" className="mt-3 text-sm text-red-200">{error}</p>}
   </form>;
