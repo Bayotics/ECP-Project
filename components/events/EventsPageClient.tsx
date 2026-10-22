@@ -277,7 +277,7 @@ export default function EventsPageClient() {
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<EventType | "all">("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("upcoming");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("card");
 
@@ -315,25 +315,27 @@ export default function EventsPageClient() {
     });
   }, [published, search, typeFilter, dateFilter, organizerFilter, now]);
 
-  const sorted = useMemo(
-    () =>
-      [...filtered].sort((a, b) =>
-        dateFilter === "past" ? new Date(b.date).getTime() - new Date(a.date).getTime() : new Date(a.date).getTime() - new Date(b.date).getTime(),
-      ),
-    [filtered, dateFilter],
-  );
+  const eventGroups = useMemo(() => {
+    const upcoming: Event[] = [], past: Event[] = [];
+    for (const event of filtered) {
+      (new Date(event.date) >= now ? upcoming : past).push(event);
+    }
+    upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return [
+      { id: "upcoming", title: "Upcoming events", events: upcoming },
+      { id: "past", title: "Past events", events: past },
+    ].filter(group => dateFilter === "all" || group.id === dateFilter);
+  }, [filtered, dateFilter, now]);
 
   const upcomingCount = useMemo(() => published.filter((event) => new Date(event.date) >= now).length, [published, now]);
 
-  const hasFilters = search !== "" || typeFilter !== "all" || dateFilter !== "upcoming" || organizerFilter !== "all";
-  /* The list opens on "Upcoming", so an empty result with nothing else
-     narrowed means the calendar is simply between events rather than
-     bare. Worth saying differently. */
-  const nothingUpcoming = !hasFilters && published.length > 0;
+  const hasFilters = search !== "" || typeFilter !== "all" || dateFilter !== "all" || organizerFilter !== "all";
+  const nothingUpcoming = dateFilter === "upcoming" && !search.trim() && typeFilter === "all" && organizerFilter === "all" && published.length > 0;
   function clearFilters() {
     setSearch("");
     setTypeFilter("all");
-    setDateFilter("upcoming");
+    setDateFilter("all");
     setOrganizerFilter("all");
   }
 
@@ -622,7 +624,7 @@ export default function EventsPageClient() {
                 </select>
 
                 <span className="ml-1 text-sm text-neutral-600">
-                  {isLoading ? "Loading events…" : `${sorted.length} event${sorted.length !== 1 ? "s" : ""}`}
+                  {isLoading ? "Loading events…" : `${filtered.length} event${filtered.length !== 1 ? "s" : ""}`}
                 </span>
 
                 {hasFilters && (
@@ -641,7 +643,7 @@ export default function EventsPageClient() {
                   <div key={i} className="h-[30rem] animate-pulse rounded-[1.75rem] bg-neutral-100" />
                 ))}
               </div>
-            ) : sorted.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <div className="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
                 <p className="text-lg font-normal text-neutral-900">
                   {published.length === 0
@@ -685,16 +687,26 @@ export default function EventsPageClient() {
                   )}
                 </div>
               </div>
-            ) : viewMode === "card" ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {sorted.map((event) => (
-                  <EventTile key={event.id} event={event} />
-                ))}
-              </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {sorted.map((event) => (
-                  <EventRow key={event.id} event={event} />
+              <div className="space-y-12">
+                {eventGroups.map(group => (
+                  <section key={group.id} aria-labelledby={`${group.id}-events-title`} className="border-t border-neutral-200 pt-10 first:border-0 first:pt-0">
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                      <h3 id={`${group.id}-events-title`} className="text-2xl font-medium tracking-[-0.03em] text-neutral-950 sm:text-3xl">{group.title}</h3>
+                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-700">{group.events.length} event{group.events.length !== 1 ? "s" : ""}</span>
+                    </div>
+                    {group.events.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-neutral-300 p-6 text-sm text-neutral-600">No {group.id} events match the current filters.</p>
+                    ) : viewMode === "card" ? (
+                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {group.events.map(event => <EventTile key={event.id} event={event} />)}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {group.events.map(event => <EventRow key={event.id} event={event} />)}
+                      </div>
+                    )}
+                  </section>
                 ))}
               </div>
             )}
