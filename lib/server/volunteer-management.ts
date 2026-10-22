@@ -76,8 +76,8 @@ export async function manageVolunteering(authorization: string|null, body: Recor
       await (await getCollection("volunteerAccessTokens")).deleteMany({volunteerId:person.id},{session});
     }
     // Suppress already queued mail immediately. Management acknowledgements and
-    // private links explicitly requested by the person remain deliverable.
-    if(updated.status==="inactive")await (await getCollection("volunteerMessages")).updateMany({volunteerId:person.id,audience:"volunteer",kind:{$nin:["management","access"]},status:{$in:["pending","failed"]}},{$set:{status:"superseded"}},{session});
+    // private links and cancellation confirmations remain deliverable.
+    if(updated.status==="inactive")await (await getCollection("volunteerMessages")).updateMany({volunteerId:person.id,audience:"volunteer",kind:{$nin:["management","access","cancellation"]},signupStatus:{$ne:"cancelled"},status:{$in:["pending","failed"]}},{$set:{status:"superseded"}},{session});
     const messageIds=await recordChange(updated,kind,changed,person,session);
     if(kind==="deletion-requested")messageIds.push(...await queueVolunteerDeletionNotice(updated,session));
     return {person:updated,emailChanged,messageIds,unchanged:false};

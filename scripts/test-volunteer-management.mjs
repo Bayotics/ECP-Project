@@ -25,13 +25,13 @@ test('public committee data comes from saved records without member IDs, bios or
  assert.doesNotMatch(JSON.stringify(result),/private-member-id|Private biography|private@example/);
 });
 const {volunteerCanReceive}=load('lib/volunteer-status.ts');
-test('pause blocks opportunities; inactive blocks volunteer mail except requested access and change confirmations',()=>{
+test('pause blocks opportunities; inactive blocks volunteer mail except requested access, change and cancellation confirmations',()=>{
  assert.equal(volunteerCanReceive({status:'active',opportunityEmails:true},'opportunity'),true);
  assert.equal(volunteerCanReceive({status:'active',opportunityEmails:false},'opportunity'),false);
  assert.equal(volunteerCanReceive({status:'paused',opportunityEmails:true},'opportunity'),false);
  assert.equal(volunteerCanReceive({status:'paused'},'signup'),true);
  for(const kind of ['signup','welcome','opportunity',undefined])assert.equal(volunteerCanReceive({status:'inactive',opportunityEmails:true},kind),false);
- for(const kind of ['management','access'])assert.equal(volunteerCanReceive({status:'inactive'},kind),true);
+ for(const kind of ['management','access','cancellation'])assert.equal(volunteerCanReceive({status:'inactive'},kind),true);
 });
 class VolunteerError extends Error{constructor(message,status){super(message);this.status=status;}}
 function managementHarness({valid=true,conflict=false,delivery={failed:0}}={}) {

@@ -1257,7 +1257,7 @@ function EventTimelineSection() {
         </div>
 
         <Link
-          href="/events"
+          href="/programs"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:underline mt-10"
         >
           View full calendar

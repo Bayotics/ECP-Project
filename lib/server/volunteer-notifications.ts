@@ -25,7 +25,7 @@ export async function queueVolunteerMessages(volunteer: Volunteer, signup: Volun
   const committeeNames = volunteer.committeeIds?.length ? (await (await getCollection("committees")).find({id:{$in:volunteer.committeeIds}},{session}).project({name:1}).toArray()).map(row=>row.name) : [];
   const recipients = [{ to: volunteer.email, audience: "volunteer" as const }, ...[...staff].map(to => ({ to, audience: "staff" as const }))];
   const messages: VolunteerMessage[] = recipients.map(recipient => ({
-    id: nanoid(), volunteerId: volunteer.id, kind: "signup",
+    id: nanoid(), volunteerId: volunteer.id, kind: signup?.status === "cancelled" ? "cancellation" : "signup",
     ...(signup ? { signupId: signup.id, signupStatus: signup.status } : {}),
     ...(event ? { eventId: event.id } : {}),
     ...recipient,
@@ -52,7 +52,10 @@ export async function deliverVolunteerMessages(ids?: string[]) {
         await resumeVolunteerIfDue(person.id);
         person=await (await getCollection("volunteers")).findOne({id:person.id});
       }
-      if (!person || !volunteerCanReceive(person,message.kind) || person.email !== message.to) {
+      // Older queued cancellations used the signup kind. They remain
+      // transactional confirmations when a failed delivery is retried.
+      const kind = message.signupStatus === "cancelled" ? "cancellation" : message.kind;
+      if (!person || !volunteerCanReceive(person,kind) || person.email !== message.to) {
         await collection.updateOne({id:message.id},{$set:{status:"superseded"},$unset:{leaseUntil:""}});
         continue;
       }

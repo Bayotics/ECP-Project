@@ -50,7 +50,7 @@ export interface VolunteerMessage {
   eventId?: string;
   signupStatus?: VolunteerSignupStatus;
   audience: "volunteer" | "staff";
-  kind?: "signup" | "welcome" | "access" | "management" | "opportunity";
+  kind?: "signup" | "cancellation" | "welcome" | "access" | "management" | "opportunity";
   to: string;
   subject: string;
   html: string;

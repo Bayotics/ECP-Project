@@ -11,10 +11,11 @@ const databaseName = `ecp_volunteer_test_${Date.now().toString(36)}_${randomUUID
 process.env.MONGODB_DB = databaseName;
 const nativeRequire = createRequire(import.meta.url), cache = new Map();
 const delivered = [];
-let failOnce = true, rejectQueue = false;
+let failOnce = true, rejectQueue = false, failCancellationFor = "";
 const mocks = {
   '@/lib/server/email': { siteUrl: () => 'https://example.test', sendEmail: async message => {
     delivered.push(message);
+    if (message.to === failCancellationFor && /cancelled/.test(message.subject)) return { ok: false, error: "Mock cancellation delivery failure", retryable: true };
     if (message.to === 'lead-b@example.test' && failOnce) { failOnce = false; return { ok: false, error: 'Mock provider unavailable', retryable: true }; }
     return { ok: true, id: randomUUID() };
   } },
@@ -109,6 +110,46 @@ try {
   assert.ok(delivered.some(message => message.to === 'bob@example.test' && /place confirmed/.test(message.subject)));
   assert.ok(!delivered.some(message => message.to === 'inactive@example.test'));
   console.log('PASS: transaction rollback, restricted/closed events, durable email retries, no resending delivered jobs. Real MongoDB; email provider mocked.');
+  // Cancellation confirmations are transactional, including for people who
+  // stopped opportunity emails or made their volunteer profile inactive.
+  for (const state of ['active', 'paused', 'inactive']) {
+    const eventId = `cancel-${state}`, email = `cancel-${state}@example.test`;
+    await events.insertOne(event(eventId));
+    const registration = await registerVolunteer(input(email,eventId), false);
+    await people.updateOne({id:registration.volunteerId}, {$set:{status:state,opportunityEmails:false}});
+    const ids = await cancelVolunteerSignup(registration.reference);
+    const queued = await messages.find({id:{$in:ids},signupStatus:'cancelled'}).toArray();
+    assert.equal(queued.filter(row=>row.audience==='volunteer').length,1);
+    assert.deepEqual(queued.map(row=>row.to).sort(),['admin@example.test',email,'lead-a@example.test','lead-b@example.test'].sort());
+    assert.ok(queued.every(row=>row.kind==='cancellation'));
+    const confirmation = queued.find(row=>row.audience==='volunteer');
+    assert.match(confirmation.subject,/cancelled/);assert.ok(confirmation.html.includes(`Test ${eventId}`));assert.match(confirmation.html,/Philadelphia/);assert.match(confirmation.html,/Manage my volunteering/);
+    if (state==='inactive') failCancellationFor=email;
+    const result = await notifications.deliverVolunteerMessages(ids);
+    assert.equal(result.failed,state==='inactive'?1:0);
+    assert.equal((await messages.findOne({id:confirmation.id})).status,state==='inactive'?'failed':'sent');
+    if (state==='inactive') {
+      // Compatibility: old cancellation jobs were tagged as signup emails.
+      await messages.updateOne({id:confirmation.id},{$set:{kind:'signup'}});
+      failCancellationFor='';await notifications.deliverVolunteerMessages(ids);
+      assert.equal((await messages.findOne({id:confirmation.id})).status,'sent');
+    }
+    assert.equal((await people.findOne({id:registration.volunteerId})).status,state);
+    assert.equal((await people.findOne({id:registration.volunteerId})).opportunityEmails,false);
+    const beforeRepeat=delivered.length,mailCount=await messages.countDocuments({signupId:registration.reference,signupStatus:'cancelled'});
+    assert.deepEqual(await cancelVolunteerSignup(registration.reference),[]);await notifications.deliverVolunteerMessages(ids);
+    assert.equal(delivered.length,beforeRepeat);assert.equal(await messages.countDocuments({signupId:registration.reference,signupStatus:'cancelled'}),mailCount);
+  }
+  // A later opt-out must preserve an already queued cancellation confirmation.
+  await events.insertOne(event('cancel-optout'));
+  const optingOut=await registerVolunteer(input('cancel-optout@example.test','cancel-optout'),false);
+  const cancellationIds=await cancelVolunteerSignup(optingOut.reference);
+  const manageToken=(await messages.findOne({id:{$in:cancellationIds},audience:'volunteer'})).html.match(/#token=([a-f0-9]{64})/)[1];
+  await load('lib/server/volunteer-management.ts').manageVolunteering(`Bearer ${manageToken}`,{action:'unsubscribe'});
+  await notifications.deliverVolunteerMessages(cancellationIds);
+  assert.equal(await messages.countDocuments({id:{$in:cancellationIds},audience:'volunteer',signupStatus:'cancelled',status:'sent'}),1);
+  console.log('PASS: active/paused/inactive volunteers receive cancellation confirmations alongside admins and leads; opportunity opt-outs remain unchanged; failures retry including legacy jobs; repeated cancellations never resend; later opt-outs preserve confirmations.');
+
   // Imports reuse the same allocator, preserve preferences and deduplicate both
   // email identities and external delivery retries.
   await people.updateOne({ id: bob.volunteerId }, { $set: { phone: '215-555-0199', opportunityEmails: false } });
