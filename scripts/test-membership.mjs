@@ -5,9 +5,11 @@ import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import ts from 'typescript';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
+const nativeRequire = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function load(file, globals = {}) {
@@ -15,7 +17,7 @@ function load(file, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const exports = {};
-  vm.runInNewContext(output, { exports, URLSearchParams, AbortSignal, ...globals }, { filename: file });
+  vm.runInNewContext(output, { exports, URLSearchParams, AbortSignal, require: name => name.startsWith('@/') ? load(name.slice(2) + '.ts') : nativeRequire(name), ...globals }, { filename: file });
   return exports;
 }
 

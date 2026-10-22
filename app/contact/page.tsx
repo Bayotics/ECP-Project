@@ -1,5 +1,6 @@
 "use client";
 
+import Recaptcha from "@/components/membership/Recaptcha";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,11 +14,6 @@ import { YOUTUBE_CHANNEL } from "@/lib/content/projects";
 
 const QUAD = [EKO.green, EKO.red, EKO.blue, EKO.yellow];
 
-/* Where the form is delivered. Formspree emails the club and, with a reply
-   address attached, lets the club answer straight from the notification.
-   The auto-acknowledgement to the sender is configured on the Formspree
-   form itself, not here. */
-const FORM_ENDPOINT = "https://formspree.io/f/xpwroval";
 
 const SUBJECTS = [
   "Membership",
@@ -73,6 +69,10 @@ function QuadBar({ className }: { className?: string }) {
 }
 
 export default function ContactPage() {
+  const [captcha, setCaptcha] = useState("");
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
+  const [submitError, setSubmitError] = useState("");
+  const [website, setWebsite] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -94,9 +94,11 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+    if (!captcha) { setSubmitError("Please complete the reCAPTCHA verification."); setFormState("error"); return; }
+    setSubmitError("");
     setFormState("submitting");
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -105,10 +107,12 @@ export default function ContactPage() {
           phone,
           subject,
           message,
-          _subject: `ECP website: ${subject}`,
-          _replyto: email,
+          recaptchaToken: captcha,
+          website,
         }),
       });
+      const result = await res.json();
+      if (!res.ok || !result.ok) throw new Error(result.error || "Your message could not be delivered.");
       if (res.ok) {
         setFormState("success");
         setName("");
@@ -120,9 +124,10 @@ export default function ContactPage() {
       } else {
         setFormState("error");
       }
-    } catch {
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Your message could not be delivered. Please try again.");
       setFormState("error");
-    }
+    } finally { setCaptcha(""); setCaptchaAttempt(value => value + 1); }
   }
 
   const field = (bad: boolean) =>
@@ -359,17 +364,18 @@ export default function ContactPage() {
 
                 {formState === "error" && (
                   <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-                    The message did not go through. Please try again, or email us at info@ekoclubphiladelphia.org.
+                    {submitError || "The message did not go through. Please try again, or email us at info@ekoclubphiladelphia.org."}
                   </p>
                 )}
 
                 {/* Honeypot: bots fill hidden fields, people never see this. */}
-                <input type="text" name="_gotcha" className="hidden" tabIndex={-1} aria-hidden="true" />
+                <input type="text" name="_gotcha" value={website} onChange={event => setWebsite(event.target.value)} className="hidden" tabIndex={-1} aria-hidden="true" />
 
+                <Recaptcha key={captchaAttempt} onChange={setCaptcha} />
                 <div className="flex flex-wrap items-center gap-4 pt-1">
                   <button
                     type="submit"
-                    disabled={formState === "submitting"}
+                    disabled={formState === "submitting" || !captcha}
                     className="inline-flex items-center rounded-full px-8 py-3.5 text-sm font-normal text-white transition-opacity disabled:opacity-60"
                     style={{ background: EKO.green }}
                   >

@@ -12,14 +12,14 @@ import { csvLine as csvRow } from "@/lib/volunteer-export";
 import { apiRequest, apiDelete } from "@/lib/client/api";
 
 const SOURCE_OPTIONS = ["all", "website", "footer", "admin", "rsvp", "import"];
-const STATUS_OPTIONS = ["all", "active", "unsubscribed"];
+const STATUS_OPTIONS = ["all", "pending", "active", "unsubscribed"];
 
 export default function AdminNewsletterPage() {
   const [subscribers, setSubscribers] = useState<NewsletterAdminRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("active");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<NewsletterAdminRow | null>(null);
   const [adding, setAdding] = useState(false);
   const [addForm, setAddForm] = useState({ email: "", name: "", phone: "", source: "admin" as NewsletterSource });
@@ -66,6 +66,7 @@ export default function AdminNewsletterPage() {
   }, [subscribers, search, sourceFilter, statusFilter]);
 
   const activeCount = subscribers.filter(s => s.status === "active").length;
+  const pendingCount = subscribers.filter(s => s.status === "pending").length;
   const unsubCount = subscribers.filter(s => s.status === "unsubscribed").length;
 
   async function handleAdd() {
@@ -80,7 +81,7 @@ export default function AdminNewsletterPage() {
         body: JSON.stringify({ ...addForm, source: addForm.source }),
       });
       setSubscribers(prev => [sub, ...prev.filter(row=>row.id!==sub.id)]);
-      setNotice(sub.confirmationStatus==="sent"?"Subscriber saved and confirmation emailed.":"Subscriber saved. The confirmation email is queued; check its delivery status.");
+      setNotice(sub.confirmationStatus==="sent"?"Subscriber pending; confirmation emailed.":"Subscriber saved. The confirmation email is queued; check its delivery status.");
       setAdding(false);
       setAddForm({ email: "", name: "", phone: "", source: "admin" });
     } catch (err) {
@@ -91,12 +92,12 @@ export default function AdminNewsletterPage() {
   }
 
   async function handleToggleStatus(sub: NewsletterAdminRow) {
-    if(sub.status === "unsubscribed" && !confirm(`Re-subscribe ${sub.email}? Only continue if they have requested newsletter emails. A confirmation with a new unsubscribe link will be emailed.`))return;
+    if(sub.status === "unsubscribed" && !confirm(`Re-subscribe ${sub.email}? Only continue if they have requested newsletter emails. They must confirm the new email link before becoming active.`))return;
     setActionBusy(true);setActionError("");
     try {
-      const updated = await apiRequest<NewsletterAdminRow>(`/api/newsletter/${sub.id}`, { method: "PATCH", body: JSON.stringify({ status: sub.status === "active" ? "unsubscribed" : "active" }) });
+      const updated = await apiRequest<NewsletterAdminRow>(`/api/newsletter/${sub.id}`, { method: "PATCH", body: JSON.stringify({ status: sub.status !== "unsubscribed" ? "unsubscribed" : "active" }) });
       setSubscribers(prev=>prev.map(row=>row.id===updated.id?updated:row));setSelected(updated);
-      setNotice(updated.status==="unsubscribed"?"Newsletter subscription stopped.":updated.confirmationStatus==="sent"?"Subscription reactivated and confirmation emailed.":"Subscription reactivated. Confirmation email queued for delivery.");
+      setNotice(updated.status==="unsubscribed"?"Newsletter subscription stopped.":updated.confirmationStatus==="sent"?"Confirmation emailed. Subscription stays pending until the subscriber confirms.":"Subscription pending. Confirmation email queued for delivery.");
     }catch(error){setActionError(errorMessage(error));}finally{setActionBusy(false);}
   }
   async function handleConfirmation(sub: NewsletterAdminRow) {
@@ -114,18 +115,18 @@ export default function AdminNewsletterPage() {
     catch(error){setActionError(errorMessage(error));}finally{setActionBusy(false);}
   }
   function exportCSV() {
-    const csv=[csvRow(["Email","Name","Phone","Source","Status","Subscribed","Unsubscribed","Confirmation"]),...filtered.map(sub=>csvRow([sub.email,sub.name??"",sub.phone??"",sub.source,sub.status,sub.subscribedAt,sub.unsubscribedAt??"",sub.confirmationStatus]))].join("");
+    const csv=[csvRow(["Email","Name","Phone","Source","Status","Requested / subscribed","Unsubscribed","Confirmation delivery","Email confirmed at"]),...filtered.map(sub=>csvRow([sub.email,sub.name??"",sub.phone??"",sub.source,sub.status,sub.subscribedAt,sub.unsubscribedAt??"",sub.confirmationStatus,sub.confirmedAt??""]))].join("");
     const url=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");a.href=url;a.download=`ecp-newsletter-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  const headers = ["Email", "Name", "Phone", "Source", "Tags", "Status", "Confirmation", "Subscribed"];
+  const headers = ["Email", "Name", "Phone", "Source", "Tags", "Status", "Email delivery", "Requested / subscribed"];
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="Newsletter Subscribers"
         count={activeCount}
-        subtitle={`${activeCount} active · ${unsubCount} unsubscribed`}
+        subtitle={`${activeCount} active · ${pendingCount} pending · ${unsubCount} unsubscribed`}
       >
         <Btn variant="secondary" size="sm" onClick={refresh} disabled={isLoading}>Refresh</Btn>
         <Btn variant="secondary" size="sm" onClick={exportCSV}>Export filtered CSV</Btn>
@@ -183,7 +184,7 @@ export default function AdminNewsletterPage() {
       {adding && (
         <AdminModal title="Add Subscriber" open={adding} onClose={() => { setAdding(false); setAddError(""); }}>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-700">Only add people who have requested newsletter emails. A confirmation with an unsubscribe link will be emailed.</p>
+            <p className="text-sm text-neutral-700">Only add people who have requested newsletter emails. They will stay pending until they click the emailed confirmation link.</p>
             <FormField label="Email *">
               <FormInput aria-label="Subscriber email" type="email" required maxLength={254} value={addForm.email} onChange={e => setAddForm(p => ({ ...p, email: e.target.value }))} placeholder="subscriber@example.com" />
             </FormField>
@@ -220,19 +221,21 @@ export default function AdminNewsletterPage() {
               <div><span className="text-(--color-neutral-800)">Phone</span><p className="font-medium mt-0.5">{selected.phone ?? "—"}</p></div>
               <div><span className="text-(--color-neutral-800)">Source</span><p className="font-medium mt-0.5 capitalize">{selected.source}</p></div>
               <div><span className="text-(--color-neutral-800)">Status</span><div className="mt-0.5"><Badge value={selected.status} /></div></div>
-              <div><span className="text-(--color-neutral-800)">Subscribed</span><p className="font-medium mt-0.5">{new Date(selected.subscribedAt).toLocaleDateString()}</p></div>
+              <div><span className="text-(--color-neutral-800)">{selected.status === "pending" ? "Requested" : "Subscribed"}</span><p className="font-medium mt-0.5">{new Date(selected.subscribedAt).toLocaleDateString()}</p></div>
               {selected.unsubscribedAt && (
                 <div className="col-span-2"><span className="text-(--color-neutral-800)">Unsubscribed</span><p className="font-medium mt-0.5">{new Date(selected.unsubscribedAt).toLocaleDateString()}</p></div>
               )}
             </div>
+            {selected.confirmedAt && <p className="text-sm text-neutral-800"><strong>Email confirmed:</strong> {new Date(selected.confirmedAt).toLocaleString()}</p>}
+            {selected.status === "pending" && <p className="text-sm text-amber-950">Waiting for the subscriber to confirm their email. Newsletter updates are blocked until they confirm.</p>}
             <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm"><p><strong>Confirmation:</strong> {selected.confirmationStatus==="not-recorded"?"Not recorded for this existing subscriber":selected.confirmationStatus}</p>{selected.confirmationSentAt&&<p className="mt-2">Sent {new Date(selected.confirmationSentAt).toLocaleString()}</p>}{selected.confirmationError&&<p className="mt-2 text-red-800">{selected.confirmationError}</p>}</div>
             {actionError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{actionError}</p>}{notice&&<p role="status" className="rounded-xl bg-green-50 p-4 text-sm text-green-950">{notice}</p>}
             <SectionDivider label="Actions" />
             <div className="flex flex-wrap gap-2">
               <Btn size="sm" variant={selected.status === "active" ? "warning" : "success"} className={selected.status === "active" ? "bg-amber-800!" : "bg-green-800!"} disabled={actionBusy} onClick={() => handleToggleStatus(selected)}>
-                {selected.status === "active" ? "Unsubscribe" : "Re-subscribe"}
+                {selected.status !== "unsubscribed" ? "Unsubscribe" : "Request re-subscription"}
               </Btn>
-              {selected.status==="active"&&!["sent","superseded"].includes(selected.confirmationStatus)&&<Btn size="sm" variant="secondary" disabled={actionBusy} onClick={()=>void handleConfirmation(selected)}>{selected.confirmationStatus==="not-recorded"?"Send confirmation":"Retry confirmation"}</Btn>}
+              {(selected.status==="pending" || (selected.status==="active" && !["sent","superseded"].includes(selected.confirmationStatus)))&&<Btn size="sm" variant="secondary" disabled={actionBusy} onClick={()=>void handleConfirmation(selected)}>{selected.confirmationStatus==="not-recorded"?"Send confirmation":"Send confirmation"}</Btn>}
               <Btn size="sm" variant="danger" disabled={actionBusy} onClick={() => handleDelete(selected)}>Delete Permanently</Btn>
             </div>
           </div>

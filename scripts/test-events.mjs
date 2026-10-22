@@ -138,7 +138,7 @@ test('admin notification endpoint deduplicates audiences and logs actual send re
     '@/lib/server/notifications': { sendEventNotifications: async (event, recipients) => { delivered = recipients; return { emailSent: recipients.length, emailFailed: 0, smsSent: 0, smsFailed: 0 }; } },
     '@/lib/server/collections': { ensureCoreIndexes: async () => {}, serializeDocument: row => row, serializeDocuments: rows => rows, getCollection: async name => ({
       findOne: async () => event,
-      find: () => ({ toArray: async () => name === 'users' ? [{ email: 'SHARED@example.test' }] : name === 'newsletterSubscribers' ? [{ email: ' shared@example.test ' }] : [{ email: 'guest@example.test' }] }),
+      find: filter => { if (name === 'newsletterSubscribers') assert.equal(filter.status, 'active'); return { toArray: async () => name === 'users' ? [{ email: 'SHARED@example.test' }] : name === 'newsletterSubscribers' ? [{ email: ' shared@example.test ' }] : [{ email: 'guest@example.test' }] }; },
       insertOne: async log => { logged = log; },
     }) },
   });

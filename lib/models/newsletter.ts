@@ -1,5 +1,5 @@
 export type NewsletterSource = "website" | "footer" | "admin" | "rsvp" | "import";
-export type NewsletterStatus = "active" | "unsubscribed";
+export type NewsletterStatus = "pending" | "active" | "unsubscribed";
 
 export interface NewsletterSubscriber {
   id: string;
@@ -15,12 +15,17 @@ export interface NewsletterSubscriber {
   subscriptionVersion?: string;
   /** Never returned by public or admin APIs. */
   unsubscribeTokenHash?: string;
+  confirmationTokenHash?: string;
+  confirmationExpiresAt?: string;
+  confirmationRequestedAt?: string;
+  confirmedAt?: string;
 }
 
 export interface NewsletterMessage {
   id: string;
   subscriberId: string;
   subscriptionVersion: string;
+  kind?: "opt-in" | "welcome";
   to: string;
   subject: string;
   html: string;
@@ -32,13 +37,13 @@ export interface NewsletterMessage {
   error?: string;
 }
 
-export interface NewsletterAdminRow extends Omit<NewsletterSubscriber, "unsubscribeTokenHash"> {
+export interface NewsletterAdminRow extends Omit<NewsletterSubscriber, "unsubscribeTokenHash" | "confirmationTokenHash" | "subscriptionVersion"> {
   confirmationStatus: NewsletterMessage["status"] | "not-recorded";
   confirmationSentAt?: string;
   confirmationError?: string;
 }
 
-export type CreateSubscriberInput = Omit<NewsletterSubscriber, "id" | "subscribedAt" | "updatedAt" | "subscriptionVersion" | "unsubscribeTokenHash">;
+export type CreateSubscriberInput = Pick<NewsletterSubscriber, "email" | "name" | "phone" | "source" | "tags">;
 
 export interface NotificationLog {
   id: string;

@@ -219,6 +219,7 @@ const COLLECTION_INDEXES: CollectionIndexMap = {
     { key: { sessionId: 1 }, unique: true, sparse: true },
   ],
   newsletterSubscribers: [
+    { key: { confirmationTokenHash: 1 }, unique: true, partialFilterExpression: { confirmationTokenHash: { $type: "string" } } },
     { key: { id: 1 }, unique: true },
     { key: { email: 1 }, unique: true },
     { key: { unsubscribeTokenHash: 1 }, unique: true, partialFilterExpression: { unsubscribeTokenHash: { $type: "string" } } },

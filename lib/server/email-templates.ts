@@ -94,7 +94,11 @@ export function volunteerWelcomeEmail(name: string, preferencesUrl: string) {
   return { subject, html: layout({ title: subject, preheader: subject, body: `${heading(subject)}<p>Hello ${escapeHtml(name)},</p><p>Your volunteer record has been saved. Thank you for offering your time and skills.</p><p>You can update your contact details, interests, and volunteer opportunity email preferences using your private link below. This link expires in 90 days. Keep it private.</p>${button(preferencesUrl, "Manage my volunteering")}` }) };
 }
 
-export function newsletterConfirmationEmail(email: string, unsubscribeUrl: string) {
+export function newsletterConfirmationEmail(email: string, unsubscribeUrl: string, confirmUrl?: string) {
+  if (confirmUrl) {
+    const subject = "Confirm your Eko Club Philadelphia newsletter subscription";
+    return { subject, html: layout({ title: subject, preheader: "Confirm your email to start receiving club news.", body: `${heading("Confirm your subscription")}<p>Someone requested newsletter updates for ${escapeHtml(email)}. Confirm that this is your address to start receiving club news and event updates.</p>${button(confirmUrl, "Confirm my subscription")}<p>This private link expires in 48 hours. Until you confirm, your subscription stays pending and you will not receive newsletter updates. If you did not request this, ignore this email or cancel using the link below.</p>${button(unsubscribeUrl, "Unsubscribe from the newsletter")}` }) };
+  }
   const subject = "You’re subscribed to the Eko Club Philadelphia newsletter";
   return { subject, html: layout({ title: subject, preheader: "Thank you for subscribing. You can unsubscribe at any time.", body: `${heading("You’re subscribed!")}<p>Thank you for subscribing to the Eko Club Philadelphia newsletter.</p><p>We’ve added ${escapeHtml(email)} to our newsletter list for chapter news and event updates.</p><p>You can stop newsletter emails at any time using the link below. If you did not request this subscription, use the same link to remove it.</p>${button(unsubscribeUrl, "Unsubscribe from the newsletter")}` }) };
 }
